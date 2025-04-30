@@ -1,5 +1,17 @@
 # GT86-ISF Gateway Project Requirements
 
+## 🛠 Development Environment
+
+- **Operating System:** Windows 11
+- **IDEs Used:**
+  - [Curser IDE](https://curser.dev/)
+  - Visual Studio Code
+  - Arduino IDE
+- **Debugging Tools:**
+  - [SavvyCAN](https://www.savvycan.com/) (CAN Bus logging and analysis)
+- **Hardware:**
+  - [ESP32-CAN-X2](https://wiki.autosportlabs.com/ESP32-CAN-X2) from Autosport Labs
+
 ## Core Functional Requirements
 
 ### 1. **Handle Incoming ISF CAN Messages**
