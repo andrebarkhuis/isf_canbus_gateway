@@ -12,6 +12,24 @@
 - **Hardware:**
   - [ESP32-CAN-X2](https://wiki.autosportlabs.com/ESP32-CAN-X2) from Autosport Labs
 
+
+## 🔌 ECU Modules & Target Modules
+
+### ISF-Side ECUs (Connected and Operational)
+- **Engine ECU**
+  - Likely CAN ID base: `0x700`–`0x7FF` (UDS range), `0x180` (Speed/RPM)
+- **ABS Module**
+  - Commonly observed CAN ID: `0x284`, `0x285`
+- **TCU (Transmission Control Unit)**
+  - CAN ID range: `0x3E0`–`0x3EF` (varies by region/model)
+
+### GT86-Side ECUs (Expected Message Consumers)
+- **Body ECU**
+  - Typical CAN ID: `0x2F0`–`0x2FF`
+- **Combination Meter / Cluster**
+  - Key CAN IDs: `0x208`, `0x209`, `0x210`, `0x211`, `0x212`, `0x322`
+
+
 ## Core Functional Requirements
 
 ### 1. **Handle Incoming ISF CAN Messages**
@@ -55,8 +73,6 @@
 - The gateway must andle these 1-to-many mappings accurately and in real time to ensure compatibility.
 - Ensure that transformed messages from the ISF are prioritized and replace their respective default GT86 messages during operation.
 - Default messages for IDs that are replaced should not be sent.
-
----
 
 ## Message Summary
 

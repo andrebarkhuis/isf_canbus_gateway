@@ -1,0 +1,22 @@
+Implementation Guidelines
+To ensure consistent, high-quality contributions from the AI agent across this project, please follow these rules:
+
+Primary References
+Always consult Techstream.md, Readme.md, and the Techstream_uds_logs/ folder before making any code changes.
+If any instructions in Techstream.md or Readme.md are unclear, prioritize examples and patterns found in the Techstream_uds_logs/ folder.
+Treat the UDS logs in Techstream_uds_logs/ as the authoritative ground truth for UDS message formats and content. When handling or interpreting UDS messages, trust and align your implementation to the patterns in these logs.
+
+Source Code Scope
+Only modify files within the src/ directory. Do not alter configuration or documentation outside this folder unless explicitly instructed.
+
+Commenting
+Add concise, meaningful comments that explain why the code exists or what it intends to accomplish.
+Avoid comments that simply restate the code (e.g., do not write "// increment counter" for counter++;).
+
+Variable Management
+Before introducing any new variable or function, search the existing codebase to ensure a similar variable or abstraction does not already exist.
+Reuse or extend existing constructs when possible to keep the code DRY (Don’t Repeat Yourself).
+
+Clean Code Principles
+Follow established clean code practices: small functions, single responsibility, meaningful naming, and consistent formatting.
+Keep methods and classes small and focused; refactor when a function exceeds 30–40 lines or has multiple responsibilities.
