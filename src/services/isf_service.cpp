@@ -15,44 +15,29 @@
 #define BUFFER_SIZE 256 // Define BUFFER_SIZE for log_signals function
 
 UDSRequest isf_session_messages[] = {
-    {0x700, 0x000, UDS_SID_DIAGNOSTIC_SESSION_CONTROL, 0x01, 0, "Default session (functional)"},
-    {0x7E0, 0x7E8, UDS_SID_DIAGNOSTIC_SESSION_CONTROL, 0x01, 0, "Default session (ECM)"},
+    {0x700, 0x000, UDS_SID_TESTER_PRESENT, 0x00, 0, "Tester Present (Functional)"},
+    {0x7E0, 0x7E8, UDS_SID_TESTER_PRESENT, 0x00, 0, "Tester Present (ECU)"},
 };
 
 UDSRequest isf_messages[] = {
-    {0x7E0, 0x7E8, UDS_SID_TESTER_PRESENT, 0x0000, 3000, "Tester present - Keep Alive"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x01E7, 2000, "Engine Oil Temperature"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x02CD, 2000, "Engine Oil Pressure"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x02C6, 2000, "Engine Oil Temp Sensor"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0009, 400, "Engine Speed"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x000A, 400, "Vehicle Speed"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0196, 1000, "A/T Oil Temperature 1"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0197, 1000, "A/T Oil Temperature 2"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0198, 1000, "A/T Oil Temperature 3"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0229, 2000, "Coolant Temperature 1"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x022A, 2000, "Coolant Temperature 2"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x00BF, 1000, "Knock Correct Learn Value"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0022, 1000, "MIL, Shift Position"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0025, 1000, "Fuel Lid, Shift SWs, Sports/Snow Modes, A/C & Filter Signals"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0033, 1000, "Air Pump & DPR Pressures"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0037, 200, "Coolant Temp, Knock, Fuel Cut"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0038, 1000, "Exhaust Fuel FB #1 & #2"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0039, 1000, "Pumps, VSVs, Fans, A/C Relay, Shutoffs"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x003A, 1000, "Pump Duty, Injector Status"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x003C, 1000, "Pump Duties, Dilution, Sensors"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x003D, 1000, "Fuel Return Temp"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x003E, 1000, "Fuel Pressures & Temps #1–4"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0004, 1000, "Target AFR"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0048, 1000, "Fuel Pressures, Temps, Sensor Voltages"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0049, 1000, "Fuel Level"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0005, 1000, "Fuel Pressure & Temp"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0051, 500, "A/C Duty, Oil Temp, Immobiliser, Fuel Cut"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0001, 100, "Engine Speed, Vehicle Speed"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0052, 1000, "Fuel Cut Delay, Coolant Temp, Throttle Learn"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0056, 100, "Max Speed Limit (Vehicle)"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0082, 100, "AT Oil Temps 1–3"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0083, 100, "Shift Mode & Range"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0085, 100, "Shift Status"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x01, 1000, "Vehicle Load"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x04, 1000, "Target Air-Fuel Ratio"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x06, 1000, "Fuel System Monitor"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x22, 1000, "A/T Oil Temp from ECT"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x25, 1000, "Engine Oil Pressure SW"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x37, 1000, "Initial Intake Air Temp"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x39, 1000, "Fuel Shutoff Valve for Delivery Pipe"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x51, 1000, "Engine Oil Temperature"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x6C, 1000, "A/T Oil Temp from ECT"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0xBF, 1000, "Knock Correct Learn Value"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0xC0, 1000, "Knock Feedback Value"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0xC1, 1000, "Transmission Type"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x1B7, 1000, "Transmission Type"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x1D6, 1000, "Transfer Neutral"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x1E7, 1000, "Engine Oil Temperature"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x1F4, 1000, "Neutral Control"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x1F9, 1000, "Immobiliser Fuel Cut"},
+    // Add more entries as needed from the JSON definitions
 };
 
 IsfService::IsfService()
@@ -142,53 +127,40 @@ bool IsfService::initialize()
 
 bool IsfService::initialize_diagnostic_session()
 {
+    // Stricter response validation for Techstream-style session init
+    bool allOk = true;
     for (size_t i = 0; i < ISF_SESSION_MESSAGE_SIZE; ++i)
     {
         const UDSRequest &req = isf_session_messages[i];
-
-        // Build UDS request
         Message_t msg;
         msg.tx_id = req.tx_id;
         msg.rx_id = req.rx_id;
-
         uint8_t buffer[8] = {0};
         msg.len = buildRequestPayload(req, buffer);
         msg.Buffer = buffer;
-
         Logger::info("[IsfService] Sending session request to 0x%03X (%s)", req.tx_id, req.param_name);
-
         uint16_t retval = uds->Session(&msg);
-
-        if (retval == 0 && msg.Buffer[0] == 0x50) // Positive response SID
-        {
-            uint8_t session_id = msg.Buffer[2];
-            Logger::info("[IsfService] ECU 0x%03X accepted session 0x%02X (%s)", msg.rx_id, session_id, req.param_name);
-
-            // Update all functional entries (tx_id = 0x700, rx_id = 0x000) to physical IDs
-            for (int j = 0; j < ISF_SESSION_MESSAGE_SIZE; ++j)
-            {
-                if (isf_messages[j].tx_id == req.tx_id &&
-                    (isf_messages[j].rx_id == 0x000 || isf_messages[j].rx_id == req.rx_id))
-                {
-                    isf_messages[j].tx_id = msg.rx_id - 8;
-                    isf_messages[j].rx_id = msg.rx_id;
-                }
+        // For Tester Present (SID 0x3E), positive response is 0x7E (0x3E + 0x40)
+        bool isTesterPresent = (req.sid == UDS_SID_TESTER_PRESENT);
+        bool positiveResponse = (retval == 0 && isTesterPresent && msg.Buffer[0] == 0x7E);
+        if (!positiveResponse) {
+            Logger::warn("[IsfService] No positive response for 0x%03X (retval=0x%04X, resp=0x%02X)", req.tx_id, retval, msg.Buffer[0]);
+            allOk = false;
+        } else {
+            Logger::info("[IsfService] Positive response from 0x%03X (resp=0x%02X)", req.tx_id, msg.Buffer[0]);
+            // If this is the physical ECU (0x7E0), set sessionActive immediately
+            if (req.tx_id == 0x7E0) {
+                sessionActive = true;
+                Logger::info("[IsfService] Diagnostic session active after ECU response (Techstream style).");
+                return true;
             }
-
-            sessionActive = true;
-            return true;
         }
-        else
-        {
-            Logger::warn("[IsfService] ECU at 0x%03X did not accept session (retval=0x%04X)", req.tx_id, retval);
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(20)); // small delay between requests
+        vTaskDelay(pdMS_TO_TICKS(20));
     }
-
-    Logger::error("[IsfService] No ECU accepted a diagnostic session.");
+    Logger::error("[IsfService] Failed to initialize diagnostic session (no positive ECU response).");
     return false;
 }
+
 
 void IsfService::listen()
 {
