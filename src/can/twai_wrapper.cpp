@@ -1,5 +1,5 @@
-#include "twai_wrapper.h"
-#include "../utils/logger.h"
+#include <can/twai_wrapper.h>
+#include <utils/logger.h>
 
 // Ensure constructor is properly defined
 TwaiWrapper::TwaiWrapper()

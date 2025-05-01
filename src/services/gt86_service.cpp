@@ -1,5 +1,5 @@
 #include "gt86_service.h"
-#include "../utils/logger.h"
+#include <utils/logger.h>
 #include "../message_translator.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"

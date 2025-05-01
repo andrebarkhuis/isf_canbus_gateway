@@ -20,3 +20,9 @@ Reuse or extend existing constructs when possible to keep the code DRY (Don’t 
 Clean Code Principles
 Follow established clean code practices: small functions, single responsibility, meaningful naming, and consistent formatting.
 Keep methods and classes small and focused; refactor when a function exceeds 30–40 lines or has multiple responsibilities.
+
+
+Building Arduino Application
+The application is built using the Arduino framework. If the build fails try to resolve the issue by checking the error message and the codebase.
+If the build fails, try to resolve the issue by checking the error message and the codebase.
+Run this command to clean the build: "Remove-Item -Recurse -Force *.o,*.d; if (Test-Path ../.pio) { Remove-Item -Recurse -Force ../.pio }; arduino-cli cache clean"

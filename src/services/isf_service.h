@@ -1,10 +1,10 @@
 #pragma once
 
 #include <Arduino.h>
-#include "../mcp_can/mcp_canbus.h"
-#include "../isotp/iso-tp.h"
-#include "../uds/uds.h"
-#include "../common_types.h"
+#include <mcp_can/mcp_canbus.h>
+#include <isotp/iso-tp.h>
+#include <uds/uds.h>
+#include <common_types.h>
 
 namespace std
 {

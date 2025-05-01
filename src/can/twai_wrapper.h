@@ -2,8 +2,8 @@
 
 #include <Arduino.h>
 #include <driver/twai.h>
-#include "../utils/logger.h"
-#include "../common_types.h"
+#include <utils/logger.h>
+#include <common_types.h>
 
 //#ifndef DEBUG
 //#define DEBUG  // Enable debug mode
