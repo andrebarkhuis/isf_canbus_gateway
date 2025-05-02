@@ -10,6 +10,7 @@ Always update #include references using the following rules to maintain consiste
 * Do not mix styles like #include "common/logger.h" and #include "logger.h" for the same file unless necessary to resolve ambiguous references.
 * Ensure that all headers are located within clearly defined folders (e.g., common/, can/, services/) and included accordingly.
 * Ensure all include paths are consistent throughout the codebase. Avoid using different paths to include the same file (e.g., #include "common/logger.h" vs #include "logger.h") unless it's necessary to resolve reference or scope issues.
+* Ensure only header files ( .h ) are referenced instead of source files ( .cpp ) directly. If a cpp file does not have a corresponding header file, add it.
 
 ## Project Header Files
 
@@ -55,12 +56,11 @@ Always update #include references using the following rules to maintain consiste
 ## Clean Code Principles
 
 * Follow clean code practices:
-
   * Small, purpose-driven functions
   * One responsibility per method/class
   * Meaningful, descriptive names
   * Consistent formatting and indentation
-* Refactor when:
 
+* Refactor when:
   * A function exceeds **30–40 lines**
   * It starts handling **multiple concerns or conditions**

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
-#include "common_types.h"
+#include "common/common_types.h"
 #include <string>
 
 // Define log levels

@@ -1,4 +1,4 @@
-#include "common_types.h"
+#include "common/common_types.h"
 #include <string>
 
 // Implementation for Message_t::getStateStr()
