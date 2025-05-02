@@ -1,9 +1,9 @@
 #pragma once
 
 #include <Arduino.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include <common_types.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+#include "common_types.h"
 #include <string>
 
 // Define log levels

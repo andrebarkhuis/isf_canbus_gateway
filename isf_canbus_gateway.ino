@@ -7,10 +7,10 @@
 ======================================================================== */
 #include <Arduino.h>
 #include <SPI.h>
-#include <utils/logger.h>
-#include <can/twai_wrapper.h>
-#include <services/isf_service.h>
-#include <services/gt86_service.h>
+#include "common/logger.h"
+#include "can/twai_wrapper.h"
+#include "services/isf_service.h"
+#include "services/gt86_service.h"
 
 // Define LED pin if it's not already defined
 #ifndef LED_BUILTIN

@@ -1,8 +1,9 @@
 #include "gt86_service.h"
-#include <utils/logger.h>
-#include "../message_translator.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
+#include "common/logger.h"
+#include "message_translator.h"
+#include "can/twai_wrapper.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 Gt86Service::Gt86Service()
 {

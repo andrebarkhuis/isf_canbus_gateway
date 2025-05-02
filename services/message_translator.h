@@ -2,9 +2,9 @@
 
 #include <vector>
 #include <cstdint>
-#include <common_types.h>
-#include <utils/logger.h>
-#include <uds_mapper.h>
+#include "common/common_types.h"
+#include "common/logger.h"
+#include "uds/uds_mapper.h"
 
 class MessageTranslator {
 public:

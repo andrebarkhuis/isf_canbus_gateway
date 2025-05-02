@@ -1,7 +1,7 @@
 #pragma once
 
-#include <can/twai_wrapper.h>
-#include <common_types.h>
+#include "can/twai_wrapper.h"
+#include "common/common_types.h"
 
 // GT86 CAN messages to be sent periodically
 const CANMessage GT86_PID_MESSAGES[] = {
