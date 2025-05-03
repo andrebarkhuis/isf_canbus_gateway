@@ -1,6 +1,5 @@
 #include "common/logger.h"
 
-
 int Logger::logLevel = LOG_DEBUG;  // Change default to DEBUG level
 bool Logger::serialInitialized = false;
 unsigned long Logger::startTime = 0;

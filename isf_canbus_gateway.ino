@@ -8,7 +8,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include "common/logger.h"
-#include "can/twai_wrapper.h"
 #include "services/isf_service.h"
 #include "services/gt86_service.h"
 

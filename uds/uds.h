@@ -1,7 +1,5 @@
 #pragma once
 
-#include "isotp/iso-tp.h"
-#include "mcp_can/mcp_canbus.h"
 #include "common/common_types.h"
 
 // #define UDS_DEBUG

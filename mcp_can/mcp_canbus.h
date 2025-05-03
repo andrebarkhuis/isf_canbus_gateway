@@ -1,8 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-#include "mcp_canbus_dfs.h"
-
 // Define byte type if not already defined
 #ifndef byte
 typedef uint8_t byte;

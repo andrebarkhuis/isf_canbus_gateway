@@ -1,6 +1,6 @@
-#include "gt86_service.h"
 #include "common/logger.h"
-#include "message_translator.h"
+#include "services/gt86_service.h"
+#include "services/message_translator.h"
 #include "can/twai_wrapper.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>

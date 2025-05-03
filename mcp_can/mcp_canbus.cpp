@@ -1,6 +1,5 @@
 
-#include "mcp_canbus.h"
-#include "mcp_canbus_dfs.h"
+#pragma once
 
 #define spi_readwrite SPI.transfer
 #define spi_read() spi_readwrite(0x00)

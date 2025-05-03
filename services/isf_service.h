@@ -1,10 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
-#include "mcp_can/mcp_canbus.h"
-#include "isotp/iso-tp.h"
-#include "uds/uds.h"
 #include "common/common_types.h"
+
+class MCP_CAN;
+class IsoTp;
+class UDS;
 
 namespace std
 {
@@ -21,9 +22,6 @@ namespace std
     };
 }
 
-class MCP_CAN;
-class IsoTp;
-class UDS;
 
 // #define DEBUG_ISF
 
