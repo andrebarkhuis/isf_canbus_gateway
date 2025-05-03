@@ -1,66 +1,94 @@
 # Code Style Guide and Rules
 
-This document defines the code style conventions, file organization rules, and clean coding practices for the project. It ensures consistency and maintainability across the codebase, particularly for Arduino and C++ development.
+This document defines code style conventions, file organization rules, and clean coding practices for the project. It aims to ensure consistency, clarity, and maintainability across the codebase, especially for Arduino and C++ development.
 
-## Header File Inclusion Rule
+## 1. Header File Inclusion Rules
 
-Always update #include references using the following rules to maintain consistency, clarity, and reliable builds:
+To ensure consistency and avoid ambiguity in file references:
 
-* Use a consistent and canonical path for each header file throughout the codebase.
-* Do not mix styles like #include "common/logger.h" and #include "logger.h" for the same file unless necessary to resolve ambiguous references.
-* Ensure that all headers are located within clearly defined folders (e.g., common/, can/, services/) and included accordingly.
-* Ensure all include paths are consistent throughout the codebase. Avoid using different paths to include the same file (e.g., #include "common/logger.h" vs #include "logger.h") unless it's necessary to resolve reference or scope issues.
-* Ensure only header files ( .h ) are referenced instead of source files ( .cpp ) directly. If a cpp file does not have a corresponding header file, add it.
+- Always use a **canonical, consistent path** when including header files.
+- Avoid mixing styles for the same file (e.g., `#include "logger/logger.h"` vs `#include "logger.h"`). Only use alternative styles if necessary to resolve scope or reference issues.
+- Header files should be located in clearly defined folders (e.g., `common/`, `can/`, `services/`) and referenced using their **relative path from the project root**.
+- Only include `.h` files, **never** `.cpp` files directly. If a `.cpp` file does not have a corresponding header, create one.
 
-## Project Header Files
+**Correct Usage Example:**
 
-* Use **double quotes (`"..."`)** for all headers that are part of your own project, including any files within the `src` directory or its subfolders.
-* Always include the **relative folder path** from the project root:
+```cpp
+#include "logger/logger.h"        // ✅ Correct: with folder context
+#include "mcp_can/mcp_canbus.h"   // ✅ Correct
 
-  ```cpp
-  #include "utils/logger.h"        // ✅ Correct
-  #include "mcp_can/mcp_canbus.h"  // ✅ Correct
-  #include "logger.h"              // ❌ Avoid: lacks folder context
-  ```
+#include "logger.h"               // ❌ Avoid: lacks folder context
+````
 
-* Use **angle brackets (`<...>`)** for:
+## 2. Project Folder and Library Structure
 
-  * Arduino core libraries
-  * Board support packages (e.g., ESP-IDF, FreeRTOS)
-  * Any third-party libraries installed via the Arduino Library Manager
+### 2.1 Arduino Libraries
 
-  Examples:
+* All reusable modules must reside in their own subfolder under the `libraries/` directory, e.g., `libraries/logger`, `libraries/common`.
+* Each module **must** contain a valid `library.properties` file for compatibility with the Arduino CLI and IDE.
 
-  ```cpp
-  #include <Wire.h>                // ✅ Arduino core
-  #include <freertos/FreeRTOS.h>   // ✅ Board/RTOS
-  #include <Adafruit_Sensor.h>     // ✅ External library
-  ```
+**Example `library.properties`:**
 
-## Code Commenting
+```ini
+name=ModuleName
+version=1.0.0
+author=Your Name
+sentence=Short description of the library.
+paragraph=Longer description of the module and its purpose.
+category=Other
+```
 
-* Add concise, meaningful comments that explain **why** the code exists or what it intends to accomplish.
-* Avoid comments that simply restate the code:
+This ensures modules are indexed correctly, avoids build warnings, and promotes modularity and reuse.
 
-  ```cpp
-  counter++; // ❌ Don't: "increment counter"
-  counter++; // ✅ Do: "advance to the next retry attempt"
-  ```
+## 3. Include Syntax Guidelines
 
-## Variable Usage
+Use **double quotes (`"..."`)** for:
 
-* Before introducing any new variable or function, **search the existing codebase** to avoid duplication.
-* Reuse or extend existing constructs when possible to keep the code **DRY (Don't Repeat Yourself)**.
-* Avoid **magic numbers or strings**; extract them into named constants if used more than once or tied to a specific meaning.
+* Project-specific headers (files within `src/` or subfolders)
 
-## Clean Code Principles
+Use **angle brackets (`<...>`)** for:
 
-* Follow clean code practices:
-  * Small, purpose-driven functions
-  * One responsibility per method/class
-  * Meaningful, descriptive names
-  * Consistent formatting and indentation
+* Arduino core libraries
+* Board support packages (e.g., ESP-IDF, FreeRTOS)
+* External libraries installed via the Arduino Library Manager
 
-* Refactor when:
-  * A function exceeds **30–40 lines**
-  * It starts handling **multiple concerns or conditions**
+**Examples:**
+
+```cpp
+#include "logger/logger.h"         // ✅ Project-specific
+#include <Wire.h>                  // ✅ Arduino core
+#include <freertos/FreeRTOS.h>     // ✅ Board support package
+#include <Adafruit_Sensor.h>       // ✅ External library
+```
+
+## 4. Code Commenting Best Practices
+
+* Write concise comments that explain **why** the code exists or what it aims to accomplish.
+* Avoid stating the obvious or repeating what the code already expresses.
+
+**Examples:**
+
+```cpp
+counter++; // ❌ Avoid: "increment counter"
+counter++; // ✅ Good: "advance to the next retry attempt"
+```
+
+## 5. Variable and Function Usage
+
+* Before introducing new variables or functions, **search the codebase** to avoid duplication.
+* Reuse or extend existing constructs where possible to adhere to **DRY** (Don't Repeat Yourself) principles.
+* Avoid "magic numbers" or strings—extract them into named constants if reused or meaningful.
+
+## 6. Clean Code Principles
+
+Follow established clean coding guidelines:
+
+* Write small, single-purpose functions
+* Assign one responsibility per method or class
+* Use clear, descriptive names
+* Maintain consistent formatting and indentation
+
+**Refactor code when:**
+
+* A function exceeds **30–40 lines**
+* It begins to handle **multiple concerns or conditions**

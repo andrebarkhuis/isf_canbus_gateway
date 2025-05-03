@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <common/common_types.h>
+#include "common/common_types.h"
 
 class MCP_CAN;
 class IsoTp;
