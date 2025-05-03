@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <driver/twai.h>
 
-#include "common/common_types.h"
+#include <common/common_types.h>
 
 //#ifndef DEBUG
 //#define DEBUG  // Enable debug mode

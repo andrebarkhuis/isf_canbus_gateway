@@ -1,3 +1,6 @@
+Automation
+Always try to resolve any issues by checking the error message and the codebase. IF you need to run a command to resolve an issue, run the command and try again without confirming.
+
 Implementation Guidelines
 To ensure consistent, high-quality contributions from the AI agent across this project, please follow these rules:
 
