@@ -7,12 +7,11 @@ This guide walks you through building the **ISF CAN‑Bus Gateway** for ESP3
 1. [Prerequisites](#prerequisites)
 2. [Board Configuration (FQBN)](#board-configuration-fqbn)
 3. [Build Process](#build-process)
-   1. [Arduino CLI](#arduino-cli)
-   2. [Arduino IDE](#arduino-ide)
+   * [Arduino CLI](#arduino-cli)
+   * [Arduino IDE](#arduino-ide)
 4. [Output Artifacts](#output-artifacts)
 
 ## ✅ Prerequisites<a name="prerequisites"></a>
-
 
 | Requirement             | Version / Notes                                                                                                                                  |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -29,7 +28,7 @@ esp32:esp32:aslcanx2
 
 ## 🧪 Build Process<a name="build-process"></a>
 
-### Arduino CLI<a name="arduino-cli"></a>
+### Arduino CLI<a name="arduino-cli"></a>
 
 > **Heads‑up:**
 > The include‑path flags **must mirror the folder names inside `/src`**.
@@ -51,7 +50,7 @@ The command above will:
 3. Produce verbose output for easier debugging
 4. Place all build artifacts in **`./.build/`**
 
-### Arduino IDE<a name="arduino-ide"></a>
+### Arduino IDE<a name="arduino-ide"></a>
 
 Follow the step‑by‑step instructions in the official board guide:
 [https://wiki.autosportlabs.com/ESP32-CAN-X2#Step\_by\_step\_instruction\_for\_Arduino\_IDE](https://wiki.autosportlabs.com/ESP32-CAN-X2#Step_by_step_instruction_for_Arduino_IDE)

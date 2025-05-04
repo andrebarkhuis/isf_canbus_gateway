@@ -1,10 +1,10 @@
 # ESP32‑S3 Firmware Flash & Build Upload Guide
 
-This guide documents how to flash the *isf\_canbus\_gateway* firmware onto an ESP32‑S3 using `esptool`. It explains every piece of the command and what to expect in the console output.
+This guide documents how to flash the *isf_canbus_gateway* firmware onto an ESP32‑S3 using `esptool`. It explains every piece of the command and what to expect in the console output.
 
 ## Prerequisites
 
-* **Hardware**: ESP32‑S3 development board with USB‑to‑UART, USB‑C cable. 
+* **Hardware**: ESP32‑S3 development board with USB‑to‑UART, USB‑C cable.
 * **Software**:
 
   * `esptool.py` ≥ 4.8 **installed on your PATH** — install with `pip install esptool` or add the Arduino core’s `esptool_py` folder to your `%PATH%`. You can still call the full `.exe` path if you prefer, but keeping it on PATH makes scripts portable.
@@ -12,7 +12,7 @@ This guide documents how to flash the *isf\_canbus\_gateway* firmware onto an ES
   * USB driver for the board (CP210x/CH34x).
 * **Host**: Windows 10/11 (paths below are from `%LOCALAPPDATA%`).
 
-[Detailed Installation] (https://docs.espressif.com/projects/esptool/en/latest/esp32/installation.html)
+[Detailed Installation] (<https://docs.espressif.com/projects/esptool/en/latest/esp32/installation.html>)
 
 ## Build artefacts
 
@@ -70,9 +70,6 @@ esptool.py ^
 
 A complete successful session looks like:
 
-<details>
-<summary>Example log</summary>
-
 ```text
 (esptool.py v4.8.1)
 Serial port COM7
@@ -96,20 +93,3 @@ Writing at 0x00000000... (100 %)
 ...
 Hard resetting with RTC WDT...
 ```
-
-</details>
-
-## Troubleshooting
-
-| Symptom                        | Fix                                                                 |
-| ------------------------------ | ------------------------------------------------------------------- |
-| `Failed to connect`            | Hold BOOT, press RESET, then release BOOT while connection retries. |
-| Upload freezes                 | Lower `--baud` to e.g. 460800.                                      |
-| Flash verification fails       | Check USB cable, disable USB hubs, try another port.                |
-| Application reboots repeatedly | Likely bad app image; re‑build or review partition scheme.          |
-
-## Next steps
-
-* Open **Serial Monitor** at 115 200 bps to watch `isf_canbus_gateway` startup logs.
-* Commit the `*.bin` files & this guide in your project’s **/release** folder for reproducible builds.
-

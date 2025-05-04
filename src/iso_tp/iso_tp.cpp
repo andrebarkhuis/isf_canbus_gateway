@@ -1,6 +1,6 @@
 #include <SPI.h>
 #include <Arduino.h>
-#include "iso-tp.h"
+#include "iso_tp.h"
 #include "../mcp_can/mcp_can.h"
 #include "../logger/logger.h"
 
@@ -550,7 +550,7 @@ uint8_t IsoTp::receive(Message_t *msg)
 
   if (msg->tp_state == ISOTP_WAIT_DATA)
   {
-    Logger::error("[IsoTp::receive] Incomplete ISO-TP message. Expected more CFs");
+    Logger::error("[IsoTp::receive] Incomplete iso_tp message. Expected more CFs");
   }
 
   Logger::warn("[IsoTp::receive] Timeout after %u ms", TIMEOUT_SESSION);
