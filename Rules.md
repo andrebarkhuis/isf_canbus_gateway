@@ -7,9 +7,9 @@ Define the canonical references, coding standards, build steps, and directory co
 
 | Priority | Folder / File                                    | Rule                                                                                                                     |
 | -------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| 1        | `docs/`                                          | Always consult first for any implementation detail.                                                                      |
-| 2        | `Techstream_uds_logs/`                           | Use as factual ground truth for UDS message formats. If instructions in `docs/` are ambiguous, follow the patterns here. |
-| –        | `docs/Lexus ISF Canbus Message Definitions.json` | Defines Lexus IS‑F CAN bus messages; treat as authoritative.                                                             |
+| 1        | `docs/Lexus ISF Canbus Message Definitions.json` | Defines Lexus IS‑F CAN bus messages; treat as authoritative.                                                             |
+| 2        | `docs/`                                          | Always consult first for any implementation detail.                                                                      |
+| 3        | `Techstream_uds_logs/`                           | Use as factual ground truth for UDS message formats. If instructions in `docs/` are ambiguous, follow the patterns here. |
 
 **When discrepancies exist**
 
