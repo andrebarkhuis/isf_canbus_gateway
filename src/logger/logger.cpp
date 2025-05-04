@@ -1,9 +1,10 @@
-#include "logger/logger.h"
+#include "logger.h"
 
-int Logger::logLevel = LOG_DEBUG;  // Change default to DEBUG level
+// Static member definitions
+int Logger::logLevel = LOG_DEBUG;
 bool Logger::serialInitialized = false;
 unsigned long Logger::startTime = 0;
-SemaphoreHandle_t Logger::serialMutex = NULL;
+SemaphoreHandle_t Logger::serialMutex = nullptr;
 
 void Logger::setMutex(SemaphoreHandle_t mutex) {
     serialMutex = mutex;
@@ -87,11 +88,18 @@ void Logger::debug(const char *format, ...) {
 }
 
 void Logger::logCANMessage(const char *busName, uint32_t id, const uint8_t *data, uint8_t len, bool success, bool isTx, const char *description) {
-    if (busName == nullptr) return;
+    if (busName == nullptr)
+        return;
     if (logLevel >= LOG_INFO) {
         if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
             char buffer[BUFFER_SIZE];
-            snprintf(buffer, sizeof(buffer), "[%s] %s %s ID: 0x%lX Data: %s%s", success ? "OK" : "FAIL", busName, isTx ? "TX" : "RX", id, data != nullptr ? formatData(data, len).c_str() : "", description != nullptr ? description : "");
+            snprintf(buffer, sizeof(buffer), "[%s] %s %s ID: 0x%lX Data: %s%s",
+                     success ? "OK" : "FAIL",
+                     busName,
+                     isTx ? "TX" : "RX",
+                     id,
+                     data != nullptr ? formatData(data, len).c_str() : "",
+                     description != nullptr ? description : "");
             Serial.println(buffer);
             xSemaphoreGive(serialMutex);
         }
@@ -101,7 +109,14 @@ void Logger::logCANMessage(const char *busName, uint32_t id, const uint8_t *data
 void Logger::logUdsMessage(const char *description, const Message_t *msg) {
     if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
         char buffer[BUFFER_SIZE];
-        snprintf(buffer, sizeof(buffer), "%s state=%s tx_id=0x%lX, rx_id=0x%lX, len=%u, seq_id=%u, data=%s", description, msg->getStateStr().c_str(), (unsigned long)msg->tx_id, (unsigned long)msg->rx_id, (unsigned int)msg->len, (unsigned int)msg->seq_id, msg->Buffer != nullptr ? formatData(msg->Buffer, msg->len).c_str() : "");
+        snprintf(buffer, sizeof(buffer), "%s state=%s tx_id=0x%lX, rx_id=0x%lX, len=%u, seq_id=%u, data=%s",
+                 description,
+                 msg->getStateStr().c_str(),
+                 (unsigned long)msg->tx_id,
+                 (unsigned long)msg->rx_id,
+                 (unsigned int)msg->len,
+                 (unsigned int)msg->seq_id,
+                 msg->Buffer != nullptr ? formatData(msg->Buffer, msg->len).c_str() : "");
         Serial.println(buffer);
         xSemaphoreGive(serialMutex);
     }
@@ -110,7 +125,15 @@ void Logger::logUdsMessage(const char *description, const Message_t *msg) {
 void Logger::print_message_in(const char *method, const Message_t *msg) {
     if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
         char buffer[BUFFER_SIZE];
-        snprintf(buffer, sizeof(buffer), "[%s] tx_id=0x%lX, rx_id=0x%lX, len=%u, state=%s, seq_id=%u, data=%s", method, (unsigned long)msg->tx_id, (unsigned long)msg->rx_id, (unsigned int)msg->len, msg->getStateStr().c_str(), (unsigned int)msg->seq_id, msg->Buffer != nullptr ? formatData(msg->Buffer, msg->len).c_str() : "");
+        snprintf(buffer, sizeof(buffer),
+                 "[%s] tx_id=0x%lX, rx_id=0x%lX, len=%u, state=%s, seq_id=%u, data=%s",
+                 method,
+                 (unsigned long)msg->tx_id,
+                 (unsigned long)msg->rx_id,
+                 (unsigned int)msg->len,
+                 msg->getStateStr().c_str(),
+                 (unsigned int)msg->seq_id,
+                 msg->Buffer != nullptr ? formatData(msg->Buffer, msg->len).c_str() : "");
         Serial.println(buffer);
         xSemaphoreGive(serialMutex);
     }
@@ -119,7 +142,11 @@ void Logger::print_message_in(const char *method, const Message_t *msg) {
 void Logger::print_message_out(const char *method, uint32_t id, uint8_t *buffer, uint16_t len) {
     if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
         char formattedData[BUFFER_SIZE];
-        snprintf(formattedData, sizeof(formattedData), "[%s] Buffer: 0x%lX [%d] %s", method, id, len, formatData(buffer, len).c_str());
+        snprintf(formattedData, sizeof(formattedData), "[%s] Buffer: 0x%lX [%d] %s",
+                 method,
+                 id,
+                 len,
+                 formatData(buffer, len).c_str());
         Serial.println(formattedData);
         xSemaphoreGive(serialMutex);
     }

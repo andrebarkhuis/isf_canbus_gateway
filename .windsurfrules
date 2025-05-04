@@ -1,8 +1,3 @@
-Automation
-Always try to resolve any issues by checking the error message and the codebase. IF you need to run a command to resolve an issue, run the command and try again without confirming.
-
-Implementation Guidelines
-To ensure consistent, high-quality contributions from the AI agent across this project, please follow these rules:
 
 Primary References
 Always consult the docs/ folder, and the Techstream_uds_logs/ folder before making any code changes.
@@ -11,12 +6,15 @@ Treat the UDS logs in Techstream_uds_logs/ as the authoritative ground truth for
 Regularly review the markdown readme files to make sure the code still aligns. If it not aligns, update the code to align with the .md files.
 
 Code Style Guidelines
-Follow the code style guidelines defined in code-guidelines.md to ensure consistency and maintainability across the codebase.
+Follow the code style guidelines defined in code-guidelines.md.
 
 Building Arduino Application
-The application is built using the Arduino framework. If the build fails try to resolve the issue by checking the error message and the codebase.
-If the build fails, try to resolve the issue by checking the error message and the codebase.
-Run this command to clean the build: "Remove-Item -Recurse -Force *.o,*.d; if (Test-Path ../.pio) { Remove-Item -Recurse -Force ../.pio }; arduino-cli cache clean"
+Follow the build instructions in build-instructions.md to build the application.
+Follow the esp32 build instructions in ESP32 Firmware Flash & Build Upload Guide.md to flash the application and upload it to the esp32 on the configured com port.
 
 Directory Layout
-Ensure the Directory Layout is updated if any new folders are added.
+Ensure the Directory Layout in readme.md is updated if any new folders are added.
+
+Ignore the contents in the following folders.  
+.build
+.cursor

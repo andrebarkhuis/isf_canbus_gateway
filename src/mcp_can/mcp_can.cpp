@@ -1,5 +1,5 @@
-
-#pragma once
+#include "mcp_can.h"
+#include "mcp_can_dfs.h"
 
 #define spi_readwrite SPI.transfer
 #define spi_read() spi_readwrite(0x00)

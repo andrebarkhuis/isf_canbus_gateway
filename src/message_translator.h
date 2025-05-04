@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <cstdint>
-#include "common/common_types.h"
+#include "common_types.h"
 #include "logger/logger.h"
 #include "uds/uds_mapper.h"
 

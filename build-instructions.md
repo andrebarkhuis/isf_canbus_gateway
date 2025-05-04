@@ -1,83 +1,64 @@
-# 🛠️ Build Instructions
+# 🛠️ Build Instructions – ESP32 Arduino Project
 
-This document provides a detailed overview of how to build the ESP32 Arduino-based project, including required tools, settings, and the build process.
+This guide walks you through building the **ISF CAN‑Bus Gateway** for ESP32 using either the Arduino CLI or the Arduino IDE.
 
-## ✅ Requirements
+## 📋 Table of Contents
 
-* **Arduino CLI**: Installed and accessible via system PATH. [Installation guide](https://arduino.github.io/arduino-cli/0.35/installation/)
-* **ESP32 board support**: Installed via Arduino CLI
+1. [Prerequisites](#prerequisites)
+2. [Board Configuration (FQBN)](#board-configuration-fqbn)
+3. [Build Process](#build-process)
+   1. [Arduino CLI](#arduino-cli)
+   2. [Arduino IDE](#arduino-ide)
+4. [Output Artifacts](#output-artifacts)
 
-  ```bash
-  arduino-cli core update-index
-  arduino-cli core install esp32:esp32
-  ```
+## ✅ Prerequisites<a name="prerequisites"></a>
 
-## ⚙️ Board Configuration (FQBN)
+| Requirement             | Version / Notes                                                                                                                               |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Arduino CLI**         | v0.35 or newer installed and available on your `PATH`. <br/>➡️ [Installation guide](https://arduino.github.io/arduino-cli/0.35/installation/) |
+| **ESP32 board support** | Core installed via **Arduino CLI**: `arduino-cli core install esp32:esp32`                                                                    |
 
-Fully Qualified Board Name (FQBN) for this project:
+## ⚙️ Board Configuration (FQBN)<a name="board-configuration-fqbn"></a>
 
-```bash
+```text
 esp32:esp32:aslcanx2
 ```
 
-Use this when compiling the sketch with `arduino-cli`.
+*Board details*: [https://wiki.autosportlabs.com/ESP32-CAN-X2](https://wiki.autosportlabs.com/ESP32-CAN-X2)
 
-## 🧪 Build Process
+## 🧪 Build Process<a name="build-process"></a>
 
-To compile the sketch using `arduino-cli`, ensure the following:
+### Arduino CLI<a name="arduino-cli"></a>
 
-- All source folders (`common`, `can`, `services`, `uds`, `mcp_can`, `isotp`) are now inside the `libraries/` directory.
-- All `#include` statements use the Arduino library style, e.g., `#include <common/logger.h>`, `#include <can/twai_wrapper.h>`, etc. (Do NOT use the `libraries/` prefix in your includes.)
-- The `--libraries` flag is NOT needed for these folders; all include paths are handled via the `-I` flags below.
-
-Use this command from the project root:
+> **Heads‑up:**
+> The include‑path flags **must mirror the folder names inside `/src`**.
+> If you add or rename sub‑directories, remember to update the `-I` paths below.
 
 ```bash
-arduino-cli compile --fqbn esp32:esp32:aslcanx2 \
-  --build-property build.extra_flags="-I./libraries/common -I./libraries/can -I./libraries/services -I./libraries/uds -I./libraries/mcp_can -I./libraries/isotp" \
-  --build-property "compiler.cpp.extra_flags=-I./libraries/common -I./libraries/can -I./libraries/services -I./libraries/uds -I./libraries/mcp_can -I./libraries/isotp" \
-  --build-path ./.build --verbose .
+arduino-cli compile \
+  --fqbn esp32:esp32:aslcanx2 \
+  --build-property build.extra_flags="-I./src/common -I./src/can -I./src/services -I./src/uds -I./src/mcp_can -I./src/iso_tp" \
+  --build-property "compiler.cpp.extra_flags=-I./src/can -I./src/services -I./src/uds -I./src/mcp_can -I./src/iso_tp" \
+  --build-path ./.build \
+  --verbose .
 ```
 
-This command:
+The command above will:
 
-* Compiles the `isf_canbus_gateway.ino` sketch
-* Applies all relevant include paths
-* Produces detailed verbose output
-* Saves build artifacts in the `.build/` directory
+1. Compile **`isf_canbus_gateway.ino`**
+2. Apply all required include paths
+3. Produce verbose output for easier debugging
+4. Place all build artifacts in **`./.build/`**
 
-**Troubleshooting:**
-- If you see errors about missing headers (e.g., `fatal error: can/twai_wrapper.h: No such file or directory`), double-check that:
-    - The folder exists inside `libraries/` (e.g., `libraries/can/twai_wrapper.h`)
-    - The `#include` statement uses the correct style (e.g., `#include <can/twai_wrapper.h>`)
-    - The `-I` flag for that folder is present in the build command.
+### Arduino IDE<a name="arduino-ide"></a>
 
+Follow the step‑by‑step instructions in the official board guide:
+[https://wiki.autosportlabs.com/ESP32-CAN-X2#Step\_by\_step\_instruction\_for\_Arduino\_IDE](https://wiki.autosportlabs.com/ESP32-CAN-X2#Step_by_step_instruction_for_Arduino_IDE)
 
-## 📂 Output Artifacts
+## 📂 Output Artifacts<a name="output-artifacts"></a>
 
-Output files include:
+After a successful build, the following files will be located in **`./.build/`**:
 
 * `isf_canbus_gateway.ino.cpp`
 * `isf_canbus_gateway.ino.elf`
 * `isf_canbus_gateway.ino.bin`
-
-All files are placed in the `.build/` directory.
-
----
-
-## ⚠️ NOTE for Arduino IDE (GUI) Compatibility
-
-The current build instructions rely on explicit include paths (`-I` flags), which **are not supported directly by the Arduino IDE graphical interface**.
-
-If you need to compile this project using the Arduino IDE GUI, you'll need to:
-
-* Use relative paths for your include statements, such as:
-
-  ```cpp
-  #include "../common/logger.h"
-  #include "../can/twai_wrapper.h"
-  ```
-
-* Or, reorganize headers to the root directory of the sketch to avoid include path issues.
-
-For compatibility with both Arduino CLI and Arduino IDE GUI simultaneously, relative paths are recommended.
