@@ -13,10 +13,11 @@ This guide walks you through building the **ISF CAN‑Bus Gateway** for ESP3
 
 ## ✅ Prerequisites<a name="prerequisites"></a>
 
-| Requirement             | Version / Notes                                                                                                                               |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Arduino CLI**         | v0.35 or newer installed and available on your `PATH`. <br/>➡️ [Installation guide](https://arduino.github.io/arduino-cli/0.35/installation/) |
-| **ESP32 board support** | Core installed via **Arduino CLI**: `arduino-cli core install esp32:esp32`                                                                    |
+
+| Requirement             | Version / Notes                                                                                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Arduino CLI**        | v0.35 or newer installed and available on your`PATH`. <br/>➡️ [Installation guide](https://arduino.github.io/arduino-cli/0.35/installation/) |
+| **ESP32 board support** | Core installed via**Arduino CLI**: `arduino-cli core install esp32:esp32`                                                                       |
 
 ## ⚙️ Board Configuration (FQBN)<a name="board-configuration-fqbn"></a>
 
