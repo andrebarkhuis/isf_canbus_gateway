@@ -29,7 +29,7 @@ This guide documents how to flash the *isf_canbus_gateway* firmware onto an ESP3
 ## Flash command
 
 ```bash
-esptool.py ^
+esptool.py \
   --chip esp32s3           # Target chip family  
   --port COM7              # Serial port connected to the board  
   --baud 921600            # Upload speed (auto‑reduces if unstable)  
@@ -42,9 +42,9 @@ esptool.py ^
   --flash_freq keep        # Keep the detected crystal frequency (40 MHz)  
   --flash_size keep        # Autodetect flash size  
 
-  0x0      "<bootloader.bin>"   ^
-  0x8000   "<partitions.bin>"   ^
-  0xE000   "<boot_app0.bin>"    ^
+  0x0      "<bootloader.bin>"   \
+  0x8000   "<partitions.bin>"   \
+  0xE000   "<boot_app0.bin>"    \
   0x10000  "<app.bin>"
 ```
 
