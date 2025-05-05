@@ -27,17 +27,38 @@ class UDS;
 
 // #define DEBUG_ISF
 
-#define UDS_SID_READ_DATA_BY_ID 0x22
-#define UDS_SID_READ_DATA_BY_LOCAL_ID 0x21
-#define UDS_SID_TESTER_PRESENT 0x3E
-#define OBD_MODE_SHOW_CURRENT_DATA 0x01
-#define UDS_NRC_SUCCESS 0x00
+inline UDSRequest isf_session_messages[] = {
+    /* functional broadcast first – many Toyota ECUs want this         */
+    {0x7DF, 0x7E8, UDS_SID_DIAGNOSTIC_SESSION_CONTROL, 0x81,   0, "Extended session (functional)"},
+    /* direct to the ECM (0x7E0) in case the functional failed         */
+    {0x7E0, 0x7E8, UDS_SID_DIAGNOSTIC_SESSION_CONTROL, 0x81,   0, "Extended session (ECM)"},
+};
 
-extern UDSRequest isf_session_messages[];
-extern UDSRequest isf_messages[];
-extern const int ISF_SESSION_MESSAGE_SIZE;
-extern const int ISF_MESSAGES_SIZE;
-extern bool sessionActive;
+inline UDSRequest isf_messages[] = {
+    /* 1‑sec keep‑alive so the ECU stays in session                    */
+    {0x7E0, 0x7E8, UDS_SID_TESTER_PRESENT,         0x00, 1000, "Tester Present – keep‑alive"},
+    /* === Toyota private service 0x21 (1‑byte Local IDs) ============= */
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x08, 1000, "Coolant Temp"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x09, 100, "Engine Speed"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x0A, 100, "Vehicle Speed"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x21, 1000, "Target Air‑Fuel Ratio"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x3A, 1000, "Fuel System Monitor"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x6C, 1000, "A/T Oil Temp (ECT)"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x73, 1000, "Engine Oil Pressure SW"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x93, 1000, "Neutral Position SW"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0xBB, 1000, "Initial Intake Air Temp"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0xBF, 1000, "Knock Correct Learn"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0xC0, 1000, "Knock Feedback"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0xE0, 1000, "Fuel Shut‑off Valve"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0xE3, 1000, "Idle Fuel‑Cut Prohibit"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0xED, 1000, "Intank Fuel Pump"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x1D, 1000, "Throttle Fully‑Close Learn"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0x3F, 1000, "Misfire RPM"},
+    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID,  0xB7, 1000, "Transmission Type"}
+};
+
+inline const int ISF_SESSION_MESSAGE_SIZE = sizeof(isf_session_messages) / sizeof(isf_session_messages[0]);
+inline const int ISF_MESSAGES_SIZE = sizeof(isf_messages) / sizeof(isf_messages[0]);
 
 class IsfService
 {

@@ -29,7 +29,7 @@ This guide documents how to flash the *isf_canbus_gateway* firmware onto an ESP3
 ## Flash command
 
 ```bash
-esptool.py \
+esptool \
   --chip esp32s3           # Target chip family  
   --port COM7              # Serial port connected to the board  
   --baud 921600            # Upload speed (auto‑reduces if unstable)  
@@ -46,6 +46,14 @@ esptool.py \
   0x8000   "<partitions.bin>"   \
   0xE000   "<boot_app0.bin>"    \
   0x10000  "<app.bin>"
+```
+
+Example:
+
+```bash
+
+ esptool --chip esp32s3 --port COM7 --baud 921600 --before default_reset --after hard_reset write_flash -z --flash_mode keep --flash_freq keep --flash_size keep 0x0 ./.build/isf_canbus_gateway.ino.bootloader.bin 0x8000 ./.build/isf_canbus_gateway.ino.partitions.bin 0xe000 C:/Users/andre/AppData/Local/Arduino15/packages/esp32/hardware/esp32/3.2.0/tools/partitions/boot_app0.bin 0x10000 ./.build/isf_canbus_gateway.ino.bin
+
 ```
 
 ### How to run it

@@ -11,49 +11,6 @@
 
 #define BUFFER_SIZE 256 // Define BUFFER_SIZE for log_signals function
 
-UDSRequest isf_session_messages[] = {
-    {0x700, 0x000, UDS_SID_DIAGNOSTIC_SESSION_CONTROL, 0x01, 0, "Default session (functional)"},
-    {0x7E0, 0x7E8, UDS_SID_DIAGNOSTIC_SESSION_CONTROL, 0x01, 0, "Default session (ECM)"},
-};
-
-UDSRequest isf_messages[] = {
-    {0x7E0, 0x7E8, UDS_SID_TESTER_PRESENT, 0x0000, 3000, "Tester present - Keep Alive"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x01E7, 2000, "Engine Oil Temperature"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x02CD, 2000, "Engine Oil Pressure"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x02C6, 2000, "Engine Oil Temp Sensor"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0009, 400, "Engine Speed"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x000A, 400, "Vehicle Speed"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0196, 1000, "A/T Oil Temperature 1"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0197, 1000, "A/T Oil Temperature 2"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0198, 1000, "A/T Oil Temperature 3"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0229, 2000, "Coolant Temperature 1"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x022A, 2000, "Coolant Temperature 2"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x00BF, 1000, "Knock Correct Learn Value"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0022, 1000, "MIL, Shift Position"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0025, 1000, "Fuel Lid, Shift SWs, Sports/Snow Modes, A/C & Filter Signals"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0033, 1000, "Air Pump & DPR Pressures"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0037, 200, "Coolant Temp, Knock, Fuel Cut"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0038, 1000, "Exhaust Fuel FB #1 & #2"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0039, 1000, "Pumps, VSVs, Fans, A/C Relay, Shutoffs"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x003A, 1000, "Pump Duty, Injector Status"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x003C, 1000, "Pump Duties, Dilution, Sensors"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x003D, 1000, "Fuel Return Temp"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x003E, 1000, "Fuel Pressures & Temps #1–4"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0004, 1000, "Target AFR"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0048, 1000, "Fuel Pressures, Temps, Sensor Voltages"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0049, 1000, "Fuel Level"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0005, 1000, "Fuel Pressure & Temp"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0051, 500, "A/C Duty, Oil Temp, Immobiliser, Fuel Cut"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0001, 100, "Engine Speed, Vehicle Speed"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0052, 1000, "Fuel Cut Delay, Coolant Temp, Throttle Learn"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0056, 100, "Max Speed Limit (Vehicle)"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0082, 100, "AT Oil Temps 1–3"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0083, 100, "Shift Mode & Range"},
-    {0x7E0, 0x7E8, UDS_SID_READ_DATA_BY_LOCAL_ID, 0x0085, 100, "Shift Status"},
-};
-
-const int ISF_SESSION_MESSAGE_SIZE = sizeof(isf_session_messages) / sizeof(isf_session_messages[0]);
-const int ISF_MESSAGES_SIZE = sizeof(isf_messages) / sizeof(isf_messages[0]);
 bool sessionActive = false;
 
 IsfService::IsfService()
@@ -145,34 +102,40 @@ bool IsfService::initialize_diagnostic_session()
 {
     for (size_t i = 0; i < ISF_SESSION_MESSAGE_SIZE; ++i)
     {
+        /* ---------- build & send the session‑control request -------- */
         const UDSRequest &req = isf_session_messages[i];
 
-        // Build UDS request
-        Message_t msg;
-        msg.tx_id = req.tx_id;
-        msg.rx_id = req.rx_id;
+        Message_t msg{};
+        msg.tx_id = req.tx_id;                   // 0x7DF or 0x7E0
+        msg.rx_id = req.rx_id;                   // 0x7E8 (first ECU you expect)
 
         uint8_t buffer[8] = {0};
-        msg.len = buildRequestPayload(req, buffer);
+        msg.len    = buildRequestPayload(req, buffer);   // makes 02 10 81
         msg.Buffer = buffer;
 
-        Logger::info("[IsfService] Sending session request to 0x%03X (%s)", req.tx_id, req.param_name);
+        Logger::info("[IsfService] Session request -> 0x%03X (%s)", msg.tx_id, req.param_name);
 
-        uint16_t retval = uds->Session(&msg);
+        uint16_t retval = uds->Session(&msg);    // TX + wait for reply
 
-        if (retval == 0 && msg.Buffer[0] == 0x50) // Positive response SID
+        /* ---------- look for a positive response 0x50 xx xx --------- */
+        const uint8_t POSITIVE_SID = req.service_id | 0x40; // 0x10 → 0x50
+
+        if (retval == UDS_NRC_SUCCESS &&
+            msg.len >= 3 &&
+            msg.Buffer[1] == POSITIVE_SID)
         {
-            uint8_t session_id = msg.Buffer[2];
+            uint8_t session_id = msg.Buffer[2];          // e.g. 0x81
             Logger::info("[IsfService] ECU 0x%03X accepted session 0x%02X (%s)", msg.rx_id, session_id, req.param_name);
 
-            // Update all functional entries (tx_id = 0x700, rx_id = 0x000) to physical IDs
-            for (int j = 0; j < ISF_SESSION_MESSAGE_SIZE; ++j)
+            /* ---- patch functional requests to the now‑known IDs ---- */
+            for (size_t j = 0; j < ISF_MESSAGES_SIZE; ++j)
             {
                 if (isf_messages[j].tx_id == req.tx_id &&
-                    (isf_messages[j].rx_id == 0x000 || isf_messages[j].rx_id == req.rx_id))
+                    (isf_messages[j].rx_id == 0x000 ||  // functional
+                     isf_messages[j].rx_id == req.rx_id))
                 {
-                    isf_messages[j].tx_id = msg.rx_id - 8;
-                    isf_messages[j].rx_id = msg.rx_id;
+                    isf_messages[j].tx_id = msg.rx_id - 8; // 0x7E0 / 7E1 …
+                    isf_messages[j].rx_id = msg.rx_id;     // 0x7E8 / 7E9 …
                 }
             }
 
@@ -181,15 +144,16 @@ bool IsfService::initialize_diagnostic_session()
         }
         else
         {
-            Logger::warn("[IsfService] ECU at 0x%03X did not accept session (retval=0x%04X)", req.tx_id, retval);
+            Logger::warn("[IsfService] ECU 0x%03X rejected session (retval=0x%04X, SID=0x%02X)", req.rx_id, retval, (msg.len ? msg.Buffer[1] : 0xFF));
         }
 
-        vTaskDelay(pdMS_TO_TICKS(20)); // small delay between requests
+        vTaskDelay(pdMS_TO_TICKS(20));                    // small gap
     }
 
-    Logger::error("[IsfService] No ECU accepted a diagnostic session.");
+    Logger::error("[IsfService] No ECU accepted a diagnostic session");
     return false;
 }
+
 
 void IsfService::listen()
 {
@@ -243,35 +207,52 @@ bool IsfService::beginSend()
 
 uint8_t IsfService::buildRequestPayload(const UDSRequest &req, uint8_t *out)
 {
-    if (req.service_id == OBD_MODE_SHOW_CURRENT_DATA)
+    switch (req.service_id)
     {
-        // PID mode (Mode 01)
-        out[0] = 0x02;           // Payload length = 2
-        out[1] = req.service_id; // e.g., 0x01
-        out[2] = req.did & 0xFF; // PID (1 byte)
-        memset(out + 3, 0, 5);   // Pad
-        return 8;
-    }
-    else if (req.service_id == UDS_SID_READ_DATA_BY_ID || req.service_id == UDS_SID_READ_DATA_BY_LOCAL_ID)
-    {
-        // UDS Mode
-        out[0] = 0x03;                  // Payload length = 3
-        out[1] = req.service_id;        // 0x21 or 0x22
-        out[2] = (req.did >> 8) & 0xFF; // High byte
-        out[3] = req.did & 0xFF;        // Low byte
-        memset(out + 4, 0, 4);          // Pad
-        return 8;
-    }
-    else if (req.service_id == UDS_SID_TESTER_PRESENT)
-    {
-        out[0] = 0x02;
-        out[1] = 0x3E;
-        out[2] = 0x00;
+    /* ----------- ISO‑14229 Diagnostic‑Session‑Control (0x10) -------- */
+    case UDS_SID_DIAGNOSTIC_SESSION_CONTROL:      // 0x10
+        out[0] = 0x02;                    // length
+        out[1] = 0x10;                    // SID
+        out[2] = req.did & 0xFF;          // sub‑function, e.g. 0x81
         memset(out + 3, 0, 5);
         return 8;
-    }
 
-    return 0;
+    /* ----------------- Toyota private Read‑Data‑By‑LocalID ---------- */
+    case UDS_SID_READ_DATA_BY_LOCAL_ID:           // 0x21
+        out[0] = 0x02;                    // **NOT 0x03** – only 1‑byte ID
+        out[1] = 0x21;
+        out[2] = req.did & 0xFF;          // Local ID
+        memset(out + 3, 0, 5);
+        return 8;
+
+    /* -------------- Standard Read‑Data‑By‑Identifier (0x22) --------- */
+    case UDS_SID_READ_DATA_BY_ID:                 // 0x22
+        out[0] = 0x03;                    // two‑byte identifier
+        out[1] = 0x22;
+        out[2] = (req.did >> 8) & 0xFF;   // high
+        out[3] = req.did & 0xFF;          // low
+        memset(out + 4, 0, 4);
+        return 8;
+
+    /* ------------------------ Tester‑Present ------------------------ */
+    case UDS_SID_TESTER_PRESENT:                  // 0x3E
+        out[0] = 0x02;
+        out[1] = 0x3E;
+        out[2] = 0x00;                   // “alive” sub‑function
+        memset(out + 3, 0, 5);
+        return 8;
+
+    /* -------------------------- OBD‑II PID -------------------------- */
+    case OBD_MODE_SHOW_CURRENT_DATA:              // 0x01
+        out[0] = 0x02;
+        out[1] = 0x01;
+        out[2] = req.did & 0xFF;          // 1‑byte PID
+        memset(out + 3, 0, 5);
+        return 8;
+
+    default:
+        return 0;
+    }
 }
 
 void IsfService::sendUdsRequest(const UDSRequest &request)

@@ -12,6 +12,16 @@
 - **Hardware:**
   - [ESP32-CAN-X2](https://wiki.autosportlabs.com/ESP32-CAN-X2) from Autosport Labs
 
+## Configure local python environment
+
+Always install the required python packages in a local virtual environment.
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
 ## 📁 Directory Layout
 
 ```text
