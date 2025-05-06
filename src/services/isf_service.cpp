@@ -111,7 +111,7 @@ bool IsfService::initialize_diagnostic_session()
                                       const_cast<byte *>(isf_pid_session_requests[i].data)); // Cast to match byte*
         if (failed)
         {
-            Logger::error("ISF: Failed to send session request for ID: %d", isf_pid_session_requests[i].id);
+            Logger::error("[IsfService:initialize_diagnostic_session] Failed to send session request for ID: %d", isf_pid_session_requests[i].id);
             return false;
         }
     }
@@ -181,7 +181,7 @@ bool IsfService::beginSend()
                 break;
 
             default:
-                Logger::error("Unsupported UDS service ID: %02X", isf_uds_requests[i].service_id);
+                Logger::error("[IsfService:beginSend] Unsupported UDS service ID: %02X", isf_uds_requests[i].service_id);
                 continue; // Skip unknown services
             }
 
@@ -210,20 +210,20 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
     if (retval == UDS_NRC_SUCCESS)
     {
 #ifdef DEBUG_ISF
-        Logger::info("UDS request successful. %s", request.param_name);
+        Logger::info("[IsfService:sendUdsRequest] UDS request successful. %s", request.param_name);
 #endif
         // Read ISO-TP response directly here
         if (processUdsResponse(session.Data, session.len, request))
         {
 #ifdef DEBUG_ISF
-            Logger::info("UDS response parsed successfully. %s", request.param_name);
+            Logger::info("[IsfService:sendUdsRequest] UDS response parsed successfully. %s", request.param_name);
 #endif
             return true;
         }
         else
         {
 #ifdef DEBUG_ISF
-            Logger::warn("Failed to parse UDS response data. %s", request.param_name);
+            Logger::warn("[IsfService:sendUdsRequest] Failed to parse UDS response data. %s", request.param_name);
 #endif
             return false;
         }
@@ -231,7 +231,7 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
     else
     {
 #ifdef DEBUG_ISF
-        Logger::error("UDS session failed with retval: %04X", retval);
+        Logger::error("[IsfService:sendUdsRequest] UDS session failed with retval: %04X", retval);
 #endif
         return false;
     }
@@ -241,7 +241,7 @@ bool IsfService::processUdsResponse(uint8_t *data, uint8_t length, const UDSRequ
 {
     if (data == nullptr || length == 0)
     {
-        Logger::error("Invalid UDS response data");
+        Logger::error("[IsfService:processUdsResponse] Invalid UDS response data");
         return false;
     }
 
@@ -251,7 +251,7 @@ bool IsfService::processUdsResponse(uint8_t *data, uint8_t length, const UDSRequ
     case UDS_SID_READ_DATA_BY_ID:
         return transformResponse(data, length, request);
     default:
-        Logger::error("Unsupported response SID: %02X", request.service_id);
+        Logger::error("[IsfService:processUdsResponse] Unsupported response SID: %02X", request.service_id);
         return false;
     }
 }
@@ -559,7 +559,7 @@ bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSReque
 
     if (grouped.empty())
     {
-        Logger::warn("[transformResponse] No UDS definitions for TX: %04X, DID: %04X", request.tx_id, request.did);
+        Logger::warn("[IsfService:transformResponse] No UDS definitions for TX: %04X, DID: %04X", request.tx_id, request.did);
         return false;
     }
 
@@ -567,7 +567,7 @@ bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSReque
     int required_len = get_max_required_payload_size(grouped);
     if (length < required_len)
     {
-        Logger::warn("[transformResponse] Buffer too short. TX: %04X, DID: %04X → Needed: %d bytes, Got: %d", request.tx_id, request.did, required_len, length);
+        Logger::warn("[IsfService:transformResponse] Buffer too short. TX: %04X, DID: %04X → Needed: %d bytes, Got: %d", request.tx_id, request.did, required_len, length);
         return false;
     }
 
@@ -576,7 +576,7 @@ bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSReque
 
     if (signals.empty())
     {
-        Logger::warn("[transformResponse] No signal values extracted for TX: %04X, DID: %04X", request.tx_id, request.did);
+        Logger::warn("[IsfService:transformResponse] No signal values extracted for TX: %04X, DID: %04X", request.tx_id, request.did);
         return false;
     }
 

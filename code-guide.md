@@ -29,7 +29,7 @@ This guide defines coding conventions, file‑organization rules, and clean‑co
    | --------------------------------- | --------- | ---------------------------------- |
    | Project headers                 | `"..."` | `#include "logger/logger.h"`     |
    | Arduino core libraries          | `<...>` | `#include <Wire.h>`              |
-   | BSPs / RTOS                   | `<...>` | `#include <freertos/FreeRTOS.h>` |
+   | BSPs/RTOS                       | `<...>` | `#include <freertos/FreeRTOS.h>` |
    | External libs (Library Manager) | `<...>` | `#include <Adafruit_Sensor.h>`   |
 
 🔹 **Tip for AI parsers:** Every include line starts at column 0; avoid indenting `#include`.
