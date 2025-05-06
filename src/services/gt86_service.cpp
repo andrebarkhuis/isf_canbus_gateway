@@ -108,11 +108,11 @@ bool Gt86Service::handleIncomingMessages()
     int messagesProcessed = 0;
 
     // Process messages with a reasonable limit
-    while (twaiWrapper->receiveMessage(id, data, len, extended) && messagesProcessed < 10)
+    while (twaiWrapper->receiveMessage(id, data, len, extended) && messagesProcessed < 5)
     {
         messagesProcessed++;
 #ifdef DEBUG_GT86
-        Logger::logCANMessage(BUS_NAME, id, data, len, true, false);
+        Logger::logCANMessage("[GT86:handleIncomingMessages]", id, data, len, true, false);
 #endif
     }
     return success;
