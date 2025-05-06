@@ -1,15 +1,11 @@
 #pragma once
 
-#include <stdint.h> // Add explicit include for standard integer types
-#include <string>
 #include "../mcp_can/mcp_can.h"
-#include "../common_types.h"
+#include "../common.h"
+#include <stdint.h> // Add explicit include for standard integer types
 
 // #define ISO_TP_DEBUG
 // #define ISO_TP_INFO_PRINT
-
-#define RESULT_OK 0
-#define RESULT_ERROR 1
 
 #define CAN_MAX_DLEN 8 // Not extended CAN
 
@@ -25,14 +21,14 @@
 #define ISOTP_FC_CTS 0   /* clear to send */
 #define ISOTP_FC_WT 1    /* wait */
 #define ISOTP_FC_OVFLW 2 /* overflow */
-
 /* Timeout values */
-#define TIMEOUT_SESSION 500 /* Timeout between successfull send and receive */
-#define TIMEOUT_FC 100      /* Timeout between FF and FC or Block CF and FC */
-#define TIMEOUT_CF 100      /* Timeout between CFs                          */
+#define TIMEOUT_SESSION 5000 /* Timeout between successfull send and receive */
+#define TIMEOUT_FC 500       /* Timeout between FF and FC or Block CF and FC */
+#define TIMEOUT_CF 500       /* Timeout between CFs                          */
 #define MAX_FCWAIT_FRAME 100
 
 #define MAX_MSGBUF 128 /* Received Message Buffer. Depends on uC ressources! Should be enough for our needs */
+
 
 class IsoTp
 {
@@ -40,9 +36,7 @@ public:
   IsoTp(MCP_CAN *bus);
   uint8_t send(Message_t *msg);
   uint8_t receive(Message_t *msg);
-  void print_message_out(const char *method_name, uint32_t id, uint8_t *buffer, uint16_t len);
-  void print_message_in(const char *methodName, const Message_t *msg);
-
+  
 private:
   MCP_CAN *_bus;
   uint8_t rxLen;

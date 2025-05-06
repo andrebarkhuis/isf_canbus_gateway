@@ -1,4 +1,5 @@
 #include "twai_wrapper.h"
+#include "../logger/logger.h"
 
 // Ensure constructor is properly defined
 TwaiWrapper::TwaiWrapper()
@@ -24,26 +25,26 @@ bool TwaiWrapper::initialize()
     esp_err_t result = twai_driver_install(&g_config, &t_config, &f_config);
     if (result != ESP_OK)
     {
-        #ifdef DEBUG
-            Logger::error("[TwaiWrapper::initialize] Failed to install TWAI driver: %d", result);
-        #endif
-        
+#ifdef DEBUG
+        Logger::error("initialize: Failed to install TWAI driver: %d", result);
+#endif
+
         return false;
     }
 
     result = twai_start();
     if (result != ESP_OK)
     {
-        #ifdef DEBUG
-            Logger::error("[TwaiWrapper::initialize] Failed to start TWAI driver: %d", result);
-        #endif
+#ifdef DEBUG
+        Logger::error("initialize: Failed to start TWAI driver: %d", result);
+#endif
 
         return false;
     }
 
-    #ifdef DEBUG
-        Logger::info("[TwaiWrapper::initialize] GT86 TWAI interface initialized successfully on pins TX:%d/RX:%d at 500kbps", TWAI_TX, TWAI_RX);
-    #endif
+#ifdef DEBUG
+    Logger::info("initialize: GT86 TWAI interface initialized successfully on pins TX:%d/RX:%d at 500kbps", TWAI_TX, TWAI_RX);
+#endif
 
     return true;
 }
@@ -60,13 +61,13 @@ bool TwaiWrapper::sendMessage(const CANMessage &msg)
     // Send message with a timeout
     esp_err_t result = twai_transmit(&twai_msg, pdMS_TO_TICKS(100)); // 100ms timeout
 
-    #ifdef DEBUG
-        Logger::logCANMessage("[TwaiWrapper::sendMessage] " + std::string(BUS_NAME), msg.id, msg.data, msg.len, (result == ESP_OK), true);
-    #endif
+#ifdef DEBUG
+    Logger::logCANMessage(BUS_NAME, msg.id, msg.data, msg.len, (result == ESP_OK), true);
+#endif
 
-    #ifdef DEBUG
+#ifdef DEBUG
     checkAlerts();
-    #endif
+#endif
 
     return (result == ESP_OK);
 }
@@ -87,10 +88,10 @@ bool TwaiWrapper::receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len, bool
     extended = twai_msg.extd;
     len = twai_msg.data_length_code;
     memcpy(data, twai_msg.data, len);
-   
-    #ifdef DEBUG
-        Logger::logCANMessage("[TwaiWrapper::receiveMessage] " + std::string(BUS_NAME), id, data, len, true, false);
-    #endif
+
+#ifdef DEBUG
+    Logger::logCANMessage(BUS_NAME, id, data, len, true, false);
+#endif
 
     return true;
 }
@@ -99,9 +100,10 @@ void TwaiWrapper::checkAlerts()
 {
     uint32_t alerts;
     esp_err_t alert_result = twai_read_alerts(&alerts, pdMS_TO_TICKS(10));
-    
+
     // Handle ESP_ERR_TIMEOUT (263) silently as it's expected when no alerts are pending
-    if (alert_result == ESP_ERR_TIMEOUT) {
+    if (alert_result == ESP_ERR_TIMEOUT)
+    {
         return; // No alerts available, just return silently
     }
     else if (alert_result != ESP_OK)
@@ -109,12 +111,13 @@ void TwaiWrapper::checkAlerts()
         // Only log other errors
         static unsigned long lastErrorLogTime = 0;
         unsigned long currentTime = millis();
-        
+
         // Limit logging frequency to avoid serial spam
-        if (currentTime - lastErrorLogTime > 5000) { // Log once every 5 seconds at most
-            #ifdef DEBUG
-                Logger::warn("[TwaiWrapper::checkAlerts] Failed to read TWAI alerts: %d", alert_result);
-            #endif
+        if (currentTime - lastErrorLogTime > 5000)
+        { // Log once every 5 seconds at most
+#ifdef DEBUG
+            Logger::warn("checkAlerts: Failed to read TWAI alerts: %d", alert_result);
+#endif
             lastErrorLogTime = currentTime;
         }
         return;
@@ -123,39 +126,39 @@ void TwaiWrapper::checkAlerts()
     // Check for bus errors
     if (alerts & TWAI_ALERT_BUS_ERROR)
     {
-        #ifdef DEBUG
-            Logger::warn("[TwaiWrapper::checkAlerts] Bus error detected on GT86 bus");
-        #endif
+#ifdef DEBUG
+        Logger::warn("checkAlerts: Bus error detected on GT86 bus");
+#endif
     }
 
     // Check if receive queue is full
     if (alerts & TWAI_ALERT_RX_QUEUE_FULL)
     {
-        #ifdef DEBUG
-        Logger::warn("[TwaiWrapper::checkAlerts] Receive queue full on GT86 bus");
-        #endif
+#ifdef DEBUG
+        Logger::warn("checkAlerts: Receive queue full on GT86 bus");
+#endif
     }
 
     // Check for other important alerts
     if (alerts & TWAI_ALERT_TX_FAILED)
     {
-        #ifdef DEBUG
-            Logger::warn("[TwaiWrapper::checkAlerts] TX failed on GT86 bus");
-        #endif
+#ifdef DEBUG
+        Logger::warn("checkAlerts: TX failed on GT86 bus");
+#endif
     }
 
     if (alerts & TWAI_ALERT_ERR_PASS)
     {
-        #ifdef DEBUG
-            Logger::warn("[TwaiWrapper::checkAlerts] GT86 bus entered error passive state");
-        #endif
+#ifdef DEBUG
+        Logger::warn("checkAlerts: GT86 bus entered error passive state");
+#endif
     }
 
     if (alerts & TWAI_ALERT_BUS_OFF)
     {
-        #ifdef DEBUG
-            Logger::error("[TwaiWrapper::checkAlerts] GT86 bus is off - attempting recovery");
-        #endif
+#ifdef DEBUG
+        Logger::error("checkAlerts: GT86 bus is off - attempting recovery");
+#endif
         // Attempt to recover the bus
         twai_stop();
         twai_start();

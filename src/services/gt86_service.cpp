@@ -1,7 +1,8 @@
 #include "gt86_service.h"
 #include "../logger/logger.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
+#include "../message_translator.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 Gt86Service::Gt86Service()
 {
@@ -20,10 +21,11 @@ bool Gt86Service::initialize()
 {
     bool result = twaiWrapper->initialize();
 
+// Replace direct Serial print statements with Logger calls
 #ifdef DEBUG_GT86
-    Logger::info("[Gt86Service::initialize] GT86 running on core %d", xPortGetCoreID());
+    Logger::info("[GT86:initialize] running on core %d", xPortGetCoreID());
 #endif
-vTaskDelay(pdMS_TO_TICKS(5)); 
+    vTaskDelay(pdMS_TO_TICKS(10));
 
     return result;
 }
@@ -41,18 +43,18 @@ void Gt86Service::listen()
     if (!sendResult)
     {
 #ifdef DEBUG_GT86
-        Logger::warn("[Gt86Service::listen] Error during message sending");
+        Logger::warn("[GT86:listen] Error during message sending");
 #endif
     }
 
-    vTaskDelay(pdMS_TO_TICKS(5));
+    vTaskDelay(pdMS_TO_TICKS(10));
 
     // Process incoming messages with proper error handling
     bool receiveResult = handleIncomingMessages();
     if (!receiveResult)
     {
 #ifdef DEBUG_GT86
-        Logger::warn("[Gt86Service::listen] Error during message receiving");
+        Logger::warn("[GT86:listen] Error during message receiving");
 #endif
     }
 
@@ -60,7 +62,7 @@ void Gt86Service::listen()
     digitalWrite(LED_BUILTIN, LOW);
 #endif
 
-    vTaskDelay(pdMS_TO_TICKS(5));
+    vTaskDelay(pdMS_TO_TICKS(10));
 }
 
 bool Gt86Service::sendPidRequests()
@@ -76,7 +78,7 @@ bool Gt86Service::sendPidRequests()
             if (!twaiWrapper->sendMessage(GT86_PID_MESSAGES[i]))
             {
 #ifdef DEBUG_GT86
-                Logger::warn("[Gt86Service::sendPidRequests] GT86: Failed to send message ID: 0x%x", GT86_PID_MESSAGES[i].id);
+                Logger::warn("[GT86:sendPidRequests] Failed to send message ID: 0x%x", GT86_PID_MESSAGES[i].id);
 #endif
                 success = false;
             }
@@ -88,7 +90,7 @@ bool Gt86Service::sendPidRequests()
             // Only introduce a delay after a certain number of messages to avoid unnecessary delays
             if ((i + 1) % 2 == 0) // Introduce a delay after sending 2 messages
             {
-                vTaskDelay(pdMS_TO_TICKS(5)); // You can adjust this delay if needed
+                vTaskDelay(pdMS_TO_TICKS(10)); // You can adjust this delay if needed
             }
         }
     }
@@ -110,7 +112,7 @@ bool Gt86Service::handleIncomingMessages()
     {
         messagesProcessed++;
 #ifdef DEBUG_GT86
-        Logger::logCANMessage("[Gt86Service::handleIncomingMessages] " + std::string(BUS_NAME), id, data, len, true, false);
+        Logger::logCANMessage(BUS_NAME, id, data, len, true, false);
 #endif
     }
     return success;

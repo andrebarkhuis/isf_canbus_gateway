@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "../common_types.h"
+#include "../common.h"
 #include <string>
 
 // Define log levels
@@ -32,8 +32,6 @@ public:
     static void debug(const char *format, ...);
     static void logCANMessage(const char *busName, uint32_t id, const uint8_t *data, uint8_t len, bool success, bool isTx, const char *description = nullptr);
     static void logUdsMessage(const char *description, const Message_t *msg);
-    static void print_message_in(const char *method, const Message_t *msg);
-    static void print_message_out(const char *method, uint32_t id, uint8_t *buffer, uint16_t len);
 
 private:
     static std::string formatData(const uint8_t *data, uint8_t len);

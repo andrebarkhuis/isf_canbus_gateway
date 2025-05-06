@@ -21,7 +21,7 @@ void MCP_CAN::mcp2515_reset(void)
 #ifdef SPI_HAS_TRANSACTION
     SPI_END();
 #endif
-    vTaskDelay(pdMS_TO_TICKS(5)); 
+    delay(10);
 }
 
 /*********************************************************************************************************
@@ -563,7 +563,7 @@ byte MCP_CAN::init_Mask(byte num, byte ext, unsigned long ulData)
 #if DEBUG_EN
     Serial.print("Begin to set Mask!!\r\n");
 #else
-    vTaskDelay(pdMS_TO_TICKS(5)); 
+    delay(10);
 #endif
     res = mcp2515_setCANCTRL_Mode(MODE_CONFIG);
     if (res > 0)
@@ -571,7 +571,7 @@ byte MCP_CAN::init_Mask(byte num, byte ext, unsigned long ulData)
 #if DEBUG_EN
         Serial.print("Enter setting mode fall\r\n");
 #else
-        vTaskDelay(pdMS_TO_TICKS(5)); 
+        delay(10);
 #endif
         return res;
     }
@@ -592,14 +592,16 @@ byte MCP_CAN::init_Mask(byte num, byte ext, unsigned long ulData)
     {
 #if DEBUG_EN
         Serial.print("Enter normal mode fall\r\n");
+#else
+        delay(10);
 #endif
-        vTaskDelay(pdMS_TO_TICKS(5)); 
-
         return res;
     }
-
-    vTaskDelay(pdMS_TO_TICKS(5)); 
-
+#if DEBUG_EN
+    Serial.print("set Mask success!!\r\n");
+#else
+    delay(10);
+#endif
     return res;
 }
 
@@ -613,7 +615,7 @@ byte MCP_CAN::init_Filt(byte num, byte ext, unsigned long ulData)
 #if DEBUG_EN
     Serial.print("Begin to set Filter!!\r\n");
 #else
-    vTaskDelay(pdMS_TO_TICKS(5)); 
+    delay(10);
 #endif
     res = mcp2515_setCANCTRL_Mode(MODE_CONFIG);
     if (res > 0)
@@ -621,7 +623,7 @@ byte MCP_CAN::init_Filt(byte num, byte ext, unsigned long ulData)
 #if DEBUG_EN
         Serial.print("Enter setting mode fall\r\n");
 #else
-        vTaskDelay(pdMS_TO_TICKS(5)); 
+        delay(10);
 #endif
         return res;
     }
@@ -662,12 +664,15 @@ byte MCP_CAN::init_Filt(byte num, byte ext, unsigned long ulData)
 #if DEBUG_EN
         Serial.print("Enter normal mode fall\r\nSet filter fail!!\r\n");
 #else
-        vTaskDelay(pdMS_TO_TICKS(5)); 
+        delay(10);
 #endif
         return res;
     }
-
-    vTaskDelay(pdMS_TO_TICKS(5));   
+#if DEBUG_EN
+    Serial.print("set Filter success!!\r\n");
+#else
+    delay(10);
+#endif
 
     return res;
 }

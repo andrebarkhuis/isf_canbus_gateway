@@ -1,21 +1,19 @@
-#include <algorithm>
 #include "isf_service.h"
 #include "../mcp_can/mcp_can.h"
 #include "../logger/logger.h"
 #include "../uds/uds_mapper.h"
-#include "../iso_tp/iso_tp.h"
 #include "../uds/uds.h"
-
-#include "../common_types.h"
-#include "../message_translator.h"
-
-#define BUFFER_SIZE 256 // Define BUFFER_SIZE for log_signals function
-
-bool sessionActive = false;
+#include "../isotp/iso_tp.h"
+#include <algorithm>
+#include <string>
+#include <unordered_map>
+#include <tuple>
+#include <optional>
 
 IsfService::IsfService()
 {
-    lastUdsRequestTime = nullptr;
+    // Initialize the array with the correct size
+    lastUdsRequestTime = new unsigned long[ISF_UDS_REQUESTS_SIZE]();
 }
 
 IsfService::~IsfService()
@@ -23,13 +21,17 @@ IsfService::~IsfService()
     delete uds;
     delete isotp;
     delete mcp;
-    if (lastUdsRequestTime)
-    {
-        delete[] lastUdsRequestTime;
-        lastUdsRequestTime = nullptr;
-    }
+    delete[] lastUdsRequestTime; // Clean up the array
 }
 
+/**
+ * @brief Initializes the ISF service and CAN interface
+ *
+ * Sets up the CAN interface and validates that the UDS and ISO-TP objects
+ * are properly initialized.
+ *
+ * @return true if initialization was successful, false otherwise
+ */
 bool IsfService::initialize()
 {
     // Initialize UDS response mappings
@@ -39,134 +41,99 @@ bool IsfService::initialize()
     mcp = new MCP_CAN();
     if (mcp == nullptr)
     {
-        Logger::error("[IsfService::initialize] Failed to create MCP_CAN instance.");
+        Logger::error("[IsfService:initialize] Failed to create MCP_CAN instance.");
         return false;
     }
     else
     {
-        Logger::info("[IsfService::initialize] MCP_CAN instance created successfully.");
+        Logger::info("[IsfService:initialize] MCP_CAN instance created successfully.");
     }
 
     // Initialize the MCP_CAN directly
     byte initResult = mcp->begin();
     if (initResult != CAN_OK)
     {
-        Logger::error("[IsfService::initialize] MCP_CAN initialization failed. Error code: %d", initResult);
+        Logger::error("[IsfService:initialize] MCP_CAN initialization failed. Error code: %d", initResult);
         return false;
     }
     else
     {
-        Logger::info("[IsfService::initialize] MCP_CAN initialized successfully. Code: %d", initResult);
+        Logger::info("[IsfService:initialize] MCP_CAN initialized successfully. Code: %d", initResult);
     }
 
     // Create IsoTp instance
     isotp = new IsoTp(mcp);
     if (isotp == nullptr)
     {
-        Logger::error("[IsfService::initialize] Failed to create IsoTp instance.");
+        Logger::error("[IsfService:initialize] Failed to create IsoTp instance.");
         return false;
     }
     else
     {
-        Logger::info("[IsfService::initialize] IsoTp instance created successfully.");
+        Logger::info("[IsfService:initialize] IsoTp instance created successfully.");
     }
 
     // Create UDS instance
     uds = new UDS(isotp);
     if (uds == nullptr)
     {
-        Logger::error("[IsfService::initialize] Failed to create UDS instance.");
+        Logger::error("[IsfService:initialize] Failed to create UDS instance.");
         return false;
     }
     else
     {
-        Logger::info("[IsfService::initialize] UDS instance created successfully.");
-    }
-
-    if (lastUdsRequestTime)
-        delete[] lastUdsRequestTime;
-    lastUdsRequestTime = new (std::nothrow) unsigned long[ISF_MESSAGES_SIZE]();
-    if (!lastUdsRequestTime)
-    {
-        Logger::error("[IsfService::initialize] Failed to allocate lastUdsRequestTime array.");
-        return false;
+        Logger::info("[IsfService:initialize] UDS instance created successfully.");
     }
 
 #ifdef DEBUG_ISF
-    Logger::debug("[IsfService::initialize] Running on core %d", xPortGetCoreID());
+    Logger::debug("[IsfService:initialize] Running on core %d", xPortGetCoreID());
 #endif
     return true;
 }
 
+/**
+ * @brief Sends diagnostic session initialization messages
+ *
+ * Sends all predefined session initialization messages from isf_pid_session_requests
+ * to prepare the ECUs for diagnostic communication.
+ *
+ * @return true if all session messages were sent successfully, false otherwise
+ */
 bool IsfService::initialize_diagnostic_session()
 {
-    for (size_t i = 0; i < ISF_SESSION_MESSAGE_SIZE; ++i)
+    const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(CANMessage);
+
+    for (int i = 0; i < SESSION_REQUESTS_SIZE; i++)
     {
-        /* ---------- build & send the session‑control request -------- */
-        const UDSRequest &req = isf_session_messages[i];
-
-        Message_t msg{};
-        msg.tx_id = req.tx_id;                   // 0x7DF or 0x7E0
-        msg.rx_id = req.rx_id;                   // 0x7E8 (first ECU you expect)
-
-        uint8_t buffer[8] = {0};
-        msg.len    = buildRequestPayload(req, buffer);   // makes 02 10 81
-        msg.Buffer = buffer;
-
-        Logger::info("[IsfService] Session request -> 0x%03X (%s)", msg.tx_id, req.param_name);
-
-        uint16_t retval = uds->Session(&msg);    // TX + wait for reply
-
-        /* ---------- look for a positive response 0x50 xx xx --------- */
-        const uint8_t POSITIVE_SID = req.service_id | 0x40; // 0x10 → 0x50
-
-        if (retval == UDS_NRC_SUCCESS &&
-            msg.len >= 3 &&
-            msg.Buffer[1] == POSITIVE_SID)
+        bool failed = mcp->sendMsgBuf(isf_pid_session_requests[i].id,
+                                      isf_pid_session_requests[i].extended ? 1 : 0,
+                                      isf_pid_session_requests[i].len,
+                                      const_cast<byte *>(isf_pid_session_requests[i].data)); // Cast to match byte*
+        if (failed)
         {
-            uint8_t session_id = msg.Buffer[2];          // e.g. 0x81
-            Logger::info("[IsfService] ECU 0x%03X accepted session 0x%02X (%s)", msg.rx_id, session_id, req.param_name);
-
-            /* ---- patch functional requests to the now‑known IDs ---- */
-            for (size_t j = 0; j < ISF_MESSAGES_SIZE; ++j)
-            {
-                if (isf_messages[j].tx_id == req.tx_id &&
-                    (isf_messages[j].rx_id == 0x000 ||  // functional
-                     isf_messages[j].rx_id == req.rx_id))
-                {
-                    isf_messages[j].tx_id = msg.rx_id - 8; // 0x7E0 / 7E1 …
-                    isf_messages[j].rx_id = msg.rx_id;     // 0x7E8 / 7E9 …
-                }
-            }
-
-            sessionActive = true;
-            return true;
+            Logger::error("ISF: Failed to send session request for ID: %d", isf_pid_session_requests[i].id);
+            return false;
         }
-        else
-        {
-            Logger::warn("[IsfService] ECU 0x%03X rejected session (retval=0x%04X, SID=0x%02X)", req.rx_id, retval, (msg.len ? msg.Buffer[1] : 0xFF));
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(20));                    // small gap
     }
 
-    Logger::error("[IsfService] No ECU accepted a diagnostic session");
-    return false;
+    return true;
 }
 
-
+/**
+ * @brief Main processing function that sends requests and receives messages
+ *
+ * This method should be called periodically from a task loop to:
+ * 1. Send scheduled UDS requests to the ECU
+ * 2. Process incoming CAN messages
+ * 3. Blink activity LED to indicate operation
+ */
 void IsfService::listen()
 {
 #ifdef LED_BUILTIN
     digitalWrite(LED_BUILTIN, HIGH);
 #endif
 
-    if (!sessionActive)
-    {
-        initialize_diagnostic_session();
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-    else
+    if (initialize_diagnostic_session())
     {
         beginSend();
     }
@@ -174,128 +141,107 @@ void IsfService::listen()
 #ifdef LED_BUILTIN
     digitalWrite(LED_BUILTIN, LOW);
 #endif
-
-    vTaskDelay(pdMS_TO_TICKS(5));
+    vTaskDelay(pdMS_TO_TICKS(5)); // Delay to avoid flooding the bus
 }
 
 bool IsfService::beginSend()
 {
     unsigned long currentTime = millis();
-    for (int i = 0; i < ISF_MESSAGES_SIZE; i++)
+
+    for (int i = 0; i < ISF_UDS_REQUESTS_SIZE; i++)
     {
-        if (currentTime - lastUdsRequestTime[i] >= isf_messages[i].interval)
+        if (currentTime - lastUdsRequestTime[i] >= isf_uds_requests[i].interval)
         {
-            const UDSRequest &req = isf_messages[i];
-            switch (req.service_id)
+            uint8_t udsMessage[8] = {0};
+            uint8_t dataLength = 0;
+
+            switch (isf_uds_requests[i].service_id)
             {
             case UDS_SID_READ_DATA_BY_ID:
-            case UDS_SID_READ_DATA_BY_LOCAL_ID:
-            case UDS_SID_TESTER_PRESENT:
-                sendUdsRequest(req);
+                udsMessage[0] = (isf_uds_requests[i].did >> 8) & 0xFF; // DID high byte
+                udsMessage[1] = isf_uds_requests[i].did & 0xFF;        // DID low byte
+                dataLength = 2;
                 break;
+
             case OBD_MODE_SHOW_CURRENT_DATA:
-                sendPidRequest(req);
+                udsMessage[0] = isf_uds_requests[i].did & 0xFF; // Single-byte PID
+                dataLength = 1;
                 break;
+
+            case UDS_SID_TESTER_PRESENT:
+                udsMessage[0] = 0x00; // Sub-function for Tester Present
+                dataLength = 1;
+                break;
+
+            case UDS_SID_READ_DATA_BY_LOCAL_ID:                 // Techstream SID for Local Identifier requests
+                udsMessage[0] = 0x02;                           // Length of the remaining bytes
+                udsMessage[1] = UDS_SID_READ_DATA_BY_LOCAL_ID;  // Use defined SID instead of hardcoded value
+                udsMessage[2] = isf_uds_requests[i].did & 0xFF; // Identifier (0x01, 0xE1, etc.)
+                dataLength = 3;                                 // SID + Identifier + length byte
+                break;
+
             default:
-                continue;
+                Logger::error("Unsupported UDS service ID: %02X", isf_uds_requests[i].service_id);
+                continue; // Skip unknown services
             }
+
+            sendUdsRequest(udsMessage, dataLength, isf_uds_requests[i]);
+
             lastUdsRequestTime[i] = currentTime;
+
+            vTaskDelay(pdMS_TO_TICKS(1));
         }
     }
+
     return true;
 }
 
-uint8_t IsfService::buildRequestPayload(const UDSRequest &req, uint8_t *out)
+bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const UDSRequest &request)
 {
-    switch (req.service_id)
-    {
-    /* ----------- ISO‑14229 Diagnostic‑Session‑Control (0x10) -------- */
-    case UDS_SID_DIAGNOSTIC_SESSION_CONTROL:      // 0x10
-        out[0] = 0x02;                    // length
-        out[1] = 0x10;                    // SID
-        out[2] = req.did & 0xFF;          // sub‑function, e.g. 0x81
-        memset(out + 3, 0, 5);
-        return 8;
+    Session_t session;
+    session.tx_id = request.tx_id;
+    session.rx_id = request.rx_id;
+    session.sid = request.service_id;
+    session.len = dataLength;
+    session.Data = udsMessage;
 
-    /* ----------------- Toyota private Read‑Data‑By‑LocalID ---------- */
-    case UDS_SID_READ_DATA_BY_LOCAL_ID:           // 0x21
-        out[0] = 0x02;                    // **NOT 0x03** – only 1‑byte ID
-        out[1] = 0x21;
-        out[2] = req.did & 0xFF;          // Local ID
-        memset(out + 3, 0, 5);
-        return 8;
-
-    /* -------------- Standard Read‑Data‑By‑Identifier (0x22) --------- */
-    case UDS_SID_READ_DATA_BY_ID:                 // 0x22
-        out[0] = 0x03;                    // two‑byte identifier
-        out[1] = 0x22;
-        out[2] = (req.did >> 8) & 0xFF;   // high
-        out[3] = req.did & 0xFF;          // low
-        memset(out + 4, 0, 4);
-        return 8;
-
-    /* ------------------------ Tester‑Present ------------------------ */
-    case UDS_SID_TESTER_PRESENT:                  // 0x3E
-        out[0] = 0x02;
-        out[1] = 0x3E;
-        out[2] = 0x00;                   // “alive” sub‑function
-        memset(out + 3, 0, 5);
-        return 8;
-
-    /* -------------------------- OBD‑II PID -------------------------- */
-    case OBD_MODE_SHOW_CURRENT_DATA:              // 0x01
-        out[0] = 0x02;
-        out[1] = 0x01;
-        out[2] = req.did & 0xFF;          // 1‑byte PID
-        memset(out + 3, 0, 5);
-        return 8;
-
-    default:
-        return 0;
-    }
-}
-
-void IsfService::sendUdsRequest(const UDSRequest &request)
-{
-    Message_t msg;
-    msg.rx_id = request.rx_id;
-    msg.tx_id = request.tx_id;
-
-    uint8_t buffer[8];
-    msg.len = buildRequestPayload(request, buffer);
-    msg.Buffer = buffer;
-
-    vTaskDelay(pdMS_TO_TICKS(1));
-
-    uint16_t retval = uds->Session(&msg);
+    uint16_t retval = uds->Session(&session);
 
     if (retval == UDS_NRC_SUCCESS)
     {
-        processUdsResponse(msg, request);
+#ifdef DEBUG_ISF
+        Logger::info("UDS request successful. %s", request.param_name);
+#endif
+        // Read ISO-TP response directly here
+        if (processUdsResponse(session.Data, session.len, request))
+        {
+#ifdef DEBUG_ISF
+            Logger::info("UDS response parsed successfully. %s", request.param_name);
+#endif
+            return true;
+        }
+        else
+        {
+#ifdef DEBUG_ISF
+            Logger::warn("Failed to parse UDS response data. %s", request.param_name);
+#endif
+            return false;
+        }
     }
     else
     {
-        Logger::logUdsMessage("[ERROR] IsfService::sendUdsRequest. UDS response", &msg);
+#ifdef DEBUG_ISF
+        Logger::error("UDS session failed with retval: %04X", retval);
+#endif
+        return false;
     }
 }
 
-void IsfService::sendPidRequest(const UDSRequest &request)
+bool IsfService::processUdsResponse(uint8_t *data, uint8_t length, const UDSRequest &request)
 {
-    uint8_t payload[8];
-    uint8_t len = buildRequestPayload(request, payload);
-
-    bool failed = mcp->sendMsgBuf(request.tx_id, 0, len, payload);
-
-    Logger::logCANMessage("[IsfService::sendPidRequest]", request.tx_id, payload, len, !failed, true);
-}
-
-bool IsfService::processUdsResponse(Message_t &msg, const UDSRequest &request)
-{
-    vTaskDelay(pdMS_TO_TICKS(1));
-
-    if (msg.Buffer == nullptr || msg.len == 0)
+    if (data == nullptr || length == 0)
     {
-        Logger::error("[IsfService::processUdsResponse] Invalid UDS response data");
+        Logger::error("Invalid UDS response data");
         return false;
     }
 
@@ -303,11 +249,26 @@ bool IsfService::processUdsResponse(Message_t &msg, const UDSRequest &request)
     {
     case UDS_SID_READ_DATA_BY_LOCAL_ID: // Local Identifier (Techstream)
     case UDS_SID_READ_DATA_BY_ID:
-        return transformResponse(msg, request);
+        return transformResponse(data, length, request);
     default:
-        Logger::error("[IsfService::processUdsResponse] Unsupported response SID: %02X", request.service_id);
+        Logger::error("Unsupported response SID: %02X", request.service_id);
         return false;
     }
+}
+
+namespace std
+{
+    template <>
+    struct hash<std::tuple<uint16_t, int, int>>
+    {
+        size_t operator()(const std::tuple<uint16_t, int, int> &k) const
+        {
+            size_t h1 = std::hash<uint16_t>{}(std::get<0>(k));
+            size_t h2 = std::hash<int>{}(std::get<1>(k));
+            size_t h3 = std::hash<int>{}(std::get<2>(k));
+            return h1 ^ (h2 << 1) ^ (h3 << 2);
+        }
+    };
 }
 
 std::vector<UdsDefinition> get_uds_definitions(uint16_t request_id, uint16_t data_id)
@@ -347,13 +308,13 @@ uint32_t extract_raw_data(
 {
     if (!data)
     {
-        Logger::error("[IsfService::extract_raw_data] Null data pointer for parameter: %s", parameter_name.c_str());
+        Logger::error("[extract_raw_data] Null data pointer for parameter: %s", parameter_name.c_str());
         return 0;
     }
 
     if (byte_pos < 0 || byte_pos >= data_len)
     {
-        Logger::error("[IsfService::extract_raw_data] Byte position out of range: %d (needs 1 byte, buffer len = %d) for parameter: %s",
+        Logger::error("[extract_raw_data] Byte position out of range: %d (needs 1 byte, buffer len = %d) for parameter: %s",
                       byte_pos, data_len, parameter_name.c_str());
         return 0;
     }
@@ -361,7 +322,7 @@ uint32_t extract_raw_data(
     int max_bytes = (bit_offset + bit_length + 7) / 8;
     if (byte_pos + max_bytes > data_len)
     {
-        Logger::error("[IsfService::extract_raw_data] Byte position out of range: %d (needs %d bytes, buffer len = %d) for parameter: %s",
+        Logger::error("[extract_raw_data] Byte position out of range: %d (needs %d bytes, buffer len = %d) for parameter: %s",
                       byte_pos, max_bytes, data_len, parameter_name.c_str());
         return 0;
     }
@@ -455,7 +416,7 @@ std::optional<SignalValue> get_signal_value(
 {
     if (!data)
     {
-        Logger::error("[IsfService::get_signal_value] Null data pointer for signal: %s", definition.parameter_name.c_str());
+        Logger::error("[get_signal_value] Null data pointer for signal: %s", definition.parameter_name.c_str());
         return std::nullopt;
     }
 
@@ -483,11 +444,9 @@ std::optional<SignalValue> get_signal_value(
             std::abs(candidate.parameter_value.value() - decoded_value) < 0.0001 &&
             candidate.parameter_display_value.has_value())
         {
-
             return SignalValue(
                 candidate.parameter_name,
                 decoded_value,
-                raw_value,
                 candidate.parameter_display_value,
                 get_unit_name(candidate.unit_type));
         }
@@ -496,7 +455,6 @@ std::optional<SignalValue> get_signal_value(
     return SignalValue(
         definition.parameter_name,
         decoded_value,
-        raw_value,
         std::nullopt,
         get_unit_name(definition.unit_type));
 }
@@ -561,26 +519,30 @@ std::vector<SignalValue> get_signal_values(
  */
 void log_signals(const std::vector<SignalValue> &signals, const uint8_t *data, size_t len, uint32_t can_id)
 {
-    SemaphoreHandle_t serialMutex = Logger::getMutex();
+    // Format the CAN data as a hex string
+    char data_hex[64] = {0};
+    size_t pos = 0;
+    for (size_t i = 0; i < len && pos < sizeof(data_hex) - 3; ++i)
+        pos += snprintf(&data_hex[pos], sizeof(data_hex) - pos, "%02X ", data[i]);
+    if (pos > 0 && data_hex[pos - 1] == ' ')
+        data_hex[pos - 1] = '\0';
 
-    if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE)
+    // Header line with CAN ID and raw data
+    Logger::debug("[log_signals] [CAN: %03X] Data: %s", can_id, data_hex);
+
+    // Individual decoded signals
+    for (const auto &sig : signals)
     {
-        for (const auto &sig : signals)
-        {
-            char buffer[BUFFER_SIZE];
-            snprintf(buffer, sizeof(buffer), "%s, Val: %.2f, RawVal: %lu%s%s", // Use %lu for long unsigned int
-                     sig.parameter_name.c_str(),
-                     sig.value,
-                     sig.raw_value,
-                     sig.display_value.has_value() ? (", DisplyVal: " + *sig.display_value).c_str() : "",
-                     sig.unit.has_value() ? (", Unit: " + *sig.unit).c_str() : "");
-            Serial.println(buffer);
-        }
-        xSemaphoreGive(serialMutex);
+        if (sig.display_value.has_value())
+            Logger::debug("  %s = %s", sig.parameter_name.c_str(), sig.display_value->c_str());
+        else if (sig.unit.has_value())
+            Logger::debug("  %s = %.2f %s", sig.parameter_name.c_str(), sig.value, sig.unit.value());
+        else
+            Logger::debug("  %s = %.2f", sig.parameter_name.c_str(), sig.value);
     }
 }
 
-bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
+bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSRequest &request)
 {
     // === Lookup all UDS definitions for this (tx_id, did) pair ===
     auto range = udsMap.equal_range(std::make_tuple(request.tx_id, request.did));
@@ -597,28 +559,29 @@ bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
 
     if (grouped.empty())
     {
-        Logger::warn("[IsfService::transformResponse] No UDS definitions for TX: %04X, DID: %04X", request.tx_id, request.did);
+        Logger::warn("[transformResponse] No UDS definitions for TX: %04X, DID: %04X", request.tx_id, request.did);
         return false;
     }
 
     // === Payload size validation ===
     int required_len = get_max_required_payload_size(grouped);
-    if (msg.len < required_len)
+    if (length < required_len)
     {
+        Logger::warn("[transformResponse] Buffer too short. TX: %04X, DID: %04X → Needed: %d bytes, Got: %d", request.tx_id, request.did, required_len, length);
         return false;
     }
 
     // === Extract one signal per bitfield group ===
-    std::vector<SignalValue> signals = get_signal_values(msg.Buffer, msg.len, grouped);
+    std::vector<SignalValue> signals = get_signal_values(data, length, grouped);
 
     if (signals.empty())
     {
-        Logger::warn("[IsfService::transformResponse] No signal values extracted for TX: %04X, DID: %04X", request.tx_id, request.did);
+        Logger::warn("[transformResponse] No signal values extracted for TX: %04X, DID: %04X", request.tx_id, request.did);
         return false;
     }
 
     // === Log each signal with raw CAN data for traceability ===
-    log_signals(signals, msg.Buffer, msg.len, request.rx_id);
+    log_signals(signals, data, length, request.rx_id);
 
     return true;
 }

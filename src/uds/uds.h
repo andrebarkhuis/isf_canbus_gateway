@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../iso_tp/iso_tp.h"
+#include "../isotp/iso_tp.h"
 #include "../mcp_can/mcp_can.h"
-#include "../common_types.h"
 
 // #define UDS_DEBUG
 
@@ -80,6 +79,16 @@
 
 extern volatile bool uds_busy;
 
+struct Session_t
+{
+  uint32_t tx_id = 0;
+  uint32_t rx_id = 0;
+  uint8_t sid = 0;
+  uint8_t *Data;
+  uint8_t len = 0;
+  uint8_t lenSub = 0; // Length of Sub-function and PID(DID or RID)
+};
+
 class UDS
 {
 private:
@@ -91,13 +100,13 @@ private:
 
   void handlePendingResponse(Message_t &msg, boolean &isPending);
 
-  uint16_t handleNegativeResponse(Message_t *msg);
+  uint16_t handleNegativeResponse(Message_t &msg, Session_t *session);
 
-  void handlePositiveResponse(Message_t *msg);
+  void handlePositiveResponse(Message_t &msg, Session_t *session);
 
-  uint16_t handleUDSResponse(Message_t *msg, boolean &isPendingResponse);
+  uint16_t handleUDSResponse(Message_t &msg, Session_t *session, boolean &isPendingResponse);
 
 public:
   UDS(IsoTp *isotp);
-  uint16_t Session(Message_t *msg);
+  uint16_t Session(Session_t *msg);
 };
