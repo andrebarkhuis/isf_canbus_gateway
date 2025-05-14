@@ -5,6 +5,7 @@
 #include "../uds/uds.h"
 #include "../isotp/iso_tp.h"
 #include <algorithm>
+#include <cstdint>          // <-- NEW
 #include <string>
 #include <unordered_map>
 #include <tuple>
@@ -256,22 +257,11 @@ bool IsfService::processUdsResponse(uint8_t *data, uint8_t length, const UDSRequ
     }
 }
 
-namespace std
-{
-    template <>
-    struct hash<std::tuple<uint16_t, int, int>>
-    {
-        size_t operator()(const std::tuple<uint16_t, int, int> &k) const
-        {
-            size_t h1 = std::hash<uint16_t>{}(std::get<0>(k));
-            size_t h2 = std::hash<int>{}(std::get<1>(k));
-            size_t h3 = std::hash<int>{}(std::get<2>(k));
-            return h1 ^ (h2 << 1) ^ (h3 << 2);
-        }
-    };
-}
+// No custom hash needed: std::hash<std::tuple<…>> is available in C++20
 
-std::vector<UdsDefinition> get_uds_definitions(uint16_t request_id, uint16_t pid, uint16_t data_id)
+std::vector<UdsDefinition> get_uds_definitions(std::uint16_t request_id,
+                                               std::uint16_t pid,
+                                               std::uint16_t data_id)
 {
     std::vector<UdsDefinition> results;
 
@@ -465,7 +455,8 @@ std::optional<SignalValue> get_signal_value(
         get_unit_name(definition.unit_type));
 }
 
-int get_max_required_payload_size(const std::unordered_map<std::tuple<uint16_t, int, int>, std::vector<UdsDefinition>> &grouped_defs)
+int get_max_required_payload_size(const std::unordered_map<std::tuple<std::uint16_t,int,int>,
+                                                             std::vector<UdsDefinition>> &grouped_defs)
 {
     int max_required = 0;
 
@@ -623,7 +614,7 @@ bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSReque
     auto definitionsRange = udsMap.equal_range(std::make_tuple(request.tx_id, request.pid, responseDID));
 
     // Group the definitions by their physical location in the data
-    using SignalLocationKey = std::tuple<uint16_t, int, int>; // data_id, byte_pos, bit_offset
+    using SignalLocationKey = std::tuple<std::uint16_t, int, int>; // data_id, byte_pos, bit_offset
     std::unordered_map<SignalLocationKey, std::vector<UdsDefinition>> signalGroups;
 
     for (auto it = definitionsRange.first; it != definitionsRange.second; ++it)
