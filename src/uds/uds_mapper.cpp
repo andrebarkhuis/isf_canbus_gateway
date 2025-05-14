@@ -3,8 +3,9 @@
 #include <unordered_map>
 
 
-inline void init_udsDefinitions()
-{
+
+
+void init_udsDefinitions_part1() {
     udsMap.emplace(uds_key{ 0x7E0, 0x1, 0x1 }, UdsDefinition{ 0x7E0, 0x1, 0x1, false, 33, 0, 0, 0.392156862745098, 0.0, 4, "Calculate Load" });
     udsMap.emplace(uds_key{ 0x7E0, 0x2, 0x1 }, UdsDefinition{ 0x7E0, 0x2, 0x1, false, 33, 1, 0, 0.392156862745098, 0.0, 4, "Vehicle Load" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3, 0x1 }, UdsDefinition{ 0x7E0, 0x3, 0x1, false, 46, 3, 0, 0.01, 0.0, 4, "MAF" });
@@ -105,6 +106,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x3B1, 0x3 }, UdsDefinition{ 0x7E0, 0x3B1, 0x3, false, 33, 5, 0, 0.78125, -100.0, 4, "Long FT B2S1" });
     udsMap.emplace(uds_key{ 0x7E0, 0x1D, 0x3 }, UdsDefinition{ 0x7E0, 0x1D, 0x3, false, 5, 6, 0, 0.5, -64.0, 4, "IGN Advance" });
     udsMap.emplace(uds_key{ 0x7E0, 0x1E, 0x3 }, UdsDefinition{ 0x7E0, 0x1E, 0x3, false, 0, 7, 0, 4, "2nd Air System Status", 0, "OFF" });
+}
+void init_udsDefinitions_part2() {
     udsMap.emplace(uds_key{ 0x7E0, 0x1E, 0x3 }, UdsDefinition{ 0x7E0, 0x1E, 0x3, false, 0, 7, 0, 4, "2nd Air System Status", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x549, 0x3 }, UdsDefinition{ 0x7E0, 0x549, 0x3, false, 0, 7, 3, 4, "Air Pump", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x549, 0x3 }, UdsDefinition{ 0x7E0, 0x549, 0x3, false, 0, 7, 3, 4, "Air Pump", 1, "ON" });
@@ -205,6 +208,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x3A8, 0x4 }, UdsDefinition{ 0x7E0, 0x3A8, 0x4, false, 48, 4, 0, 0.000122, 0.0, 4, "AFS Voltage B1S1" });
     udsMap.emplace(uds_key{ 0x7E0, 0x24, 0x4 }, UdsDefinition{ 0x7E0, 0x24, 0x4, false, 0, 6, 0, 3.05e-05, 0.0, 4, "AF Lambda B2S1" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3AD, 0x4 }, UdsDefinition{ 0x7E0, 0x3AD, 0x4, false, 0, 6, 0, 3.05e-05, 0.0, 4, "AF Lambda B2S1" });
+}
+void init_udsDefinitions_part3() {
     udsMap.emplace(uds_key{ 0x7E0, 0x25, 0x4 }, UdsDefinition{ 0x7E0, 0x25, 0x4, false, 48, 8, 0, 0.000122, 0.0, 4, "AFS Voltage B2S1" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3A9, 0x4 }, UdsDefinition{ 0x7E0, 0x3A9, 0x4, false, 48, 8, 0, 0.000122, 0.0, 4, "AFS Voltage B2S1" });
     udsMap.emplace(uds_key{ 0x7E0, 0x26, 0x4 }, UdsDefinition{ 0x7E0, 0x26, 0x4, false, 0, 10, 0, 3.05e-05, 0.0, 4, "AF Lambda B1S1" });
@@ -305,6 +310,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x44, 0x6 }, UdsDefinition{ 0x7E0, 0x44, 0x6, false, 0, 3, 7, 4, "EGR/VVT Monitor", 1, "Incmpl" });
     udsMap.emplace(uds_key{ 0x7E0, 0x45, 0x6 }, UdsDefinition{ 0x7E0, 0x45, 0x6, false, 0, 3, 6, 4, "O2S(A/FS) Heater Monitor", 0, "Compl" });
     udsMap.emplace(uds_key{ 0x7E0, 0x45, 0x6 }, UdsDefinition{ 0x7E0, 0x45, 0x6, false, 0, 3, 6, 4, "O2S(A/FS) Heater Monitor", 1, "Incmpl" });
+}
+void init_udsDefinitions_part4() {
     udsMap.emplace(uds_key{ 0x7E0, 0x46, 0x6 }, UdsDefinition{ 0x7E0, 0x46, 0x6, false, 0, 3, 5, 4, "O2S(A/FS) Monitor", 0, "Compl" });
     udsMap.emplace(uds_key{ 0x7E0, 0x46, 0x6 }, UdsDefinition{ 0x7E0, 0x46, 0x6, false, 0, 3, 5, 4, "O2S(A/FS) Monitor", 1, "Incmpl" });
     udsMap.emplace(uds_key{ 0x7E0, 0x47, 0x6 }, UdsDefinition{ 0x7E0, 0x47, 0x6, false, 0, 3, 4, 4, "A/C Monitor", 0, "Compl" });
@@ -405,6 +412,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x436, 0x7 }, UdsDefinition{ 0x7E0, 0x436, 0x7, false, 0, 0, 3, 4, "NOx Density B2S2 Supported", 0, "Unsupp" });
     udsMap.emplace(uds_key{ 0x7E0, 0x436, 0x7 }, UdsDefinition{ 0x7E0, 0x436, 0x7, false, 0, 0, 3, 4, "NOx Density B2S2 Supported", 1, "Supp" });
     udsMap.emplace(uds_key{ 0x7E0, 0x437, 0x7 }, UdsDefinition{ 0x7E0, 0x437, 0x7, false, 0, 0, 2, 4, "NOx Density B2S1 Supported", 0, "Unsupp" });
+}
+void init_udsDefinitions_part5() {
     udsMap.emplace(uds_key{ 0x7E0, 0x437, 0x7 }, UdsDefinition{ 0x7E0, 0x437, 0x7, false, 0, 0, 2, 4, "NOx Density B2S1 Supported", 1, "Supp" });
     udsMap.emplace(uds_key{ 0x7E0, 0x438, 0x7 }, UdsDefinition{ 0x7E0, 0x438, 0x7, false, 0, 0, 1, 4, "NOx Density B1S2 Supported", 0, "Unsupp" });
     udsMap.emplace(uds_key{ 0x7E0, 0x438, 0x7 }, UdsDefinition{ 0x7E0, 0x438, 0x7, false, 0, 0, 1, 4, "NOx Density B1S2 Supported", 1, "Supp" });
@@ -505,6 +514,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x3E9, 0x22 }, UdsDefinition{ 0x7E0, 0x3E9, 0x22, false, 42, 16, 0, 1.0, 0.0, 4, "SPD (SP2)" });
     udsMap.emplace(uds_key{ 0x7E0, 0x483, 0x22 }, UdsDefinition{ 0x7E0, 0x483, 0x22, false, 0, 17, 7, 4, "Stop Light Signal from EFI", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x483, 0x22 }, UdsDefinition{ 0x7E0, 0x483, 0x22, false, 0, 17, 7, 4, "Stop Light Signal from EFI", 1, "ON" });
+}
+void init_udsDefinitions_part6() {
     udsMap.emplace(uds_key{ 0xC7, 0x4, 0x23 }, UdsDefinition{ 0xC7, 0x4, 0x23, false, 0, 0, 0, 1.0, 0.0, 4, "MIN" });
     udsMap.emplace(uds_key{ 0x7E0, 0x71, 0x23 }, UdsDefinition{ 0x7E0, 0x71, 0x23, false, 0, 1, 0, 4, "VN Turbo Type", 0, "Not Avl" });
     udsMap.emplace(uds_key{ 0x7E0, 0x71, 0x23 }, UdsDefinition{ 0x7E0, 0x71, 0x23, false, 0, 1, 0, 4, "VN Turbo Type", 1, "Commo" });
@@ -605,6 +616,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x8B, 0x25 }, UdsDefinition{ 0x7E0, 0x8B, 0x25, false, 0, 6, 5, 4, "Pattern Switch (PWR/M)", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x8B, 0x25 }, UdsDefinition{ 0x7E0, 0x8B, 0x25, false, 0, 6, 5, 4, "Pattern Switch (PWR/M)", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x8C, 0x25 }, UdsDefinition{ 0x7E0, 0x8C, 0x25, false, 0, 6, 4, 4, "Snow or 2nd Start Mode", 0, "OFF" });
+}
+void init_udsDefinitions_part7() {
     udsMap.emplace(uds_key{ 0x7E0, 0x8C, 0x25 }, UdsDefinition{ 0x7E0, 0x8C, 0x25, false, 0, 6, 4, 4, "Snow or 2nd Start Mode", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x20E, 0x25 }, UdsDefinition{ 0x7E0, 0x20E, 0x25, false, 0, 6, 2, 4, "Snow Switch Status", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x20E, 0x25 }, UdsDefinition{ 0x7E0, 0x20E, 0x25, false, 0, 6, 2, 4, "Snow Switch Status", 1, "ON" });
@@ -705,6 +718,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0xC7, 0x14, 0x2B }, UdsDefinition{ 0xC7, 0x14, 0x2B, false, 0, 1, 7, 4, "Remote Guest Driver Status", 0, "NOT Avail" });
     udsMap.emplace(uds_key{ 0xC7, 0x14, 0x2B }, UdsDefinition{ 0xC7, 0x14, 0x2B, false, 0, 1, 7, 4, "Remote Guest Driver Status", 1, "Available" });
     udsMap.emplace(uds_key{ 0xC7, 0x15, 0x2B }, UdsDefinition{ 0xC7, 0x15, 0x2B, false, 0, 1, 6, 4, "Remote Navigation Display", 0, "NOT Avail" });
+}
+void init_udsDefinitions_part8() {
     udsMap.emplace(uds_key{ 0xC7, 0x15, 0x2B }, UdsDefinition{ 0xC7, 0x15, 0x2B, false, 0, 1, 6, 4, "Remote Navigation Display", 1, "Available" });
     udsMap.emplace(uds_key{ 0xC7, 0x16, 0x2B }, UdsDefinition{ 0xC7, 0x16, 0x2B, false, 0, 1, 5, 4, "Remote Vehicle Location", 0, "NOT Avail" });
     udsMap.emplace(uds_key{ 0xC7, 0x16, 0x2B }, UdsDefinition{ 0xC7, 0x16, 0x2B, false, 0, 1, 5, 4, "Remote Vehicle Location", 1, "Available" });
@@ -805,6 +820,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0xA6, 0x31 }, UdsDefinition{ 0x7E0, 0xA6, 0x31, false, 0, 15, 0, 4, "VALVEMATIC bef Warm Up", 11, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0xA6, 0x31 }, UdsDefinition{ 0x7E0, 0xA6, 0x31, false, 0, 15, 0, 4, "VALVEMATIC bef Warm Up", 21, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0xA6, 0x31 }, UdsDefinition{ 0x7E0, 0xA6, 0x31, false, 0, 15, 0, 4, "VALVEMATIC bef Warm Up", 22, "ON" });
+}
+void init_udsDefinitions_part9() {
     udsMap.emplace(uds_key{ 0x7E0, 0xA6, 0x31 }, UdsDefinition{ 0x7E0, 0xA6, 0x31, false, 0, 15, 0, 4, "VALVEMATIC bef Warm Up", 23, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0xA6, 0x31 }, UdsDefinition{ 0x7E0, 0xA6, 0x31, false, 0, 15, 0, 4, "VALVEMATIC bef Warm Up", 25, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0xA6, 0x31 }, UdsDefinition{ 0x7E0, 0xA6, 0x31, false, 0, 15, 0, 4, "VALVEMATIC bef Warm Up", 101, "OFF" });
@@ -905,6 +922,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0xCD, 0x37 }, UdsDefinition{ 0x7E0, 0xCD, 0x37, false, 0, 21, 0, 4, "FC TAU", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0xCD, 0x37 }, UdsDefinition{ 0x7E0, 0xCD, 0x37, false, 0, 21, 0, 4, "FC TAU", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0xCE, 0x37 }, UdsDefinition{ 0x7E0, 0xCE, 0x37, false, 0, 22, 5, 4, "Auto Shift Up Status", 0, "OFF" });
+}
+void init_udsDefinitions_part10() {
     udsMap.emplace(uds_key{ 0x7E0, 0xCE, 0x37 }, UdsDefinition{ 0x7E0, 0xCE, 0x37, false, 0, 22, 5, 4, "Auto Shift Up Status", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x384, 0x37 }, UdsDefinition{ 0x7E0, 0x384, 0x37, false, 0, 22, 4, 4, "Brake Override System", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x384, 0x37 }, UdsDefinition{ 0x7E0, 0x384, 0x37, false, 0, 22, 4, 4, "Brake Override System", 1, "ON" });
@@ -1005,6 +1024,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x28F, 0x39 }, UdsDefinition{ 0x7E0, 0x28F, 0x39, false, 0, 2, 2, 4, "Boost Pressure Control VSV", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x28F, 0x39 }, UdsDefinition{ 0x7E0, 0x28F, 0x39, false, 0, 2, 2, 4, "Boost Pressure Control VSV", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0xDF, 0x39 }, UdsDefinition{ 0x7E0, 0xDF, 0x39, false, 0, 3, 4, 4, "Regulator Shut Valve", 0, "OFF" });
+}
+void init_udsDefinitions_part11() {
     udsMap.emplace(uds_key{ 0x7E0, 0xDF, 0x39 }, UdsDefinition{ 0x7E0, 0xDF, 0x39, false, 0, 3, 4, 4, "Regulator Shut Valve", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0xE0, 0x39 }, UdsDefinition{ 0x7E0, 0xE0, 0x39, false, 0, 3, 3, 4, "Fuel Shutoff Valve for Delivery Pipe", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0xE0, 0x39 }, UdsDefinition{ 0x7E0, 0xE0, 0x39, false, 0, 3, 3, 4, "Fuel Shutoff Valve for Delivery Pipe", 1, "ON" });
@@ -1105,6 +1126,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x20A, 0x3A }, UdsDefinition{ 0x7E0, 0x20A, 0x3A, false, 0, 29, 5, 4, "O2 Heater B1S1", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x20B, 0x3A }, UdsDefinition{ 0x7E0, 0x20B, 0x3A, false, 0, 29, 4, 4, "O2 Heater B2S1", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x20B, 0x3A }, UdsDefinition{ 0x7E0, 0x20B, 0x3A, false, 0, 29, 4, 4, "O2 Heater B2S1", 1, "ON" });
+}
+void init_udsDefinitions_part12() {
     udsMap.emplace(uds_key{ 0x7E0, 0x2D6, 0x3A }, UdsDefinition{ 0x7E0, 0x2D6, 0x3A, false, 33, 30, 0, 0.5, 0.0, 4, "Purge Dilution Valve Duty(Bank 1)" });
     udsMap.emplace(uds_key{ 0x7E0, 0x2D7, 0x3A }, UdsDefinition{ 0x7E0, 0x2D7, 0x3A, false, 33, 31, 0, 0.5, 0.0, 4, "Purge Dilution Valve Duty(Bank 2)" });
     udsMap.emplace(uds_key{ 0x7E0, 0x2D8, 0x3A }, UdsDefinition{ 0x7E0, 0x2D8, 0x3A, false, 33, 32, 0, 0.006103515625, 0.0, 4, "Fuel Pump Duty" });
@@ -1205,6 +1228,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x312, 0x3D }, UdsDefinition{ 0x7E0, 0x312, 0x3D, false, 62, 23, 0, 0.01953125, 0.0, 4, "Injection Volume" });
     udsMap.emplace(uds_key{ 0x7E0, 0x313, 0x3D }, UdsDefinition{ 0x7E0, 0x313, 0x3D, false, 62, 25, 0, 0.01953125, -640.0, 4, "Injection Pressure Correction" });
     udsMap.emplace(uds_key{ 0x7E0, 0x314, 0x3D }, UdsDefinition{ 0x7E0, 0x314, 0x3D, false, 62, 27, 0, 0.01953125, -640.0, 4, "Inj. FB Vol. for Idle" });
+}
+void init_udsDefinitions_part13() {
     udsMap.emplace(uds_key{ 0x7E0, 0x315, 0x3D }, UdsDefinition{ 0x7E0, 0x315, 0x3D, false, 12, 33, 0, 0.125, -4096.0, 4, "Pump SCV Learning Value" });
     udsMap.emplace(uds_key{ 0x7E0, 0x316, 0x3D }, UdsDefinition{ 0x7E0, 0x316, 0x3D, false, 12, 35, 0, 0.125, 0.0, 4, "Target Pump SCV Current" });
     udsMap.emplace(uds_key{ 0x7E0, 0x379, 0x3D }, UdsDefinition{ 0x7E0, 0x379, 0x3D, false, 33, 37, 0, 0.006103515625, 0.0, 4, "Pump SCV Duty Request" });
@@ -1305,6 +1330,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x13D, 0x44 }, UdsDefinition{ 0x7E0, 0x13D, 0x44, false, 0, 28, 7, 4, "VVT-iE Mot Direction #1", 1, "Forward" });
     udsMap.emplace(uds_key{ 0x7E0, 0x13E, 0x44 }, UdsDefinition{ 0x7E0, 0x13E, 0x44, false, 0, 28, 6, 4, "VVT-iE Mot Direction #2", 0, "Backward" });
     udsMap.emplace(uds_key{ 0x7E0, 0x13E, 0x44 }, UdsDefinition{ 0x7E0, 0x13E, 0x44, false, 0, 28, 6, 4, "VVT-iE Mot Direction #2", 1, "Forward" });
+}
+void init_udsDefinitions_part14() {
     udsMap.emplace(uds_key{ 0x7E0, 0x3D5, 0x44 }, UdsDefinition{ 0x7E0, 0x3D5, 0x44, false, 5, 29, 0, 0.009765625, 0.0, 4, "VVT Target Angle #1" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3D6, 0x44 }, UdsDefinition{ 0x7E0, 0x3D6, 0x44, false, 5, 31, 0, 0.009765625, 0.0, 4, "VVT Target Angle #2" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3D7, 0x44 }, UdsDefinition{ 0x7E0, 0x3D7, 0x44, false, 5, 33, 0, 0.009765625, 0.0, 4, "VVT Ex Target Angle #1" });
@@ -1405,6 +1432,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x3C5, 0x48 }, UdsDefinition{ 0x7E0, 0x3C5, 0x48, false, 0, 14, 6, 4, "Compressor Oil Warning", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3C5, 0x48 }, UdsDefinition{ 0x7E0, 0x3C5, 0x48, false, 0, 14, 6, 4, "Compressor Oil Warning", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x4B0, 0x48 }, UdsDefinition{ 0x7E0, 0x4B0, 0x48, false, 0, 14, 5, 4, "Fuel Cooler VSV", 0, "Close" });
+}
+void init_udsDefinitions_part15() {
     udsMap.emplace(uds_key{ 0x7E0, 0x4B0, 0x48 }, UdsDefinition{ 0x7E0, 0x4B0, 0x48, false, 0, 14, 5, 4, "Fuel Cooler VSV", 1, "Open" });
     udsMap.emplace(uds_key{ 0x7E0, 0x4B9, 0x48 }, UdsDefinition{ 0x7E0, 0x4B9, 0x48, false, 0, 14, 4, 4, "Water Present on Ignition Plug", 0, "No" });
     udsMap.emplace(uds_key{ 0x7E0, 0x4B9, 0x48 }, UdsDefinition{ 0x7E0, 0x4B9, 0x48, false, 0, 14, 4, 4, "Water Present on Ignition Plug", 1, "Yes" });
@@ -1505,6 +1534,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x520, 0x4B }, UdsDefinition{ 0x7E0, 0x520, 0x4B, false, 0, 31, 0, 4, "Fr-NOx Sensor NOx Active Status (SCU)", 2, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x520, 0x4B }, UdsDefinition{ 0x7E0, 0x520, 0x4B, false, 0, 31, 0, 4, "Fr-NOx Sensor NOx Active Status (SCU)", 3, "Unused" });
     udsMap.emplace(uds_key{ 0x7E0, 0x521, 0x4B }, UdsDefinition{ 0x7E0, 0x521, 0x4B, false, 0, 32, 0, 4, "Fr-NOx Sensor A/F Active Status (SCU)", 0, "Unused" });
+}
+void init_udsDefinitions_part16() {
     udsMap.emplace(uds_key{ 0x7E0, 0x521, 0x4B }, UdsDefinition{ 0x7E0, 0x521, 0x4B, false, 0, 32, 0, 4, "Fr-NOx Sensor A/F Active Status (SCU)", 1, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x521, 0x4B }, UdsDefinition{ 0x7E0, 0x521, 0x4B, false, 0, 32, 0, 4, "Fr-NOx Sensor A/F Active Status (SCU)", 2, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x521, 0x4B }, UdsDefinition{ 0x7E0, 0x521, 0x4B, false, 0, 32, 0, 4, "Fr-NOx Sensor A/F Active Status (SCU)", 3, "Unused" });
@@ -1605,6 +1636,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x500, 0x4C }, UdsDefinition{ 0x7E0, 0x500, 0x4C, false, 0, 0, 6, 4, "Status of Ready", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x501, 0x4C }, UdsDefinition{ 0x7E0, 0x501, 0x4C, false, 0, 0, 5, 4, "Status of WI Terminal Low Voltage Guard Determination", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x501, 0x4C }, UdsDefinition{ 0x7E0, 0x501, 0x4C, false, 0, 0, 5, 4, "Status of WI Terminal Low Voltage Guard Determination", 1, "ON" });
+}
+void init_udsDefinitions_part17() {
     udsMap.emplace(uds_key{ 0x7E0, 0x502, 0x4C }, UdsDefinition{ 0x7E0, 0x502, 0x4C, false, 0, 0, 4, 4, "Status of +B Terminal Low Voltage Guard Determination", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x502, 0x4C }, UdsDefinition{ 0x7E0, 0x502, 0x4C, false, 0, 0, 4, 4, "Status of +B Terminal Low Voltage Guard Determination", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x503, 0x4C }, UdsDefinition{ 0x7E0, 0x503, 0x4C, false, 0, 0, 3, 4, "Status of STA Terminal Low Voltage Guard Determination", 0, "OFF" });
@@ -1705,6 +1738,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x2AF, 0x52 }, UdsDefinition{ 0x7E0, 0x2AF, 0x52, false, 60, 11, 0, 0.0625, 0.0, 4, "Idle Spark Advn Ctrl #12" });
     udsMap.emplace(uds_key{ 0x7E0, 0x202, 0x52 }, UdsDefinition{ 0x7E0, 0x202, 0x52, false, 39, 12, 0, 0.78125, 0.0, 4, "Minimum Engine Speed" });
     udsMap.emplace(uds_key{ 0x7E0, 0x203, 0x52 }, UdsDefinition{ 0x7E0, 0x203, 0x52, false, 27, 14, 0, 0.001220703125, -40.0, 4, "Eng Stall Control FB Flow" });
+}
+void init_udsDefinitions_part18() {
     udsMap.emplace(uds_key{ 0x7E0, 0x204, 0x52 }, UdsDefinition{ 0x7E0, 0x204, 0x52, false, 27, 16, 0, 0.001220703125, -40.0, 4, "Deposit Loss Flow" });
     udsMap.emplace(uds_key{ 0x7E0, 0x221, 0x52 }, UdsDefinition{ 0x7E0, 0x221, 0x52, false, 52, 18, 0, 1.049, 0.0, 4, "Fuel Cut Elps Time" });
     udsMap.emplace(uds_key{ 0x7E0, 0x31E, 0x52 }, UdsDefinition{ 0x7E0, 0x31E, 0x52, false, 0, 20, 0, 4, "Rough Idle #8", 0, "OFF" });
@@ -1805,6 +1840,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x42C, 0x52 }, UdsDefinition{ 0x7E0, 0x42C, 0x52, false, 0, 39, 2, 4, "Injector Heater Battery Short #2", 2, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x42C, 0x52 }, UdsDefinition{ 0x7E0, 0x42C, 0x52, false, 0, 39, 2, 4, "Injector Heater Battery Short #2", 3, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x42D, 0x52 }, UdsDefinition{ 0x7E0, 0x42D, 0x52, false, 0, 39, 0, 4, "Injector Heater Battery Short #1", 0, "Not Detected" });
+}
+void init_udsDefinitions_part19() {
     udsMap.emplace(uds_key{ 0x7E0, 0x42D, 0x52 }, UdsDefinition{ 0x7E0, 0x42D, 0x52, false, 0, 39, 0, 4, "Injector Heater Battery Short #1", 1, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x42D, 0x52 }, UdsDefinition{ 0x7E0, 0x42D, 0x52, false, 0, 39, 0, 4, "Injector Heater Battery Short #1", 2, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x42D, 0x52 }, UdsDefinition{ 0x7E0, 0x42D, 0x52, false, 0, 39, 0, 4, "Injector Heater Battery Short #1", 3, "ON" });
@@ -1905,6 +1942,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x39F, 0x57 }, UdsDefinition{ 0x7E0, 0x39F, 0x57, false, 0, 18, 0, 0.01, 0.0, 4, "Engine Speed Fluctuation Avg (worst value) (Port) #3" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3A0, 0x57 }, UdsDefinition{ 0x7E0, 0x3A0, 0x57, false, 0, 19, 0, 0.01, 0.0, 4, "Engine Speed Fluctuation Avg (worst value) (Port) #4" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3A1, 0x57 }, UdsDefinition{ 0x7E0, 0x3A1, 0x57, false, 0, 20, 0, 0.01, 0.0, 4, "Engine Speed Fluctuation Avg (worst value) (Port) #5" });
+}
+void init_udsDefinitions_part20() {
     udsMap.emplace(uds_key{ 0x7E0, 0x3A2, 0x57 }, UdsDefinition{ 0x7E0, 0x3A2, 0x57, false, 0, 21, 0, 0.01, 0.0, 4, "Engine Speed Fluctuation Avg (worst value) (Port) #6" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3D0, 0x57 }, UdsDefinition{ 0x7E0, 0x3D0, 0x57, false, 0, 22, 0, 0.01, 0.0, 4, "Engine Speed Fluctuation Avg (worst value) (Port) #7" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3D1, 0x57 }, UdsDefinition{ 0x7E0, 0x3D1, 0x57, false, 0, 23, 0, 0.01, 0.0, 4, "Engine Speed Fluctuation Avg (worst value) (Port) #8" });
@@ -2005,6 +2044,8 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x1A2, 0x85 }, UdsDefinition{ 0x7E0, 0x1A2, 0x85, false, 0, 1, 6, 4, "ST Solenoid Status", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x1A2, 0x85 }, UdsDefinition{ 0x7E0, 0x1A2, 0x85, false, 0, 1, 6, 4, "ST Solenoid Status", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x1A3, 0x85 }, UdsDefinition{ 0x7E0, 0x1A3, 0x85, false, 0, 1, 5, 4, "SL Solenoid Status", 0, "OFF" });
+}
+void init_udsDefinitions_part21() {
     udsMap.emplace(uds_key{ 0x7E0, 0x1A3, 0x85 }, UdsDefinition{ 0x7E0, 0x1A3, 0x85, false, 0, 1, 5, 4, "SL Solenoid Status", 1, "ON" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3EA, 0x85 }, UdsDefinition{ 0x7E0, 0x3EA, 0x85, false, 0, 1, 4, 4, "Solenoid(SC)", 0, "OFF" });
     udsMap.emplace(uds_key{ 0x7E0, 0x3EA, 0x85 }, UdsDefinition{ 0x7E0, 0x3EA, 0x85, false, 0, 1, 4, 4, "Solenoid(SC)", 1, "ON" });
@@ -2105,4 +2146,27 @@ inline void init_udsDefinitions()
     udsMap.emplace(uds_key{ 0x7E0, 0x467, 0xE3 }, UdsDefinition{ 0x7E0, 0x467, 0xE3, false, 0, 3, 1, 4, "Exhaust Temperature B1S2 Test Result", 1, "Incmpl" });
     udsMap.emplace(uds_key{ 0x7E0, 0x468, 0xE3 }, UdsDefinition{ 0x7E0, 0x468, 0xE3, false, 0, 3, 0, 4, "Exhaust Temperature B1S1 Test Result", 0, "Compl" });
     udsMap.emplace(uds_key{ 0x7E0, 0x468, 0xE3 }, UdsDefinition{ 0x7E0, 0x468, 0xE3, false, 0, 3, 0, 4, "Exhaust Temperature B1S1 Test Result", 1, "Incmpl" });
+}
+void init_udsDefinitions() {
+    init_udsDefinitions_part1();
+    init_udsDefinitions_part2();
+    init_udsDefinitions_part3();
+    init_udsDefinitions_part4();
+    init_udsDefinitions_part5();
+    init_udsDefinitions_part6();
+    init_udsDefinitions_part7();
+    init_udsDefinitions_part8();
+    init_udsDefinitions_part9();
+    init_udsDefinitions_part10();
+    init_udsDefinitions_part11();
+    init_udsDefinitions_part12();
+    init_udsDefinitions_part13();
+    init_udsDefinitions_part14();
+    init_udsDefinitions_part15();
+    init_udsDefinitions_part16();
+    init_udsDefinitions_part17();
+    init_udsDefinitions_part18();
+    init_udsDefinitions_part19();
+    init_udsDefinitions_part20();
+    init_udsDefinitions_part21();
 }

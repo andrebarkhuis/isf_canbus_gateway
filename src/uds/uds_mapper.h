@@ -103,4 +103,4 @@ struct uds_key_hash {
 #endif
 
 inline std::unordered_multimap<uds_key, UdsDefinition, uds_key_hash> udsMap;
-inline void init_udsDefinitions();     // defined in a .cpp
+void init_udsDefinitions();     // defined in a .cpp

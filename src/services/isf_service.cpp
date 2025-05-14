@@ -11,6 +11,50 @@
 #include <tuple>
 #include <optional>
 
+/**
+ * @brief Represents a decoded signal value from a CAN message
+ * 
+ * Contains all the metadata about the signal as well as the decoded value
+ * and formatted display value if available.
+ */
+struct SignalValue {
+    std::uint16_t obd2_request_id_hex;
+    std::uint16_t parameter_id_hex;
+    std::uint16_t uds_data_identifier_hex;
+    std::string parameter_name;
+    double value;
+    std::optional<std::string> display_value;
+    std::optional<const char*> unit_name;
+
+    // Constructor for signal values
+    SignalValue(
+        std::uint16_t obd2_id,
+        std::uint16_t param_id,
+        std::uint16_t data_id,
+        std::string name,
+        double val,
+        std::optional<std::string> display,
+        std::optional<const char*> unit
+    ) : obd2_request_id_hex(obd2_id),
+        parameter_id_hex(param_id),
+        uds_data_identifier_hex(data_id),
+        parameter_name(std::move(name)),
+        value(val),
+        display_value(display),
+        unit_name(unit)
+    {}
+};
+
+// Custom hash function for std::tuple<std::uint16_t, int, int>
+struct SignalLocationKeyHash {
+    std::size_t operator()(const std::tuple<std::uint16_t, int, int>& k) const {
+        auto h1 = std::hash<std::uint16_t>{}(std::get<0>(k));
+        auto h2 = std::hash<int>{}(std::get<1>(k));
+        auto h3 = std::hash<int>{}(std::get<2>(k));
+        return h1 ^ (h2 << 1) ^ (h3 << 2);
+    }
+};
+
 IsfService::IsfService()
 {
     // Initialize the array with the correct size
@@ -486,10 +530,11 @@ int get_max_required_payload_size(const std::unordered_map<std::tuple<std::uint1
  * @param signalGroups      Map of signal location keys → lists of UdsDefinitions
  * @return                  Vector of successfully extracted SignalValue objects
  */
+
 std::vector<SignalValue> get_signal_values(
     const uint8_t *responseData,
     int responseLength,
-    const std::unordered_map<std::tuple<uint16_t, int, int>, std::vector<UdsDefinition>> &signalGroups)
+    const std::unordered_map<std::tuple<uint16_t, int, int>, std::vector<UdsDefinition>, SignalLocationKeyHash> &signalGroups)
 {
     std::vector<SignalValue> extractedSignals;
 
@@ -545,8 +590,8 @@ void log_signals(const std::vector<SignalValue> &signals, const uint8_t *data, s
     {
         if (sig.display_value.has_value())
             Logger::debug("  %s = %s", sig.parameter_name.c_str(), sig.display_value->c_str());
-        else if (sig.unit.has_value())
-            Logger::debug("  %s = %.2f %s", sig.parameter_name.c_str(), sig.value, sig.unit.value());
+        else if (sig.unit_name.has_value())
+            Logger::debug("  %s = %.2f %s", sig.parameter_name.c_str(), sig.value, sig.unit_name.value());
         else
             Logger::debug("  %s = %.2f", sig.parameter_name.c_str(), sig.value);
     }
@@ -615,7 +660,7 @@ bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSReque
 
     // Group the definitions by their physical location in the data
     using SignalLocationKey = std::tuple<std::uint16_t, int, int>; // data_id, byte_pos, bit_offset
-    std::unordered_map<SignalLocationKey, std::vector<UdsDefinition>> signalGroups;
+    std::unordered_map<SignalLocationKey, std::vector<UdsDefinition>, SignalLocationKeyHash> signalGroups;
 
     for (auto it = definitionsRange.first; it != definitionsRange.second; ++it)
     {
