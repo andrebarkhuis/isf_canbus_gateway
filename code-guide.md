@@ -8,9 +8,9 @@ This guide defines coding conventions, file‑organization rules, and clean‑co
 
 | Area                           | Rule                                                                                         |
 | -------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Top‑level folders**         | Place code in purpose‑driven directories such as`common/`, `can/`, `services/`, `drivers/`. |
-| **Headers vs. sources**        | Each`.cpp` must have a matching `.h`. If a `.cpp` lacks a header, create one.                |
-| **Physical vs. logical paths** | Folder names reflect the logical component, not the hardware board name.                     |
+| **Top‑level folders**         | Place code in purpose‑driven directories such as`common/`, `can/`, `services/`, `uds/`, `iso_tp/`, `mcp_can/`. |
+| **Headers vs. sources**        | Each`.cpp` must have a matching `.h`. If a `.cpp` lacks a header, create one.                    |
+| **Physical vs. logical paths** | Folder names reflect the logical component, not the hardware board name.                        |
 
 ## 2 Including Header Files
 

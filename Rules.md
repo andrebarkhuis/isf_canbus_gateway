@@ -5,10 +5,10 @@ Define the canonical references, coding standards, build steps, and directory co
 
 ## 1. Requirements Hierarchy
 
-| Priority | Folder / File                                    | Rule                                                                                                                     |
-| -------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| 1        | `readme.md`                                      | Defines Lexus IS‑F CAN bus messages; treat as authoritative requirements.                                                             |
-| 2        | `canbus logs/isf_minimum_pid_request_responses.csv`                           | Make sure the pid, uds logic and implementation aligns with the logs. |
+| Priority | Folder / File     | Rule                                                                                                                |
+| ---------- | ------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1        | `Readme.md`       | Defines Lexus IS‑F CAN bus messages; treat as authoritative requirements.                                          |
+| 2        | `uds/uds_mapper.h | Make sure UDS ISO-TP, UDS Requests and UDS Response aligns with the `ISF CAN UDS Message Definitions.csv` file. |
 
 ## 2. Code Style
 
@@ -18,7 +18,7 @@ Define the canonical references, coding standards, build steps, and directory co
 ## 3. Build & Flash Procedures
 
 | Target      | Instruction File                                                                  |
-| ----------- | --------------------------------------------------------------------------------- |
+| ------------- | ----------------------------------------------------------------------------------- |
 | **Arduino** | `build-instructions.md`                                                           |
 | **ESP32**   | `ESP32 Firmware Flash & Build Upload Guide.md` (flash to the configured COM port) |
 
@@ -36,6 +36,6 @@ Ignore everything inside the following directories:
 
 ## 6. Routine Verification Checklist (for CI or pre‑commit hooks)
 
-1. Docs reference → Logs consistency check passes.
+1. `Readme.md` reference → Logs consistency check passes.
 2. Code conforms to `code-guidelines.md`.
 3. Build succeeds using `build-instructions.md`.

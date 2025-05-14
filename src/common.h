@@ -68,10 +68,11 @@ struct Message_t
 
 struct UDSRequest
 {
-  uint32_t tx_id;
+  uint32_t tx_id; // ecu_id
   uint32_t rx_id;
-  uint8_t service_id;
-  uint16_t did;
+  uint8_t service_id; 
+  uint16_t pid = 0; // using 0 will match all pids in the map
+  uint16_t did = 0; // using 0 will match all dids in the map
   unsigned long interval;
   const char *param_name;
 };

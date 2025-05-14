@@ -1,2 +1,4 @@
 .build
 desktop.ini
+.venv
+.cursor

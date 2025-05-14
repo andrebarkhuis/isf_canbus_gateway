@@ -79,6 +79,41 @@
 
 extern volatile bool uds_busy;
 
+enum UnitType {
+  UNIT_GENERAL = 0, // Generic / ECU Identifiers
+  UNIT_ACCELERATION = 1, // Acceleration, Gradient
+  UNIT_G_FORCE = 2, // G-force sensors
+  UNIT_ACCEL_REQUEST = 3, // Acceleration request signals
+  UNIT_DECELERATION = 4, // Deceleration sensor
+  UNIT_IGNITION_FEEDBACK = 5, // Ignition timing and feedback
+  UNIT_ANGLE_SENSOR = 6, // Absolute angles (Steering, Pinion)
+  UNIT_YAW_RATE = 7, // Yaw rate sensors
+  UNIT_CURRENT_SENSOR = 9, // Current draw sensors (Throttle, Clutch)
+  UNIT_PM_SENSOR = 11, // Particulate Matter Sensors
+  UNIT_DISTANCE = 13, // Distance / Mileage / Odometer-related
+  UNIT_FORWARD_DISTANCE = 14, // Forward vehicle distance measurement
+  UNIT_ODOMETER = 17, // Odometer history and mileage
+  UNIT_BATTERY_STATUS = 18, // Battery charge, hybrid systems
+  UNIT_POWER_MANAGEMENT = 19, // Request Power, Wout Control
+  UNIT_HYBRID_BATTERY = 22, // Hybrid / EV Battery power levels
+  UNIT_FUEL_SYSTEM = 23, // Fuel system-related parameters
+  UNIT_FUEL_INJECTION = 24, // Injection volume, fuel pump parameters
+  UNIT_CRUISE_CONTROL = 25, // Cruise control request forces
+  UNIT_FREQUENCY_SENSOR = 29, // Frequency-based sensors (Motor, Generator)
+  UNIT_ILLUMINATION_SENSOR = 30, // Light control, brightness
+  UNIT_EXHAUST_SENSOR = 32, // NOx and exhaust emissions
+  UNIT_LOAD_FUEL_TRIM = 33, // Load calculations, Fuel trims
+  UNIT_MAP_TIRE_PRESSURE = 34, // Manifold Pressure and Tire Inflation sensors
+  UNIT_ENGINE_RPM = 39, // Engine Speed, RPM
+  UNIT_SPEED_SENSOR = 42, // Vehicle Speed Sensors
+  UNIT_VOLTAGE_SENSOR = 48, // Oxygen Sensor, Solar Voltage, Battery Voltage
+  UNIT_TEMPERATURE_SENSOR = 57, // Coolant Temperature, Intake Air Temp
+  UNIT_TORQUE_SENSOR = 58, // Steering, Motor, Brake Torque
+  UNIT_POSITION_SENSOR = 59, // Throttle, Clutch, ASL Gear Position
+  UNIT_AMBIENT_TEMP = 66, // Outside temperature sensors
+  UNIT_MASS_AIR_FLOW = 75 // MAF Sensors (filtered & raw values)
+};
+
 struct Session_t
 {
   uint32_t tx_id = 0;

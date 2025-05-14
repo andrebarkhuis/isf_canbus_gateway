@@ -271,11 +271,11 @@ namespace std
     };
 }
 
-std::vector<UdsDefinition> get_uds_definitions(uint16_t request_id, uint16_t data_id)
+std::vector<UdsDefinition> get_uds_definitions(uint16_t request_id, uint16_t pid, uint16_t data_id)
 {
     std::vector<UdsDefinition> results;
 
-    auto range = udsMap.equal_range(std::make_tuple(request_id, data_id));
+    auto range = udsMap.equal_range(std::make_tuple(request_id, pid, data_id));
     for (auto it = range.first; it != range.second; ++it)
     {
         results.push_back(it->second);
@@ -445,6 +445,9 @@ std::optional<SignalValue> get_signal_value(
             candidate.parameter_display_value.has_value())
         {
             return SignalValue(
+                definition.obd2_request_id_hex,
+                candidate.parameter_id_hex,
+                definition.uds_data_identifier_hex,
                 candidate.parameter_name,
                 decoded_value,
                 candidate.parameter_display_value,
@@ -453,6 +456,9 @@ std::optional<SignalValue> get_signal_value(
     }
 
     return SignalValue(
+        definition.obd2_request_id_hex,
+        definition.parameter_id_hex,
+        definition.uds_data_identifier_hex,
         definition.parameter_name,
         decoded_value,
         std::nullopt,
@@ -480,33 +486,46 @@ int get_max_required_payload_size(const std::unordered_map<std::tuple<uint16_t, 
 /**
  * @brief Extracts all unique signal values from a UDS response message.
  *
- * Groups definitions by a composite key (parameter_id_hex, byte_position, bit_offset_position)
- * and extracts one signal per group.
+ * Groups definitions by a composite key (data_id, byte_position, bit_offset_position)
+ * and extracts one signal per group. Handles partial responses by checking each signal
+ * individually rather than requiring the full expected response length.
  *
- * @param data      Raw CAN data buffer (already reassembled via ISO-TP)
- * @param data_len  Length of the CAN data buffer
- * @param groups    Map of (parameter_id_hex, byte_position, bit_offset_position) → list of UdsDefinitions
- * @return          Vector of extracted SignalValue objects
+ * @param responseData      Raw CAN data buffer (already reassembled via ISO-TP)
+ * @param responseLength    Length of the CAN data buffer in bytes
+ * @param signalGroups      Map of signal location keys → lists of UdsDefinitions
+ * @return                  Vector of successfully extracted SignalValue objects
  */
 std::vector<SignalValue> get_signal_values(
-    const uint8_t *data,
-    int data_len,
-    const std::unordered_map<std::tuple<uint16_t, int, int>, std::vector<UdsDefinition>> &groups)
+    const uint8_t *responseData,
+    int responseLength,
+    const std::unordered_map<std::tuple<uint16_t, int, int>, std::vector<UdsDefinition>> &signalGroups)
 {
-    std::vector<SignalValue> signals;
+    std::vector<SignalValue> extractedSignals;
 
-    for (const auto &[key, defs] : groups)
+    for (const auto &[locationKey, definitionGroup] : signalGroups)
     {
-        // Use the first definition as base for decoding
-        const auto &base_def = defs.front();
+        // Skip processing if the definition requires data beyond the response length
+        const auto &baseDefinition = definitionGroup.front();
+        int bitEnd = baseDefinition.bit_offset_position + baseDefinition.bit_length;
+        int byteSpan = (bitEnd + 7) / 8; // ceil
+        int endPos = baseDefinition.byte_position + byteSpan;
+        
+        if (endPos > responseLength) {
+            Logger::debug("[get_signal_values] Skipping out-of-range signal: %s (needs %d bytes, got %d)", 
+                baseDefinition.parameter_name.c_str(), endPos, responseLength);
+            continue; // Skip this signal group and try the next one
+        }
+        
+        // Try to extract the signal value
+        auto signalValue = get_signal_value(baseDefinition, responseData, responseLength, definitionGroup);
 
-        auto sig = get_signal_value(base_def, data, data_len, defs);
-
-        if (sig.has_value())
-            signals.push_back(*sig);
+        if (signalValue.has_value())
+        {
+            extractedSignals.push_back(*signalValue);
+        }
     }
 
-    return signals;
+    return extractedSignals;
 }
 
 /**
@@ -542,46 +561,100 @@ void log_signals(const std::vector<SignalValue> &signals, const uint8_t *data, s
     }
 }
 
+/**
+ * @brief Transforms a UDS response into signal values
+ *
+ * This method processes raw diagnostic response data from vehicle ECUs by:
+ *
+ * 1. Finding all signal definitions that match the request parameters
+ *    - Uses (tx_id, pid, did) tuple as the lookup key in udsMap
+ *    - Each definition specifies where (byte/bit position) a signal exists in the data
+ *
+ * 2. Grouping definitions by their physical location in the message
+ *    - Groups by (data_id, byte_position, bit_offset_position)
+ *    - Each group represents one physical signal that may have multiple interpretations
+ *    - For example: same field could be engine temperature AND a warning level
+ *
+ * 3. Extracting values for each signal group
+ *    - Decodes raw bytes according to position, length, scaling factors
+ *    - Handles signals even if response is shorter than expected (partial response)
+ *    - Some ECUs may respond with only a subset of values
+ *
+ * 4. Logging results for diagnostics and debugging
+ *    - Logs both raw data and decoded signals
+ *    - Provides units and display values where available
+ *
+ * This implementation is resilient to partial responses, allowing extraction
+ * of signals that fit within the available data, even if some expected signals
+ * are missing from the response.
+ *
+ * @param data      Pointer to the UDS response data buffer
+ * @param length    Length of the UDS response data in bytes
+ * @param request   UDS request parameters that triggered this response
+ * @return true     if at least one signal was successfully extracted and processed
+ * @return false    if no signals could be extracted
+ */
 bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSRequest &request)
 {
-    // === Lookup all UDS definitions for this (tx_id, did) pair ===
-    auto range = udsMap.equal_range(std::make_tuple(request.tx_id, request.did));
+    // Extract DID from the response if possible
+    uint16_t responseDID = request.did; // Default to requested DID
+    
+    // Check if we have enough data to extract the response DID
+    if (length >= 3 && data[0] == (request.service_id + 0x40)) {
+        // Standard UDS response format: [service_id+0x40][DID_MSB][DID_LSB][data...]
+        if (request.service_id == UDS_SID_READ_DATA_BY_ID && length >= 4) {
+            // For service 0x22 (ReadDataByID), the response has the DID in bytes 1-2
+            responseDID = (data[1] << 8) | data[2];
+            // Adjust response data pointer and length to skip header
+            data += 3;  // Skip service ID and DID bytes
+            length -= 3;
+        } 
+        else if (request.service_id == UDS_SID_READ_DATA_BY_LOCAL_ID) {
+            // For Toyota-specific local ID (service 0x21)
+            // Response format is [0x61][LocalID][data...]
+            responseDID = data[1];
+            // Adjust response data pointer and length to skip header
+            data += 2;  // Skip service ID and local ID byte
+            length -= 2;
+        }
+    }
+    
+    // Now look up definitions using the extracted response DID if possible
+    auto definitionsRange = udsMap.equal_range(std::make_tuple(request.tx_id, request.pid, responseDID));
 
-    using GroupKey = std::tuple<uint16_t, int, int>;
-    std::unordered_map<GroupKey, std::vector<UdsDefinition>> grouped;
+    // Group the definitions by their physical location in the data
+    using SignalLocationKey = std::tuple<uint16_t, int, int>; // data_id, byte_pos, bit_offset
+    std::unordered_map<SignalLocationKey, std::vector<UdsDefinition>> signalGroups;
 
-    for (auto it = range.first; it != range.second; ++it)
+    for (auto it = definitionsRange.first; it != definitionsRange.second; ++it)
     {
-        const auto &def = it->second;
-        GroupKey key = std::make_tuple(def.parameter_id_hex, def.byte_position, def.bit_offset_position);
-        grouped[key].push_back(def);
+        const auto &signalDefinition = it->second;
+        SignalLocationKey locationKey = std::make_tuple(
+            signalDefinition.uds_data_identifier_hex, 
+            signalDefinition.byte_position, 
+            signalDefinition.bit_offset_position);
+        signalGroups[locationKey].push_back(signalDefinition);
     }
 
-    if (grouped.empty())
+    if (signalGroups.empty())
     {
-        Logger::warn("[IsfService:transformResponse] No UDS definitions for TX: %04X, DID: %04X", request.tx_id, request.did);
+        Logger::warn("[IsfService:transformResponse] No UDS definitions for TX: %04X, DID: %04X (Response DID: %04X)", 
+            request.tx_id, request.did, responseDID);
         return false;
     }
 
-    // === Payload size validation ===
-    int required_len = get_max_required_payload_size(grouped);
-    if (length < required_len)
-    {
-        Logger::warn("[IsfService:transformResponse] Buffer too short. TX: %04X, DID: %04X → Needed: %d bytes, Got: %d", request.tx_id, request.did, required_len, length);
-        return false;
-    }
+    // Skip global length validation and handle partial responses
+    // Instead of requiring the entire expected payload, we'll extract what we can
+    std::vector<SignalValue> extractedSignals = get_signal_values(data, length, signalGroups);
 
-    // === Extract one signal per bitfield group ===
-    std::vector<SignalValue> signals = get_signal_values(data, length, grouped);
-
-    if (signals.empty())
+    if (extractedSignals.empty())
     {
         Logger::warn("[IsfService:transformResponse] No signal values extracted for TX: %04X, DID: %04X", request.tx_id, request.did);
         return false;
     }
 
-    // === Log each signal with raw CAN data for traceability ===
-    log_signals(signals, data, length, request.rx_id);
+    // Log the extracted signals with the raw data for traceability
+    log_signals(extractedSignals, data, length, request.rx_id);
 
     return true;
 }
