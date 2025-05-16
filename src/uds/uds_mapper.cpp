@@ -2148,25 +2148,46 @@ void init_udsDefinitions_part21() {
     udsMap.emplace(uds_key{ 0x7E0, 0x468, 0xE3 }, UdsDefinition{ 0x7E0, 0x468, 0xE3, false, 0, 3, 0, 4, "Exhaust Temperature B1S1 Test Result", 1, "Incmpl" });
 }
 void init_udsDefinitions() {
+    
     init_udsDefinitions_part1();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part2();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part3();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part4();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part5();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part6();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part7();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part8();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part9();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part10();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part11();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part12();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part13();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part14();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part15();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part16();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part17();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part18();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part19();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part20();
+    vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part21();
 }
