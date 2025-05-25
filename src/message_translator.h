@@ -69,7 +69,7 @@ public:
     gt86Msg.data[1] = (rpm >> 8) & 0xFF;
 
     // Log the translation
-    Logger::debug("Translated RPM: %u", rpm);
+    LOG_DEBUG("Translated RPM: %u", rpm);
 
     return gt86Msg;
   }
@@ -105,7 +105,7 @@ public:
     // For example, brake signal, etc.
 
     // Log the translation
-    Logger::debug("Translated Speed: %u km/h", speed);
+    LOG_DEBUG("Translated Speed: %u km/h", speed);
 
     return gt86Msg;
   }
@@ -138,7 +138,7 @@ public:
     gt86Msg.data[0] = temp + 40; // Adding offset back for GT86 format
 
     // Log the translation
-    Logger::debug("Translated Temperature: %d°C", temp);
+    LOG_DEBUG("Translated Temperature: %d°C", temp);
 
     return gt86Msg;
   }

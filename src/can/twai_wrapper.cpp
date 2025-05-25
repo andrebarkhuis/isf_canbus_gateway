@@ -26,7 +26,7 @@ bool TwaiWrapper::initialize()
     if (result != ESP_OK)
     {
 #ifdef DEBUG
-        Logger::error("initialize: Failed to install TWAI driver: %d", result);
+        LOG_ERROR("Failed to install TWAI driver: %d", result);
 #endif
 
         return false;
@@ -36,14 +36,14 @@ bool TwaiWrapper::initialize()
     if (result != ESP_OK)
     {
 #ifdef DEBUG
-        Logger::error("initialize: Failed to start TWAI driver: %d", result);
+        LOG_ERROR("Failed to start TWAI driver: %d", result);
 #endif
 
         return false;
     }
 
 #ifdef DEBUG
-    Logger::info("initialize: GT86 TWAI interface initialized successfully on pins TX:%d/RX:%d at 500kbps", TWAI_TX, TWAI_RX);
+    LOG_INFO("GT86 TWAI interface initialized successfully on pins TX:%d/RX:%d at 500kbps", TWAI_TX, TWAI_RX);
 #endif
 
     return true;
@@ -116,7 +116,7 @@ void TwaiWrapper::checkAlerts()
         if (currentTime - lastErrorLogTime > 5000)
         { // Log once every 5 seconds at most
 #ifdef DEBUG
-            Logger::warn("checkAlerts: Failed to read TWAI alerts: %d", alert_result);
+            LOG_WARN("Failed to read TWAI alerts: %d", alert_result);
 #endif
             lastErrorLogTime = currentTime;
         }
@@ -127,7 +127,7 @@ void TwaiWrapper::checkAlerts()
     if (alerts & TWAI_ALERT_BUS_ERROR)
     {
 #ifdef DEBUG
-        Logger::warn("checkAlerts: Bus error detected on GT86 bus");
+        LOG_WARN("Bus error detected on GT86 bus");
 #endif
     }
 
@@ -135,7 +135,7 @@ void TwaiWrapper::checkAlerts()
     if (alerts & TWAI_ALERT_RX_QUEUE_FULL)
     {
 #ifdef DEBUG
-        Logger::warn("checkAlerts: Receive queue full on GT86 bus");
+        LOG_WARN("Receive queue full on GT86 bus");
 #endif
     }
 
@@ -143,21 +143,21 @@ void TwaiWrapper::checkAlerts()
     if (alerts & TWAI_ALERT_TX_FAILED)
     {
 #ifdef DEBUG
-        Logger::warn("checkAlerts: TX failed on GT86 bus");
+        LOG_WARN("TX failed on GT86 bus");
 #endif
     }
 
     if (alerts & TWAI_ALERT_ERR_PASS)
     {
 #ifdef DEBUG
-        Logger::warn("checkAlerts: GT86 bus entered error passive state");
+        LOG_WARN("GT86 bus entered error passive state");
 #endif
     }
 
     if (alerts & TWAI_ALERT_BUS_OFF)
     {
 #ifdef DEBUG
-        Logger::error("checkAlerts: GT86 bus is off - attempting recovery");
+        LOG_ERROR("GT86 bus is off - attempting recovery");
 #endif
         // Attempt to recover the bus
         twai_stop();

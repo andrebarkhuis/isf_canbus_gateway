@@ -140,7 +140,7 @@ uint8_t IsoTp::receive_consecutive_frame(struct Message_t *msg)
 
   if ((delta >= TIMEOUT_FC) && msg->seq_id > 1)
   {
-    Logger::warn("[receive_consecutive_frame] Timeout waiting for CF. wait_cf=%lu delta=%lu", wait_cf, delta);
+    LOG_WARN("Timeout waiting for CF. wait_cf=%lu delta=%lu", wait_cf, delta);
     msg->tp_state = ISOTP_IDLE;
     return 1;
   }
@@ -151,7 +151,7 @@ uint8_t IsoTp::receive_consecutive_frame(struct Message_t *msg)
 
   if (receivedSeqId != expectedSeqId)
   {
-    Logger::warn("[receive_consecutive_frame] iso_tp sequence mismatch. Got: %u, Expected: %u", receivedSeqId, expectedSeqId);
+    LOG_WARN("iso_tp sequence mismatch. Got: %u, Expected: %u", receivedSeqId, expectedSeqId);
     msg->tp_state = ISOTP_ERROR;
     return 1;
   }
@@ -164,13 +164,13 @@ uint8_t IsoTp::receive_consecutive_frame(struct Message_t *msg)
   {
     msg->tp_state = ISOTP_FINISHED;
     Logger::logUdsMessage("receive_consecutive_frame", msg);
-    Logger::debug("[receive_consecutive_frame] Last CF received with seq. ID: %u", msg->seq_id);
+    LOG_DEBUG("Last CF received with seq. ID: %u", msg->seq_id);
   }
   else
   {
     Logger::logUdsMessage("receive_consecutive_frame", msg);
-    Logger::debug("[receive_consecutive_frame] CF received with seq. ID: %u", msg->seq_id);
-    Logger::debug("[receive_consecutive_frame] Remaining bytes: %u", rest);
+    LOG_DEBUG("CF received with seq. ID: %u", msg->seq_id);
+    LOG_DEBUG("Remaining bytes: %u", rest);
   }
 
   msg->seq_id = (msg->seq_id + 1) & 0x0F; // Wrap sequence number
@@ -197,7 +197,7 @@ uint8_t IsoTp::receive_flow_control(struct Message_t *msg)
       msg->min_sep_time = 0x7F;
   }
 
-  Logger::debug("[receive_flow_control] FC frame: FS %u, Blocksize %u, Min. separation Time %u", rxBuffer[0] & 0x0F, msg->blocksize, msg->min_sep_time);
+  LOG_DEBUG("FC frame: FS %u, Blocksize %u, Min. separation Time %u", rxBuffer[0] & 0x0F, msg->blocksize, msg->min_sep_time);
 
   switch (rxBuffer[0] & 0x0F)
   {
@@ -208,15 +208,15 @@ uint8_t IsoTp::receive_flow_control(struct Message_t *msg)
       fc_wait_frames++;
       if (fc_wait_frames >= MAX_FCWAIT_FRAME)
       {
-        Logger::warn("[receive_flow_control] FC wait frames exceeded.");
+        LOG_WARN("FC wait frames exceeded.");
         fc_wait_frames = 0;
         msg->tp_state = ISOTP_IDLE;
         retval = 1;
       }
-      Logger::debug("[receive_flow_control] Start waiting for next FC");
+      LOG_DEBUG("Start waiting for next FC");
       break;
     case ISOTP_FC_OVFLW:
-      Logger::warn("[receive_flow_control] Overflow in receiver side");
+      LOG_WARN("Overflow in receiver side");
       msg->tp_state = ISOTP_IDLE;
       retval = 1;
       break;
@@ -382,7 +382,7 @@ uint8_t IsoTp::receive(Message_t *msg)
       {
         _bus->readMsgBufID(&rx_id, &rxLen, rxBuffer); // flush
         
-        Logger::debug("[receive] Skipping frame with ID: 0x%lX", rx_id);
+        LOG_DEBUG("Skipping frame with ID: 0x%lX", rx_id);
 
         continue;
       }
@@ -413,7 +413,7 @@ uint8_t IsoTp::receive(Message_t *msg)
 
         uint8_t expectedCFs = (totalLength - copiedBytes + 6) / 7;
 
-        Logger::debug("[receive] First Frame: totalLength = %u, initial copied = %u, expected CFs = %u", totalLength, copiedBytes, expectedCFs);
+        LOG_DEBUG("First Frame: totalLength = %u, initial copied = %u, expected CFs = %u", totalLength, copiedBytes, expectedCFs);
 
         // Send Flow Control
         Message_t fc;
@@ -434,7 +434,7 @@ uint8_t IsoTp::receive(Message_t *msg)
       {
         if (msg->tp_state != ISOTP_WAIT_DATA)
         {
-          Logger::warn("[receive] Unexpected CF before FF");
+          LOG_WARN("Unexpected CF before FF");
           continue;
         }
 
@@ -442,7 +442,7 @@ uint8_t IsoTp::receive(Message_t *msg)
 
         if (seqNum != expected_seq)
         {
-          Logger::warn("[receive] Sequence mismatch: got %u, expected %u", seqNum, expected_seq);
+          LOG_WARN("Sequence mismatch: got %u, expected %u", seqNum, expected_seq);
           return 1;
         }
 
@@ -450,13 +450,13 @@ uint8_t IsoTp::receive(Message_t *msg)
         memcpy(msg->Buffer + copiedBytes, &rxBuffer[1], bytes_to_copy);
         copiedBytes += bytes_to_copy;
 
-        Logger::debug("[receive] CF %u received: copiedBytes = %u / %u (CF %u of %u)", seqNum, copiedBytes, totalLength, seqNum, (totalLength - 6 + 6) / 7);
+        LOG_DEBUG("CF %u received: copiedBytes = %u / %u (CF %u of %u)", seqNum, copiedBytes, totalLength, seqNum, (totalLength - 6 + 6) / 7);
 
         if (copiedBytes >= totalLength)
         {
           msg->len = totalLength;
           msg->tp_state = ISOTP_FINISHED;
-          Logger::debug("[receive] All frames received, total length = %u", msg->len);
+          LOG_DEBUG("All frames received, total length = %u", msg->len);
           return 0;
         }
 

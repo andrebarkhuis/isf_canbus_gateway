@@ -32,14 +32,14 @@ TaskHandle_t gt86TaskHandle = NULL;
 // ISF Service Task (Core 0)
 void isfTask(void *parameter)
 {
-    Logger::info("[autosport_gateway::isfTask] ISF Task running on Core: %d", xPortGetCoreID());
+    LOG_DEBUG("ISF Task running on Core: %d", xPortGetCoreID());
 
     IsfService *isfService = new IsfService();
 
     if (!isfService->initialize())
     {
 
-        Logger::error("[autosport_gateway::isfTask] Failed to initialize ISF CAN");
+        LOG_ERROR("Failed to initialize ISF CAN");
 
         vTaskDelete(NULL); // Terminate task if init fails
     }
@@ -53,7 +53,7 @@ void isfTask(void *parameter)
         }
         catch (...)
         {
-            Logger::error("[autosport_gateway::isfTask] Exception in ISF task - recovering");
+            LOG_ERROR("Exception in ISF task - recovering");
             vTaskDelay(pdMS_TO_TICKS(1000)); // Delay to recover
         }
 
@@ -64,13 +64,13 @@ void isfTask(void *parameter)
 // GT86 Service Task (Core 1)
 void gt86Task(void *parameter)
 {
-    Logger::info("[autosport_gateway::gt86Task] GT86 Task running on Core: %d", xPortGetCoreID());
+    LOG_DEBUG("GT86 Task running on Core: %d", xPortGetCoreID());
 
     Gt86Service *gt86Service = new Gt86Service();
 
     if (!gt86Service->initialize())
     {
-        Logger::error("[autosport_gateway::gt86Task] Failed to initialize GT86 CAN");
+        LOG_ERROR("Failed to initialize GT86 CAN");
         vTaskDelete(NULL);
     }
 
@@ -83,7 +83,7 @@ void gt86Task(void *parameter)
         }
         catch (...)
         {
-            Logger::error("[autosport_gateway::gt86Task] Exception in GT86 task - recovering");
+            LOG_ERROR("Exception in GT86 task - recovering");
             vTaskDelay(pdMS_TO_TICKS(1000)); // Delay to recover
         }
 
@@ -120,10 +120,10 @@ void setup()
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     // Initialize the logger with DEBUG level to see all messages
-    Logger::begin(LOG_DEBUG);
+    Logger::begin(4); // Using LOG_DEBUG value directly (4)
 
     // Test direct logging to verify it works
-    Logger::info("[autosport_gateway::setup] Setup started.");
+    LOG_DEBUG("Setup started.");
 
     // Create Tasks with increased stack size - each on a different core
     xTaskCreatePinnedToCore(isfTask, "ISF Task", ISF_TASK_STACK_SIZE, NULL, 1, &isfTaskHandle, 0);
@@ -131,7 +131,7 @@ void setup()
 
     vTaskDelay(pdMS_TO_TICKS(1000)); // 1 second delay before entering loop
 
-    Logger::info("[autosport_gateway::setup] Setup complete.");
+    LOG_DEBUG("Setup complete.");
 }
 
 void loop()
@@ -139,13 +139,13 @@ void loop()
 
     if (isfTaskHandle != NULL && eTaskGetState(isfTaskHandle) == eDeleted)
     {
-        Logger::error("[autosport_gateway::setup] ISF task crashed - attempting restart.");
+        LOG_ERROR("ISF task crashed - attempting restart.");
         xTaskCreatePinnedToCore(isfTask, "ISF Task", ISF_TASK_STACK_SIZE, NULL, 1, &isfTaskHandle, 0);
     }
 
     if (gt86TaskHandle != NULL && eTaskGetState(gt86TaskHandle) == eDeleted)
     {
-        Logger::error("[autosport_gateway::setup] GT86 task crashed - attempting restart.");
+        LOG_ERROR("GT86 task crashed - attempting restart.");
         xTaskCreatePinnedToCore(gt86Task, "GT86 Task", GT86_TASK_STACK_SIZE, NULL, 1, &gt86TaskHandle, 1);
     }
 

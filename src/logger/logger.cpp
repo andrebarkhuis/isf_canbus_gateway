@@ -1,7 +1,7 @@
 #include "logger.h"
 
 // Static member definitions
-int Logger::logLevel = LOG_DEBUG;
+int Logger::logLevel = 4; // LOG_DEBUG
 bool Logger::serialInitialized = false;
 unsigned long Logger::startTime = 0;
 SemaphoreHandle_t Logger::serialMutex = nullptr;
@@ -24,11 +24,11 @@ void Logger::begin(int level, unsigned long baudRate) {
     Serial.println("----------------------------------------------------");
 }
 
-void Logger::error(const char *format, ...) {
-    if (logLevel >= LOG_ERROR) {
+void Logger::error(const char* func, const char *format, ...) {
+    if (logLevel >= 1) { // LOG_ERROR
         if (serialMutex && xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
             char buffer[BUFFER_SIZE];
-            int prefix_len = snprintf(buffer, sizeof(buffer), "[ERROR] ");
+            int prefix_len = snprintf(buffer, sizeof(buffer), "[ERROR][%s] ", func);
             va_list args;
             va_start(args, format);
             vsnprintf(buffer + prefix_len, sizeof(buffer) - prefix_len, format, args);
@@ -39,11 +39,11 @@ void Logger::error(const char *format, ...) {
     }
 }
 
-void Logger::warn(const char *format, ...) {
-    if (logLevel >= LOG_WARN) {
+void Logger::warn(const char* func, const char *format, ...) {
+    if (logLevel >= 2) { // LOG_WARN
         if (serialMutex && xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
             char buffer[BUFFER_SIZE];
-            int prefix_len = snprintf(buffer, sizeof(buffer), "[WARN] ");
+            int prefix_len = snprintf(buffer, sizeof(buffer), "[WARN][%s] ", func);
             va_list args;
             va_start(args, format);
             vsnprintf(buffer + prefix_len, sizeof(buffer) - prefix_len, format, args);
@@ -54,11 +54,11 @@ void Logger::warn(const char *format, ...) {
     }
 }
 
-void Logger::info(const char *format, ...) {
-    if (logLevel >= LOG_INFO) {
+void Logger::info(const char* func, const char *format, ...) {
+    if (logLevel >= 3) { // LOG_INFO
         if (serialMutex && xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
             char buffer[BUFFER_SIZE];
-            int prefix_len = snprintf(buffer, sizeof(buffer), "[INFO] ");
+            int prefix_len = snprintf(buffer, sizeof(buffer), "[INFO][%s] ", func);
             va_list args;
             va_start(args, format);
             vsnprintf(buffer + prefix_len, sizeof(buffer) - prefix_len, format, args);
@@ -69,18 +69,15 @@ void Logger::info(const char *format, ...) {
     }
 }
 
-void Logger::debug(const char *format, ...) {
-    if (logLevel >= LOG_DEBUG) {
+void Logger::debug(const char* func, const char *format, ...) {
+    if (logLevel >= 4) { // LOG_DEBUG
         if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
-            constexpr const char *prefix = "[DEBUG] ";
-            constexpr size_t prefix_len = 8; // strlen("[DEBUG] ")
-            char msgBuffer[BUFFER_SIZE - prefix_len];
+            char buffer[BUFFER_SIZE];
+            int prefix_len = snprintf(buffer, sizeof(buffer), "[DEBUG][%s] ", func);
             va_list args;
             va_start(args, format);
-            vsnprintf(msgBuffer, sizeof(msgBuffer), format, args);
+            vsnprintf(buffer + prefix_len, sizeof(buffer) - prefix_len, format, args);
             va_end(args);
-            char buffer[BUFFER_SIZE];
-            snprintf(buffer, sizeof(buffer), "%s%s", prefix, msgBuffer);
             Serial.println(buffer);
             xSemaphoreGive(serialMutex);
         }
@@ -90,7 +87,7 @@ void Logger::debug(const char *format, ...) {
 void Logger::logCANMessage(const char *busName, uint32_t id, const uint8_t *data, uint8_t len, bool success, bool isTx, const char *description) {
     if (busName == nullptr)
         return;
-    if (logLevel >= LOG_INFO) {
+    if (logLevel >= 3) { // LOG_INFO
         if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
             char buffer[BUFFER_SIZE];
             snprintf(buffer, sizeof(buffer), "[%s] %s %s ID: 0x%lX Data: %s%s",

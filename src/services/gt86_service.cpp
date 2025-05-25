@@ -23,7 +23,7 @@ bool Gt86Service::initialize()
 
 // Replace direct Serial print statements with Logger calls
 #ifdef DEBUG_GT86
-    Logger::info("[GT86:initialize] running on core %d", xPortGetCoreID());
+    LOG_INFO("running on core %d", xPortGetCoreID());
 #endif
     vTaskDelay(pdMS_TO_TICKS(10));
 
@@ -43,7 +43,7 @@ void Gt86Service::listen()
     if (!sendResult)
     {
 #ifdef DEBUG_GT86
-        Logger::warn("[GT86:listen] Error during message sending");
+        LOG_WARN("Error during message sending");
 #endif
     }
 
@@ -54,7 +54,7 @@ void Gt86Service::listen()
     if (!receiveResult)
     {
 #ifdef DEBUG_GT86
-        Logger::warn("[GT86:listen] Error during message receiving");
+        LOG_WARN("Error during message receiving");
 #endif
     }
 
@@ -78,7 +78,7 @@ bool Gt86Service::sendPidRequests()
             if (!twaiWrapper->sendMessage(GT86_PID_MESSAGES[i]))
             {
 #ifdef DEBUG_GT86
-                Logger::warn("[GT86:sendPidRequests] Failed to send message ID: 0x%x", GT86_PID_MESSAGES[i].id);
+                LOG_WARN("Failed to send message ID: 0x%x", GT86_PID_MESSAGES[i].id);
 #endif
                 success = false;
             }
