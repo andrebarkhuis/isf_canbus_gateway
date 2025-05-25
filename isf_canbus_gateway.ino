@@ -20,8 +20,8 @@
 // Create a mutex for serial port access
 SemaphoreHandle_t serialMutex = NULL;
 
-#define ISF_TASK_STACK_SIZE 15360
-#define GT86_TASK_STACK_SIZE 6144
+#define ISF_TASK_STACK_SIZE 65535
+#define GT86_TASK_STACK_SIZE 65535
 
 static constexpr unsigned long CPU_COOLDOWN_TIME = 5;
 

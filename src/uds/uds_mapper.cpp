@@ -2185,9 +2185,9 @@ void init_udsDefinitions() {
     vTaskDelay(pdMS_TO_TICKS(2));
     init_udsDefinitions_part18();
     vTaskDelay(pdMS_TO_TICKS(2));
-    init_udsDefinitions_part19();
-    vTaskDelay(pdMS_TO_TICKS(2));
-    init_udsDefinitions_part20();
-    vTaskDelay(pdMS_TO_TICKS(2));
-    init_udsDefinitions_part21();
+    // init_udsDefinitions_part19();
+    // vTaskDelay(pdMS_TO_TICKS(2));
+    // init_udsDefinitions_part20();
+    // vTaskDelay(pdMS_TO_TICKS(2));
+    // init_udsDefinitions_part21();
 }
