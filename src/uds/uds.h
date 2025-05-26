@@ -6,8 +6,8 @@
 // #define UDS_DEBUG
 
 #define MAX_DATA (MAX_MSGBUF - 1)
-#define UDS_RETRY 2
-#define UDS_TIMEOUT 5000 // 500 -> 5000
+#define UDS_RETRY 3
+#define UDS_TIMEOUT 1000 // 500 -> 5000
 #define UDS_KEEPALIVE 3000
 
 /* OBD-II Modes */
@@ -130,6 +130,8 @@ private:
   IsoTp *_isotp;
 
   uint8_t tmpbuf[MAX_DATA];
+
+  void reset_uds_buffer();
 
   uint16_t send(Message_t &msg);
 

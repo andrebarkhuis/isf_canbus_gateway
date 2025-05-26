@@ -7,6 +7,7 @@
 IsoTp::IsoTp(MCP_CAN *bus)
 {
   _bus = bus;
+  reset_state(); // Initialize buffer on construction
 }
 
 
@@ -115,11 +116,11 @@ uint8_t IsoTp::receive_first_frame(struct Message_t *msg)
   /* get the FF_DL */
   msg->len = (rxBuffer[0] & 0x0F) << 8;
   msg->len += rxBuffer[1];
-  rest = msg->len;
+  remaining_bytes_to_copy = msg->len;
 
   /* copy the first received data bytes */
   memcpy(msg->Buffer, rxBuffer + 2, 6); // Skip 2 bytes PCI, FF must have 6 bytes!
-  rest -= 6;                            // Rest length
+  remaining_bytes_to_copy -= 6;                            // Rest length
 
   msg->tp_state = ISOTP_WAIT_DATA;
 
@@ -127,9 +128,18 @@ uint8_t IsoTp::receive_first_frame(struct Message_t *msg)
   /* send our first FC frame with Target Address */
   struct Message_t fc;
   fc.tx_id = msg->tx_id;
-  fc.fc_status = ISOTP_FC_CTS;
+  fc.fc_status = ISOTP_FC_CTS;  // Clear To Send
+  
+  // Block size 0 means the sender can send all frames without additional FC frames
+  // This is allowed by ISO 15765-2 but a non-zero value might be more robust
   fc.blocksize = 0;
+  
+  // Minimum separation time (0 = no delay between frames)
+  // Standard compliant ECUs should respect this value
   fc.min_sep_time = 0;
+  
+  // Initialize wait_cf timer for consecutive frames
+  wait_cf = millis();
 
   return send_flow_control(&fc);
 }
@@ -138,10 +148,12 @@ uint8_t IsoTp::receive_consecutive_frame(struct Message_t *msg)
 {
   uint32_t delta = millis() - wait_cf; // (move logging after message update below)
 
-  if ((delta >= TIMEOUT_FC) && msg->seq_id > 1)
+  // Check for timeout on all consecutive frames (not just after seq_id > 1)
+  if (delta >= TIMEOUT_FC)
   {
     LOG_WARN("Timeout waiting for CF. wait_cf=%lu delta=%lu", wait_cf, delta);
-    msg->tp_state = ISOTP_IDLE;
+    msg->tp_state = ISOTP_ERROR;
+    reset_state(); // Reset state on timeout
     return 1;
   }
   wait_cf = millis();
@@ -156,21 +168,20 @@ uint8_t IsoTp::receive_consecutive_frame(struct Message_t *msg)
     return 1;
   }
 
-  uint8_t bytesToCopy = (rest <= 7) ? rest : 7;
-  memcpy(msg->Buffer + msg->len - rest, rxBuffer + 1, bytesToCopy);
-  rest -= bytesToCopy;
+  uint8_t bytesToCopy = (remaining_bytes_to_copy <= 7) ? remaining_bytes_to_copy : 7;
+  memcpy(msg->Buffer + msg->len - remaining_bytes_to_copy, rxBuffer + 1, bytesToCopy);
+  remaining_bytes_to_copy -= bytesToCopy;
 
-  if (rest == 0)
+  if (remaining_bytes_to_copy == 0)
   {
     msg->tp_state = ISOTP_FINISHED;
     Logger::logUdsMessage("receive_consecutive_frame", msg);
-    LOG_DEBUG("Last CF received with seq. ID: %u", msg->seq_id);
+    LOG_DEBUG("Last CF received with seq. ID: %u, Remaining bytes: %u", msg->seq_id, remaining_bytes_to_copy);
   }
   else
   {
     Logger::logUdsMessage("receive_consecutive_frame", msg);
-    LOG_DEBUG("CF received with seq. ID: %u", msg->seq_id);
-    LOG_DEBUG("Remaining bytes: %u", rest);
+    LOG_DEBUG("CF received with seq. ID: %u, Remaining bytes: %u", msg->seq_id, remaining_bytes_to_copy);
   }
 
   msg->seq_id = (msg->seq_id + 1) & 0x0F; // Wrap sequence number
@@ -224,6 +235,23 @@ uint8_t IsoTp::receive_flow_control(struct Message_t *msg)
   return retval;
 }
 
+void IsoTp::reset_state()
+{
+  // Reset buffer
+  memset(rxBuffer, 0, sizeof(rxBuffer));
+  
+  // Reset other state variables
+  rxLen = 0;
+  remaining_bytes_to_copy = 0;
+  fc_wait_frames = 0;
+  wait_fc = 0;
+  wait_cf = 0;
+  wait_session = 0;
+
+  LOG_DEBUG("ISO-TP state reset rxlen: %u, remaining_bytes_to_copy: %u, fc_wait_frames: %u, wait_fc: %u, wait_cf: %u, wait_session: %u",
+    rxLen, remaining_bytes_to_copy, fc_wait_frames, wait_fc, wait_cf, wait_session);
+}
+
 uint8_t IsoTp::send(Message_t *msg)
 {
   uint8_t bs = false;
@@ -269,7 +297,10 @@ uint8_t IsoTp::send(Message_t *msg)
         msg->tp_state = ISOTP_ERROR;
 
         Logger::logUdsMessage("[send] Timeout waiting for first flow control", msg);
-
+        
+        //NB: Reset state before returning on error
+        reset_state();
+        msg->tp_state = ISOTP_ERROR;
         return 1;
       }
       else if (is_can_message_available())
@@ -284,6 +315,7 @@ uint8_t IsoTp::send(Message_t *msg)
           
           retval = receive_flow_control(msg);
 
+          //NB: Only reset the buffer here, as we need to keep the FC message for processing
           memset(rxBuffer, 0, sizeof(rxBuffer));
         }
       }
@@ -324,7 +356,9 @@ uint8_t IsoTp::send(Message_t *msg)
         msg->tp_state = ISOTP_ERROR;
 
         Logger::logUdsMessage("[send] Timeout waiting for next flow control frame", msg);
-
+       
+        reset_state();
+        msg->tp_state = ISOTP_ERROR;
         return 1;
       }
       else if (is_can_message_available())
@@ -347,6 +381,10 @@ uint8_t IsoTp::send(Message_t *msg)
     default:
       msg->tp_state = ISOTP_ERROR;
       Logger::logUdsMessage("[send] Unknown or unhandled state", msg);
+      
+      // Reset buffer before returning on error
+      reset_state();
+      msg->tp_state = ISOTP_ERROR;
       return 1;
     }
 
@@ -443,6 +481,10 @@ uint8_t IsoTp::receive(Message_t *msg)
         if (seqNum != expected_seq)
         {
           LOG_WARN("Sequence mismatch: got %u, expected %u", seqNum, expected_seq);
+          
+          // Reset buffer before returning on error
+          reset_state();
+          msg->tp_state = ISOTP_ERROR;
           return 1;
         }
 
@@ -468,6 +510,10 @@ uint8_t IsoTp::receive(Message_t *msg)
       default:
       {
         Logger::logUdsMessage("[receive] unknown_pci_type", msg);
+        
+        // Reset buffer before returning on error
+        reset_state();
+        msg->tp_state = ISOTP_ERROR;
         return 1;
       }
       }
@@ -485,5 +531,9 @@ uint8_t IsoTp::receive(Message_t *msg)
   }
 
   Logger::logUdsMessage("[receive] timeout", msg);
+  
+  // Reset buffer before returning on error
+  reset_state();
+  msg->tp_state = ISOTP_ERROR;
   return 1;
 }

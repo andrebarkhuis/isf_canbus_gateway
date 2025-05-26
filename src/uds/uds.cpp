@@ -9,6 +9,7 @@ volatile bool uds_busy = false;
 UDS::UDS(IsoTp *isotp)
 {
     _isotp = isotp;
+    reset_uds_buffer();
 }
 
 uint16_t UDS::send(Message_t &msg)
@@ -24,9 +25,16 @@ uint16_t UDS::send(Message_t &msg)
     if (retval)
     {
         LOG_ERROR("Error sending message");
+        // Reset buffer on error
+        reset_uds_buffer();
     }
 
     return retval;
+}
+
+void UDS::reset_uds_buffer()
+{
+    memset(tmpbuf, 0, MAX_DATA);
 }
 
 void UDS::handlePendingResponse(Message_t &msg, boolean &isPending)
@@ -34,7 +42,7 @@ void UDS::handlePendingResponse(Message_t &msg, boolean &isPending)
     LOG_DEBUG("Pending response received. Retrying...");
     msg.Buffer = tmpbuf;
     isPending = true;
-    delay(30); // small wait to give ECU time to respond
+    delay(5); // small wait to give ECU time to respond
 }
 
 uint16_t UDS::handleNegativeResponse(Message_t &msg, Session_t *session)
@@ -44,8 +52,7 @@ uint16_t UDS::handleNegativeResponse(Message_t &msg, Session_t *session)
     session->Data = tmpbuf + 1;
     session->len = msg.len - 1;
 
-    LOG_WARN("Negative response received, SID: 0x%02X, NRC: 0x%02X",
-                 msg.Buffer[1], msg.Buffer[2]);
+    LOG_WARN("Negative response received, SID: 0x%02X, NRC: 0x%02X", msg.Buffer[1], msg.Buffer[2]);
 
     return retval;
 }
@@ -55,8 +62,7 @@ void UDS::handlePositiveResponse(Message_t &msg, Session_t *session)
     session->Data = tmpbuf + 1 + session->lenSub;
     session->len = msg.len - 1 - session->lenSub;
 
-    LOG_INFO("Positive response received, SID: 0x%02X, Length: %d",
-        msg.Buffer[0], msg.len - 1 - session->lenSub);
+    LOG_INFO("Positive response received, SID: 0x%02X, Length: %d", msg.Buffer[0], msg.len - 1 - session->lenSub);
 }
 
 uint16_t UDS::handleUDSResponse(Message_t &msg, Session_t *session, boolean &isPendingResponse)
@@ -67,12 +73,16 @@ uint16_t UDS::handleUDSResponse(Message_t &msg, Session_t *session, boolean &isP
     if (recv_result != 0)
     {
         LOG_WARN("Timeout after %u ms", UDS_TIMEOUT);
+        // Reset buffer on error
+        reset_uds_buffer();
         return 0xDEAD;
     }
 
     if (msg.len < 3)
     {
         LOG_ERROR("Incomplete response frame (len=%d)", msg.len);
+        // Reset buffer on error
+        reset_uds_buffer();
         return 0xBEEF;
     }
 
@@ -107,6 +117,8 @@ uint16_t UDS::Session(Session_t *session)
         if (millis() - startTime > maxWaitTime)
         {
             LOG_ERROR("UDS: Timeout waiting for previous session to complete (SID: 0x%02X)", session->sid);
+            // Reset buffer on error
+            reset_uds_buffer();
             return 0xFADE; // Custom timeout error
         }
         LOG_DEBUG("UDS: Waiting for uds_busy lock.");
@@ -120,7 +132,7 @@ uint16_t UDS::Session(Session_t *session)
     bool isPendingResponse = false;
 
     // Prepare buffer
-    memset(tmpbuf, 0, MAX_DATA);
+    reset_uds_buffer();
     tmpbuf[0] = session->sid;
     memcpy(tmpbuf + 1, session->Data, session->len);
 

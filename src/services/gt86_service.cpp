@@ -47,7 +47,7 @@ void Gt86Service::listen()
 #endif
     }
 
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(5));
 
     // Process incoming messages with proper error handling
     bool receiveResult = handleIncomingMessages();
@@ -62,7 +62,7 @@ void Gt86Service::listen()
     digitalWrite(LED_BUILTIN, LOW);
 #endif
 
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(5));
 }
 
 bool Gt86Service::sendPidRequests()

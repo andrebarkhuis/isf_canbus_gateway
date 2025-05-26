@@ -234,7 +234,7 @@ bool IsfService::beginSend()
 
             lastUdsRequestTime[i] = currentTime;
 
-            vTaskDelay(pdMS_TO_TICKS(1));
+            //vTaskDelay(pdMS_TO_TICKS(1));
         }
     }
 
@@ -254,30 +254,23 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
 
     if (retval == UDS_NRC_SUCCESS)
     {
-#ifdef DEBUG_ISF
         LOG_INFO("UDS request successful. %s", request.param_name);
-#endif
+
         // Read ISO-TP response directly here
         if (processUdsResponse(session.Data, session.len, request))
         {
-#ifdef DEBUG_ISF
             LOG_INFO("UDS response parsed successfully. %s", request.param_name);
-#endif
             return true;
         }
         else
         {
-#ifdef DEBUG_ISF
             LOG_WARN("Failed to parse UDS response data. %s", request.param_name);
-#endif
             return false;
         }
     }
     else
     {
-#ifdef DEBUG_ISF
         LOG_ERROR("UDS session failed with retval: %04X", retval);
-#endif
         return false;
     }
 }

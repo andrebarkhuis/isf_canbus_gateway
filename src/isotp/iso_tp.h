@@ -21,11 +21,11 @@
 #define ISOTP_FC_CTS 0   /* clear to send */
 #define ISOTP_FC_WT 1    /* wait */
 #define ISOTP_FC_OVFLW 2 /* overflow */
-/* Timeout values */
-#define TIMEOUT_SESSION 5000 /* Timeout between successfull send and receive */
-#define TIMEOUT_FC 500       /* Timeout between FF and FC or Block CF and FC */
-#define TIMEOUT_CF 500       /* Timeout between CFs                          */
-#define MAX_FCWAIT_FRAME 100
+/* Timeout values - adjusted to align with ISO 15765-2 */
+#define TIMEOUT_SESSION 1000 /* Timeout between successful send and receive (N_As) */
+#define TIMEOUT_FC 1000      /* Timeout between FF and FC or Block CF and FC (N_Bs) */
+#define TIMEOUT_CF 1000      /* Timeout between CFs (N_Cr) */
+#define MAX_FCWAIT_FRAME 128
 
 #define MAX_MSGBUF 128 /* Received Message Buffer. Depends on uC ressources! Should be enough for our needs */
 
@@ -41,7 +41,7 @@ private:
   MCP_CAN *_bus;
   uint8_t rxLen;
   uint8_t rxBuffer[8];
-  uint16_t rest;
+  uint16_t remaining_bytes_to_copy;
   uint8_t fc_wait_frames = 0;
   uint32_t wait_fc = 0;
   uint32_t wait_cf = 0;
@@ -57,4 +57,5 @@ private:
   uint8_t receive_consecutive_frame(struct Message_t *msg);
   uint8_t receive_flow_control(struct Message_t *msg);
   void flow_control_delay(uint8_t sep_time);
+  void reset_state();  // Reset buffer and internal state
 };

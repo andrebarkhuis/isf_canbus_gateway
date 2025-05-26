@@ -120,7 +120,7 @@ void setup()
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     // Initialize the logger with DEBUG level to see all messages
-    Logger::begin(4); // Using LOG_DEBUG value directly (4)
+    Logger::begin(2); //warn
 
     // Test direct logging to verify it works
     LOG_DEBUG("Setup started.");
