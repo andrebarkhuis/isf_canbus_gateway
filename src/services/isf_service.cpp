@@ -197,19 +197,21 @@ bool IsfService::beginSend()
     {
         if (currentTime - lastUdsRequestTime[i] >= isf_uds_requests[i].interval)
         {
+            const UDSRequest& request = isf_uds_requests[i];
+            
             uint8_t udsMessage[8] = {0};
             uint8_t dataLength = 0;
 
-            switch (isf_uds_requests[i].service_id)
+            switch (request.service_id)
             {
             case UDS_SID_READ_DATA_BY_ID:
-                udsMessage[0] = (isf_uds_requests[i].did >> 8) & 0xFF; // DID high byte
-                udsMessage[1] = isf_uds_requests[i].did & 0xFF;        // DID low byte
+                udsMessage[0] = (request.did >> 8) & 0xFF; // DID high byte
+                udsMessage[1] = request.did & 0xFF;        // DID low byte
                 dataLength = 2;
                 break;
 
             case OBD_MODE_SHOW_CURRENT_DATA:
-                udsMessage[0] = isf_uds_requests[i].did & 0xFF; // Single-byte PID
+                udsMessage[0] = request.did & 0xFF; // Single-byte PID
                 dataLength = 1;
                 break;
 
@@ -220,17 +222,17 @@ bool IsfService::beginSend()
 
             case UDS_SID_READ_DATA_BY_LOCAL_ID:                 // Techstream SID for Local Identifier requests
                 udsMessage[0] = 0x02;                           // Length of the remaining bytes
-                udsMessage[1] = UDS_SID_READ_DATA_BY_LOCAL_ID;  // Use defined SID instead of hardcoded value
-                udsMessage[2] = isf_uds_requests[i].did & 0xFF; // Identifier (0x01, 0xE1, etc.)
+                udsMessage[1] = request.service_id;             // Use the actual service ID from the request
+                udsMessage[2] = request.did & 0xFF;             // Identifier (0x01, 0xE1, etc.)
                 dataLength = 3;                                 // SID + Identifier + length byte
                 break;
 
             default:
-                LOG_ERROR("Unsupported UDS service ID: %02X", isf_uds_requests[i].service_id);
+                LOG_ERROR("Unsupported UDS service ID: %02X", request.service_id);
                 continue; // Skip unknown services
             }
 
-            sendUdsRequest(udsMessage, dataLength, isf_uds_requests[i]);
+            sendUdsRequest(udsMessage, dataLength, request);
 
             lastUdsRequestTime[i] = currentTime;
 

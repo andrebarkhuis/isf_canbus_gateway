@@ -13,29 +13,33 @@ class UDS;
 #define DEBUG_ISF
 
 const CANMessage isf_pid_session_requests[] = {
-    {0x700, {0x02, 0x3E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, 8, false, 1000, "Tester present - Keep Alive"},
-    {0x7E0, {0x02, 0x3E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, 8, false, 1000, "Tester present - Keep Alive"}
+    { .id = 0x700, .data = {0x02, 0x3E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 1000, .param_name = "Tester present - Keep Alive" },
+    { .id = 0x7E0, .data = {0x02, 0x3E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 1000, .param_name = "Tester present - Keep Alive" },
+    { .id = 0x7A1, .data = {0x02, 0x3E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 1000, .param_name = "Tester present - Keep Alive" },
+    { .id = 0x7A2, .data = {0x02, 0x3E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 1000, .param_name = "Tester present - Keep Alive" },
+    { .id = 0x7D0, .data = {0x02, 0x3E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 1000, .param_name = "Tester present - Keep Alive" }
 };
 
 const UDSRequest isf_uds_requests[] = {
 
     //Default pid to 0 for now since we making the uds requests using the local id data identifier.
-    {0x7E0, 0x7E8, 0x21, 0, 0x1, 150, "request-1"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x3, 150, "request-2"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x4, 150, "request-3"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x6, 150, "request-4"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x7, 150, "request-5"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x8, 150, "request-6"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x22, 150, "request-7"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x25, 150, "request-8"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x37, 150, "request-9"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x39, 150, "request-10"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x48, 150, "request-11"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x49, 150, "request-12"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x51, 150, "request-13"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x82, 150, "request-14"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x83, 150, "request-15"},
-    {0x7E0, 0x7E8, 0x21, 0, 0x85, 150, "request-16"}
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x1, .interval = 150, .param_name = "request-1" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x3, .interval = 150, .param_name = "request-2" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x4, .interval = 150, .param_name = "request-3" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x6, .interval = 150, .param_name = "request-4" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x7, .interval = 150, .param_name = "request-5" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x8, .interval = 150, .param_name = "request-6" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x22, .interval = 150, .param_name = "request-7" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 150, .param_name = "request-8" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x37, .interval = 150, .param_name = "request-9" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x39, .interval = 150, .param_name = "request-10" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x48, .interval = 150, .param_name = "request-11" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x49, .interval = 150, .param_name = "request-12" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x51, .interval = 150, .param_name = "request-13" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 150, .param_name = "request-14" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 150, .param_name = "request-15" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x85, .interval = 150, .param_name = "request-16" },
+    { .tx_id = 0x7E1, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xC2, .interval = 150, .param_name = "engine-code" }
 };
 
 const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(isf_pid_session_requests[0]);
