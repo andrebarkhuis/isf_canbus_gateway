@@ -45,7 +45,6 @@ uint8_t IsoTp::send_single_frame(struct Message_t *msg)
   TxBuf[0] = N_PCI_SF | (msg->len & 0x0F);
   memcpy(TxBuf + 1, msg->Buffer, msg->len);
 
-
   return _bus->sendMsgBuf(msg->tx_id, 0, 8, reinterpret_cast<byte *>(TxBuf)); // Cast to byte*
 }
 
