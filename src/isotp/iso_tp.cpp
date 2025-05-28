@@ -110,6 +110,9 @@ uint8_t IsoTp::receive_single_frame(struct Message_t *msg)
 
 uint8_t IsoTp::receive_first_frame(struct Message_t *msg)
 {
+  // Record the time when we received the First Frame
+  uint32_t ff_received_time = millis();
+  
   msg->seq_id = 1; // Reset expected sequence number explicitly after receiving first frame
 
   /* get the FF_DL */
@@ -119,11 +122,12 @@ uint8_t IsoTp::receive_first_frame(struct Message_t *msg)
 
   /* copy the first received data bytes */
   memcpy(msg->Buffer, rxBuffer + 2, 6); // Skip 2 bytes PCI, FF must have 6 bytes!
-  remaining_bytes_to_copy -= 6;                            // Rest length
+  remaining_bytes_to_copy -= 6;         // Rest length
 
   msg->tp_state = ISOTP_WAIT_DATA;
 
   Logger::logUdsMessage("receive_first_frame", msg);
+  
   /* send our first FC frame with Target Address */
   struct Message_t fc;
   fc.tx_id = msg->tx_id;
@@ -137,10 +141,22 @@ uint8_t IsoTp::receive_first_frame(struct Message_t *msg)
   // Standard compliant ECUs should respect this value
   fc.min_sep_time = 0;
   
+  // Send Flow Control
+  uint8_t fc_result = send_flow_control(&fc);
+  
+  // Calculate response time for sending FC after receiving FF
+  uint32_t fc_response_time = millis() - ff_received_time;
+  LOG_DEBUG("FC sent after FF in %lu ms (required: <45ms), result: %u, rx: 0x%lX, tx: 0x%lX", fc_response_time, fc_result, msg->rx_id, msg->tx_id);
+  
+  // Log warning if we're close to or exceeding the time limit
+  if (fc_response_time > 30) {
+    LOG_WARN("FC response time is high: %lu ms, rx: 0x%lX, tx: 0x%lX", fc_response_time, msg->rx_id, msg->tx_id);
+  }
+  
   // Initialize wait_cf timer for consecutive frames
   wait_cf = millis();
 
-  return send_flow_control(&fc);
+  return fc_result;
 }
 
 uint8_t IsoTp::receive_consecutive_frame(struct Message_t *msg)
@@ -150,7 +166,7 @@ uint8_t IsoTp::receive_consecutive_frame(struct Message_t *msg)
   // Check for timeout on all consecutive frames (not just after seq_id > 1)
   if (delta >= TIMEOUT_FC)
   {
-    LOG_WARN("Timeout waiting for CF. wait_cf=%lu delta=%lu", wait_cf, delta);
+    LOG_WARN("Timeout waiting for CF. wait_cf=%lu delta=%lu, rx: 0x%lX, tx: 0x%lX", wait_cf, delta, msg->rx_id, msg->tx_id);
     msg->tp_state = ISOTP_ERROR;
     reset_state(); // Reset state on timeout
     return 1;
@@ -162,7 +178,46 @@ uint8_t IsoTp::receive_consecutive_frame(struct Message_t *msg)
 
   if (receivedSeqId != expectedSeqId)
   {
-    LOG_WARN("iso_tp sequence mismatch. Got: %u, Expected: %u", receivedSeqId, expectedSeqId);
+    // Check if this is potentially a frame from a different message based on sequence gap
+    int seqGap = ((int)receivedSeqId - (int)expectedSeqId + 16) % 16; // Calculate gap considering wraparound
+    bool possiblyDifferentMessage = (seqGap > 2 || seqGap < -2) && (seqGap != 15); // Large gaps suggest different message
+    
+    // Log sequence mismatch with basic info including rx and tx IDs which identify the ECU
+    if (possiblyDifferentMessage) {
+        LOG_WARN("iso_tp sequence mismatch suggests frames from different messages. Got: %u, Expected: %u, rx: 0x%lX, tx: 0x%lX", 
+                 receivedSeqId, expectedSeqId, msg->rx_id, msg->tx_id);
+    } else {
+        LOG_WARN("iso_tp sequence mismatch. Got: %u, Expected: %u, rx: 0x%lX, tx: 0x%lX", 
+                 receivedSeqId, expectedSeqId, msg->rx_id, msg->tx_id);
+    }
+    
+    // For UDS messages, try to extract service ID and data identifier if possible
+    if (msg->Buffer && msg->len >= 2) { 
+      uint8_t serviceId = msg->Buffer[0];
+      
+      // Most UDS messages follow specific formats we can identify
+      // Service IDs: 0x22=ReadDataByID, 0x2E=WriteDataByID, etc.
+      if (serviceId == 0x22 || serviceId == 0x2E || serviceId == 0x21) { // Read/Write Data By ID services
+        if (msg->len >= 4) {
+          // Data identifier is typically 2 bytes following the service ID
+          uint16_t dataId = (msg->Buffer[2] << 8) | msg->Buffer[3];
+          LOG_WARN("UDS message: ServiceID=0x%02X, DataID=0x%04X", serviceId, dataId);
+        } else if (msg->len >= 3) {
+          // Some implementations use single-byte DIDs
+          LOG_WARN("UDS message: ServiceID=0x%02X, DataID=0x%02X", serviceId, msg->Buffer[2]);
+        } else {
+          LOG_WARN("UDS message: ServiceID=0x%02X, incomplete data", serviceId);
+        }
+      } else {
+        // For other service types, just log the service ID and first few bytes
+        LOG_WARN("UDS message: ServiceID=0x%02X with %d bytes", serviceId, msg->len);
+      }
+    } else if (msg->Buffer && msg->len > 0) {
+      // Very short message, just log what we have
+      LOG_WARN("Short message data: %02X", msg->Buffer[0]);
+    } else {
+      LOG_WARN("Message data unavailable");
+    }
     msg->tp_state = ISOTP_ERROR;
     return 1;
   }
@@ -175,12 +230,12 @@ uint8_t IsoTp::receive_consecutive_frame(struct Message_t *msg)
   {
     msg->tp_state = ISOTP_FINISHED;
     Logger::logUdsMessage("receive_consecutive_frame", msg);
-    LOG_DEBUG("Last CF received with seq. ID: %u, Remaining bytes: %u", msg->seq_id, remaining_bytes_to_copy);
+    LOG_DEBUG("Last CF received with seq. ID: %u, Remaining bytes: %u, rx: 0x%lX, tx: 0x%lX", msg->seq_id, remaining_bytes_to_copy, msg->rx_id, msg->tx_id);
   }
   else
   {
     Logger::logUdsMessage("receive_consecutive_frame", msg);
-    LOG_DEBUG("CF received with seq. ID: %u, Remaining bytes: %u", msg->seq_id, remaining_bytes_to_copy);
+    LOG_DEBUG("CF received with seq. ID: %u, Remaining bytes: %u, rx: 0x%lX, tx: 0x%lX", msg->seq_id, remaining_bytes_to_copy, msg->rx_id, msg->tx_id);
   }
 
   msg->seq_id = (msg->seq_id + 1) & 0x0F; // Wrap sequence number
@@ -207,7 +262,7 @@ uint8_t IsoTp::receive_flow_control(struct Message_t *msg)
       msg->min_sep_time = 0x7F;
   }
 
-  LOG_DEBUG("FC frame: FS %u, Blocksize %u, Min. separation Time %u", rxBuffer[0] & 0x0F, msg->blocksize, msg->min_sep_time);
+  LOG_DEBUG("FC frame: FS %u, Blocksize %u, Min. separation Time %u, rx: 0x%lX, tx: 0x%lX", rxBuffer[0] & 0x0F, msg->blocksize, msg->min_sep_time, msg->rx_id, msg->tx_id);
 
   switch (rxBuffer[0] & 0x0F)
   {
@@ -218,15 +273,15 @@ uint8_t IsoTp::receive_flow_control(struct Message_t *msg)
       fc_wait_frames++;
       if (fc_wait_frames >= MAX_FCWAIT_FRAME)
       {
-        LOG_WARN("FC wait frames exceeded.");
+        LOG_WARN("FC wait frames exceeded. rx: 0x%lX, tx: 0x%lX", msg->rx_id, msg->tx_id);
         fc_wait_frames = 0;
         msg->tp_state = ISOTP_IDLE;
         retval = 1;
       }
-      LOG_DEBUG("Start waiting for next FC");
+      LOG_DEBUG("Start waiting for next FC, rx: 0x%lX, tx: 0x%lX", msg->rx_id, msg->tx_id);
       break;
     case ISOTP_FC_OVFLW:
-      LOG_WARN("Overflow in receiver side");
+      LOG_WARN("Overflow in receiver side, rx: 0x%lX, tx: 0x%lX", msg->rx_id, msg->tx_id);
       msg->tp_state = ISOTP_IDLE;
       retval = 1;
       break;
@@ -396,14 +451,18 @@ uint8_t IsoTp::send(Message_t *msg)
 
 uint8_t IsoTp::receive(Message_t *msg)
 {
-
   uint32_t startTime = millis();
   uint8_t expected_seq = 1;
   uint16_t totalLength = 0;
   uint16_t copiedBytes = 0;
+  bool multi_ecu_warning_shown = false;
+  unsigned long last_active_ecu = 0;
 
   msg->len = 0;
   msg->tp_state = ISOTP_IDLE;
+
+  // Store original rx_id for matching the correct ECU responses
+  unsigned long target_rx_id = msg->rx_id;
 
   while ((millis() - startTime) < TIMEOUT_SESSION)
   {
@@ -414,15 +473,34 @@ uint8_t IsoTp::receive(Message_t *msg)
       byte ext;
       _bus->peekMsgId(&rx_id, &ext);
 
-      // Skip irrelevant messages
-      if (rx_id != msg->rx_id)
-      {
+      // In IDLE state, accept the first responding ECU if using broadcast
+      if (msg->tp_state == ISOTP_IDLE && msg->rx_id == 0) {
+        target_rx_id = rx_id;
+        msg->rx_id = rx_id; // Lock onto this ECU for the rest of the transaction
+        LOG_DEBUG("Broadcast request, first response from ECU: 0x%lX, tx: 0x%lX", rx_id, msg->tx_id);
+      } 
+      // For multi-frame reception, only accept messages from the ECU that sent the FF
+      else if (msg->tp_state == ISOTP_WAIT_DATA && last_active_ecu != 0 && rx_id != last_active_ecu) {
         _bus->readMsgBufID(&rx_id, &rxLen, rxBuffer); // flush
         
-        LOG_DEBUG("Skipping frame with ID: 0x%lX", rx_id);
-
+        if (!multi_ecu_warning_shown) {
+          LOG_WARN("Additional ECU (0x%lX) responding during multi-frame reception from ECU (0x%lX), tx: 0x%lX", rx_id, last_active_ecu, msg->tx_id);
+          multi_ecu_warning_shown = true; // Only show this warning once per session
+        } else {
+          LOG_DEBUG("Skipping frame from ECU: 0x%lX (continuing with: 0x%lX), tx: 0x%lX", rx_id, last_active_ecu, msg->tx_id);
+        }
         continue;
       }
+      // Skip completely irrelevant messages
+      else if (rx_id != msg->rx_id)
+      {
+        _bus->readMsgBufID(&rx_id, &rxLen, rxBuffer); // flush
+        LOG_DEBUG("Skipping irrelevant frame with ID: 0x%lX (expected: 0x%lX), tx: 0x%lX", rx_id, msg->rx_id, msg->tx_id);
+        continue;
+      }
+      
+      // Keep track of the active ECU for this transaction
+      last_active_ecu = rx_id;
 
       // Read matching message
       _bus->readMsgBufID(&rx_id, &rxLen, rxBuffer);
@@ -450,7 +528,7 @@ uint8_t IsoTp::receive(Message_t *msg)
 
         uint8_t expectedCFs = (totalLength - copiedBytes + 6) / 7;
 
-        LOG_DEBUG("First Frame: totalLength = %u, initial copied = %u, expected CFs = %u", totalLength, copiedBytes, expectedCFs);
+        LOG_DEBUG("First Frame: totalLength = %u, initial copied = %u, expected CFs = %u, rx: 0x%lX, tx: 0x%lX", totalLength, copiedBytes, expectedCFs, msg->rx_id, msg->tx_id);
 
         // Send Flow Control
         Message_t fc;
@@ -471,7 +549,35 @@ uint8_t IsoTp::receive(Message_t *msg)
       {
         if (msg->tp_state != ISOTP_WAIT_DATA)
         {
-          LOG_WARN("Unexpected CF before FF");
+          // Log unexpected CF with basic info including ECU identifier
+          LOG_WARN("Unexpected CF before FF from ECU: 0x%lX, tx: 0x%lX", rx_id, msg->tx_id);
+          
+          // For UDS messages, try to extract service ID and data identifier if possible
+          if (msg->Buffer && msg->len >= 2) { 
+            uint8_t serviceId = msg->Buffer[0];
+            
+            // Most UDS messages follow specific formats we can identify
+            if (serviceId == 0x22 || serviceId == 0x2E || serviceId == 0x21) { // Read/Write Data By ID services
+              if (msg->len >= 4) {
+                // Data identifier is typically 2 bytes following the service ID
+                uint16_t dataId = (msg->Buffer[2] << 8) | msg->Buffer[3];
+                LOG_WARN("UDS message for unexpected CF: ServiceID=0x%02X, DataID=0x%04X", serviceId, dataId);
+              } else if (msg->len >= 3) {
+                // Some implementations use single-byte DIDs
+                LOG_WARN("UDS message for unexpected CF: ServiceID=0x%02X, DataID=0x%02X", serviceId, msg->Buffer[2]);
+              } else {
+                LOG_WARN("UDS message for unexpected CF: ServiceID=0x%02X, incomplete data", serviceId);
+              }
+            } else {
+              // For other service types, just log the service ID and length
+              LOG_WARN("UDS message for unexpected CF: ServiceID=0x%02X with %d bytes", serviceId, msg->len);
+            }
+          } else if (msg->Buffer && msg->len > 0) {
+            // Very short message, just log what we have
+            LOG_WARN("Short message for unexpected CF: %02X", msg->Buffer[0]);
+          } else {
+            LOG_WARN("Message data unavailable for unexpected CF");
+          }
           continue;
         }
 
@@ -479,25 +585,77 @@ uint8_t IsoTp::receive(Message_t *msg)
 
         if (seqNum != expected_seq)
         {
-          LOG_WARN("Sequence mismatch: got %u, expected %u", seqNum, expected_seq);
+          // Check if this is potentially a frame from a different message based on sequence gap
+          int seqGap = ((int)seqNum - (int)expected_seq + 16) % 16; // Calculate gap considering wraparound
+          bool possiblyDifferentMessage = (seqGap > 2 || seqGap < -2) && (seqGap != 15); // Large gaps suggest different message
           
-          // Reset buffer before returning on error
-          reset_state();
-          msg->tp_state = ISOTP_ERROR;
-          return 1;
+          // Log sequence mismatch with basic info including rx and tx IDs which identify the ECU
+          if (possiblyDifferentMessage) {
+              LOG_WARN("Sequence mismatch suggests frames from different messages. ECU 0x%lX: got %u, expected %u, tx: 0x%lX", 
+                      rx_id, seqNum, expected_seq, msg->tx_id);
+          } else {
+              LOG_WARN("Sequence mismatch from ECU 0x%lX: got %u, expected %u, tx: 0x%lX", 
+                      rx_id, seqNum, expected_seq, msg->tx_id);
+          }
+          
+          // For UDS messages, try to extract service ID and data identifier if possible
+          if (msg->Buffer && msg->len >= 2) { 
+            uint8_t serviceId = msg->Buffer[0];
+            
+            // Most UDS messages follow specific formats we can identify
+            // Service IDs: 0x22=ReadDataByID, 0x2E=WriteDataByID, etc.
+            if (serviceId == 0x22 || serviceId == 0x2E || serviceId == 0x21) { // Read/Write Data By ID services
+              if (msg->len >= 4) {
+                // Data identifier is typically 2 bytes following the service ID
+                uint16_t dataId = (msg->Buffer[2] << 8) | msg->Buffer[3];
+                LOG_WARN("UDS message: ServiceID=0x%02X, DataID=0x%04X", serviceId, dataId);
+              } else if (msg->len >= 3) {
+                // Some implementations use single-byte DIDs
+                LOG_WARN("UDS message: ServiceID=0x%02X, DataID=0x%02X", serviceId, msg->Buffer[2]);
+              } else {
+                LOG_WARN("UDS message: ServiceID=0x%02X, incomplete data", serviceId);
+              }
+            } else {
+              // For other service types, just log the service ID and first few bytes
+              LOG_WARN("UDS message: ServiceID=0x%02X with %d bytes", serviceId, msg->len);
+            }
+          } else if (msg->Buffer && msg->len > 0) {
+            // Very short message, just log what we have
+            LOG_WARN("Short message data: %02X", msg->Buffer[0]);
+          } else {
+            LOG_WARN("Message data unavailable");
+          }
+          
+          // More informative logging to help diagnose the issue
+          LOG_DEBUG("Current progress: %u/%u bytes received, active ECU: 0x%lX, tx: 0x%lX", 
+                    copiedBytes, totalLength, last_active_ecu, msg->tx_id);
+          
+          // Try to recover if the sequence is just one ahead (might indicate a missed CF)
+          // But don't try to recover if we suspect this is from a different message
+          if (!possiblyDifferentMessage && (seqNum == ((expected_seq + 1) & 0x0F))) {
+            // Log recovery attempt
+            LOG_WARN("Attempting to recover by accepting the next sequence, rx: 0x%lX, tx: 0x%lX", 
+                     msg->rx_id, msg->tx_id);
+            expected_seq = seqNum;
+          } else {
+            // Reset buffer before returning on error
+            reset_state();
+            msg->tp_state = ISOTP_ERROR;
+            return 1;
+          }
         }
 
         uint8_t bytes_to_copy = min(rxLen - 1, totalLength - copiedBytes);
         memcpy(msg->Buffer + copiedBytes, &rxBuffer[1], bytes_to_copy);
         copiedBytes += bytes_to_copy;
 
-        LOG_DEBUG("CF %u received: copiedBytes = %u / %u (CF %u of %u)", seqNum, copiedBytes, totalLength, seqNum, (totalLength - 6 + 6) / 7);
+        LOG_DEBUG("CF %u received: copiedBytes = %u / %u (CF %u of %u), rx: 0x%lX, tx: 0x%lX", seqNum, copiedBytes, totalLength, seqNum, (totalLength - 6 + 6) / 7, msg->rx_id, msg->tx_id);
 
         if (copiedBytes >= totalLength)
         {
           msg->len = totalLength;
           msg->tp_state = ISOTP_FINISHED;
-          LOG_DEBUG("All frames received, total length = %u", msg->len);
+          LOG_DEBUG("All frames received, total length = %u, rx: 0x%lX, tx: 0x%lX", msg->len, msg->rx_id, msg->tx_id);
           return 0;
         }
 
