@@ -7,6 +7,7 @@
 ======================================================================== */
 #include <Arduino.h>
 #include <SPI.h>
+#include "./src/common.h"
 #include "./src/logger/logger.h"
 #include "./src/can/twai_wrapper.h"
 #include "./src/services/gt86_service.h"

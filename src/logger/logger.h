@@ -15,7 +15,7 @@ class Logger
 {
 private:
     static int logLevel;
-    static constexpr size_t BUFFER_SIZE = 128; // Maximum log message size
+    static constexpr size_t BUFFER_SIZE = 512; // Maximum log message size
     static SemaphoreHandle_t serialMutex;      // This should be used to protect Serial operations
 
 public:

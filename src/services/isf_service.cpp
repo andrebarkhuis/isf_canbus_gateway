@@ -2,7 +2,6 @@
 #include "../mcp_can/mcp_can.h"
 #include "../logger/logger.h"
 #include "../uds/uds_mapper.h"
-#include "../uds/uds.h"
 #include "../isotp/iso_tp.h"
 #include <algorithm>
 #include <cstdint>          // <-- NEW
@@ -63,7 +62,6 @@ IsfService::IsfService()
 
 IsfService::~IsfService()
 {
-    delete uds;
     delete isotp;
     delete mcp;
     delete[] lastUdsRequestTime; // Clean up the array
@@ -118,17 +116,7 @@ bool IsfService::initialize()
         LOG_INFO("IsoTp instance created successfully.");
     }
 
-    // Create UDS instance
-    uds = new UDS(isotp);
-    if (uds == nullptr)
-    {
-        LOG_ERROR("Failed to create UDS instance.");
-        return false;
-    }
-    else
-    {
-        LOG_INFO("UDS instance created successfully.");
-    }
+    // ISO-TP already initialized
 
 #ifdef DEBUG_ISF
     LOG_DEBUG("Running on core %d", xPortGetCoreID());
@@ -236,7 +224,7 @@ bool IsfService::beginSend()
 
             lastUdsRequestTime[i] = currentTime;
 
-            //vTaskDelay(pdMS_TO_TICKS(1));
+            vTaskDelay(pdMS_TO_TICKS(5));
         }
     }
 
@@ -245,46 +233,100 @@ bool IsfService::beginSend()
 
 bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const UDSRequest &request)
 {
-    Session_t session;
-    session.tx_id = request.tx_id;
-    session.rx_id = request.rx_id;
-    session.sid = request.service_id;
-    session.len = dataLength;
-    session.Data = udsMessage;
+    Message_t msg;
+    msg.tx_id = request.tx_id;
+    msg.rx_id = request.rx_id;
+    msg.service_id = request.service_id;
+    msg.data_id = request.did;
+    msg.length = dataLength;
+    msg.Buffer = udsMessage;
 
-    uint16_t retval = uds->Session(&session);
+    // Send with retries
+    uint8_t retval = 0;
+    uint8_t retry = UDS_RETRY;
 
-    if (retval == UDS_NRC_SUCCESS)
+    while ((retval = isotp->send(&msg)) && retry)
     {
-        LOG_INFO("UDS request successful. %s", request.param_name);
+        delay(5); // small wait
+        LOG_DEBUG("Retrying: Attempt %d of %d", retry, UDS_RETRY);
+        retry--;
+    }
 
-        // Read ISO-TP response directly here
-        if (processUdsResponse(session.Data, session.len, request))
-        {
-            LOG_INFO("UDS response parsed successfully. %s", request.param_name);
-            return true;
-        }
-        else
-        {
-            LOG_WARN("Failed to parse UDS response data. %s", request.param_name);
-            return false;
-        }
+    if (retval != 0)
+    {
+        Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
+        return false;
+    }
+    
+    // Prepare to receive response
+    msg.Buffer = udsResponseBuffer;
+    memset(udsResponseBuffer, 0, sizeof(udsResponseBuffer));
+    
+    retval = isotp->receive(&msg);
+
+    if (retval != 0) {
+        Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
+        return false;
+    }
+    
+    if (msg.length < 3) {
+        Logger::logUdsMessage("[sendUdsRequest] Incomplete response frame.", &msg);
+        return false;
+    }
+    
+    // NB: Transaction fingerprinting: Check if the response matches the request
+    // For a positive response: service_id should be request.service_id + 0x40
+    // The data_id in the response should match the request's data_id
+    
+
+    if(msg.service_id != request.service_id + 0x40)
+    {
+        Logger::logUdsMessage("[sendUdsRequest] Response with mismatched service_id rejected", &msg);
+        return false;
+    }
+    
+    if(msg.data_id != request.did)
+    {
+        Logger::logUdsMessage("[sendUdsRequest] Response with mismatched data_id rejected", &msg);
+        return false;
+    }
+    
+    if(msg.Buffer[0] == UDS_NEGATIVE_RESPONSE)
+    {
+        Logger::logUdsMessage("[sendUdsRequest] Negative response received", &msg);
+        return false;
+    }
+    
+    if(msg.Buffer[0] == UDS_POSITIVE_RESPONSE(request.service_id))
+    {
+        Logger::logUdsMessage("[sendUdsRequest] Positive response received", &msg);
+    }
+    
+    //Now we 100% sure that the response is valid and which we expect, so we can process it.
+    if (processUdsResponse(msg.Buffer, msg.length, request))
+    {
+        LOG_INFO("UDS response parsed successfully. %s", request.param_name);
+        return true;
     }
     else
     {
-        LOG_ERROR("UDS session failed with retval: %04X", retval);
+        LOG_WARN("Failed to parse UDS response data. %s", request.param_name);
         return false;
     }
+    
+    return false;
 }
 
 bool IsfService::processUdsResponse(uint8_t *data, uint8_t length, const UDSRequest &request)
 {
     if (data == nullptr || length == 0)
     {
+        //This should never happen, highlights a coding error
         LOG_ERROR("Invalid UDS response data");
         return false;
     }
 
+    //For now we only support Read Data By Local ID and Read Data By ID
     switch (request.service_id)
     {
     case UDS_SID_READ_DATA_BY_LOCAL_ID: // Local Identifier (Techstream)
@@ -295,8 +337,6 @@ bool IsfService::processUdsResponse(uint8_t *data, uint8_t length, const UDSRequ
         return false;
     }
 }
-
-// No custom hash needed: std::hash<std::tuple<…>> is available in C++20
 
 std::vector<UdsDefinition> get_uds_definitions(std::uint16_t request_id,
                                                std::uint16_t pid,

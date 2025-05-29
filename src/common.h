@@ -28,15 +28,30 @@ typedef enum
 
 struct Message_t
 {
-  uint16_t len = 0;
-  isotp_states_t tp_state = ISOTP_IDLE;
-  uint16_t seq_id = 1;
-  uint8_t fc_status = 0; // Clear to send
+  //Expected length of the complete uds message with all its Consecutive Frames included.
+  uint16_t length = 0;
+  //The current Sequence number of the consecutive frame received.
+  uint8_t sequence_number = 1;
+  //The next expected sequence number for consecutive frames
+  uint8_t next_sequence = 1;
+  //Tracks how many bytes have been received so far
+  uint16_t bytes_received = 0;
+  //Tracks how many bytes still need to be received
+  uint16_t remaining_bytes = 0;
+  //The block size of the consecutive frame received.
   uint8_t blocksize = 0;
-  uint8_t min_sep_time = 0;
-  uint32_t tx_id = 0; // Changed INT32U to uint32_t
-  uint32_t rx_id = 0; // Changed INT32U to uint32_t
+  //The tx_id of the message.
+  uint32_t tx_id = 0;
+  //The rx_id of the message.
+  uint32_t rx_id = 0;
+  //The service_id of the message.
+  uint8_t service_id = 0;
+  //The data_id of the message.
+  uint16_t data_id = 0;
+  //The buffer of the message.
   uint8_t *Buffer;
+  //The state of the message.
+  isotp_states_t tp_state = ISOTP_IDLE;
 
   std::string getStateStr() const
   {
