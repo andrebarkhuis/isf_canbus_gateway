@@ -147,6 +147,8 @@ bool IsfService::initialize_diagnostic_session()
             LOG_ERROR("Failed to send session request for ID: %d", isf_pid_session_requests[i].id);
             return false;
         }
+
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 
     return true;
@@ -241,29 +243,19 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
     msg.length = dataLength;
     msg.Buffer = udsMessage;
 
-    // Send with retries
     uint8_t retval = 0;
-    uint8_t retry = UDS_RETRY;
 
-    while ((retval = isotp->send(&msg)) && retry)
-    {
-        delay(5); // small wait
-        LOG_DEBUG("Retrying: Attempt %d of %d", retry, UDS_RETRY);
-        retry--;
-    }
-
+    retval = isotp->send(&msg);
     if (retval != 0)
     {
         Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
         return false;
     }
     
-    // Prepare to receive response
     msg.Buffer = udsResponseBuffer;
     memset(udsResponseBuffer, 0, sizeof(udsResponseBuffer));
     
     retval = isotp->receive(&msg);
-
     if (retval != 0) {
         Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
         return false;
@@ -275,31 +267,24 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
     }
     
     // NB: Transaction fingerprinting: Check if the response matches the request
-    // For a positive response: service_id should be request.service_id + 0x40
+    // In UDS protocol:
+    //  - For a positive response: service_id should be request.service_id + 0x40
+    //  - For a negative response: service_id will be 0x7F
     // The data_id in the response should match the request's data_id
-    
 
-    if(msg.service_id != request.service_id + 0x40)
+    Logger::logUdsMessage("[sendUdsRequest] Received response", &msg);
+
+    // Check if this is either a positive response (SID+0x40) or negative response (0x7F)
+    if(msg.Buffer[0] != UDS_POSITIVE_RESPONSE(request.service_id) && msg.Buffer[0] != UDS_NEGATIVE_RESPONSE)
     {
-        Logger::logUdsMessage("[sendUdsRequest] Response with mismatched service_id rejected", &msg);
+        LOG_WARN("Invalid response type: 0x%02X, expected positive (0x%02X) or negative (0x7F)", msg.Buffer[0], UDS_POSITIVE_RESPONSE(request.service_id));
         return false;
     }
     
     if(msg.data_id != request.did)
     {
-        Logger::logUdsMessage("[sendUdsRequest] Response with mismatched data_id rejected", &msg);
+        LOG_WARN("data_id missmatched, expected: 0x%02X, actual: 0x%02X", request.did, msg.data_id);
         return false;
-    }
-    
-    if(msg.Buffer[0] == UDS_NEGATIVE_RESPONSE)
-    {
-        Logger::logUdsMessage("[sendUdsRequest] Negative response received", &msg);
-        return false;
-    }
-    
-    if(msg.Buffer[0] == UDS_POSITIVE_RESPONSE(request.service_id))
-    {
-        Logger::logUdsMessage("[sendUdsRequest] Positive response received", &msg);
     }
     
     //Now we 100% sure that the response is valid and which we expect, so we can process it.
