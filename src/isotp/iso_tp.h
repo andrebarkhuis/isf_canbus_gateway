@@ -101,7 +101,6 @@
 #define UDS_NRC_TIME_DELAY_NOT_EXPIRED 0x37
 #define UDS_NRC_RESPONSE_PENDING 0x78
 
-
 class IsoTp
 {
 public:

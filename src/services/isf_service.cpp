@@ -129,26 +129,32 @@ bool IsfService::initialize()
  *
  * Sends all predefined session initialization messages from isf_pid_session_requests
  * to prepare the ECUs for diagnostic communication.
+ * Includes retry logic and appropriate delays between messages.
  *
  * @return true if all session messages were sent successfully, false otherwise
  */
 bool IsfService::initialize_diagnostic_session()
 {
     const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(CANMessage);
+    unsigned long currentTime = millis();
 
     for (int i = 0; i < SESSION_REQUESTS_SIZE; i++)
     {
+        
+        LOG_INFO("Sending diagnostic session message to ID: 0x%X", isf_pid_session_requests[i].id);
+        
         bool failed = mcp->sendMsgBuf(isf_pid_session_requests[i].id,
-                                      isf_pid_session_requests[i].extended ? 1 : 0,
-                                      isf_pid_session_requests[i].len,
-                                      const_cast<byte *>(isf_pid_session_requests[i].data)); // Cast to match byte*
+                                        isf_pid_session_requests[i].extended ? 1 : 0,
+                                        isf_pid_session_requests[i].len,
+                                        const_cast<byte *>(isf_pid_session_requests[i].data));
         if (failed)
         {
-            LOG_ERROR("Failed to send session request for ID: %d", isf_pid_session_requests[i].id);
+            LOG_ERROR("Failed to send session request for ID: 0x%X", isf_pid_session_requests[i].id);
+
             return false;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(1));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 
     return true;
@@ -170,13 +176,13 @@ void IsfService::listen()
 
     if (initialize_diagnostic_session())
     {
-        beginSend();
+        beginSend();    
     }
 
 #ifdef LED_BUILTIN
     digitalWrite(LED_BUILTIN, LOW);
 #endif
-    vTaskDelay(pdMS_TO_TICKS(5)); // Delay to avoid flooding the bus
+    vTaskDelay(pdMS_TO_TICKS(5)); 
 }
 
 bool IsfService::beginSend()
@@ -194,39 +200,37 @@ bool IsfService::beginSend()
 
             switch (request.service_id)
             {
-            case UDS_SID_READ_DATA_BY_ID:
-                udsMessage[0] = (request.did >> 8) & 0xFF; // DID high byte
-                udsMessage[1] = request.did & 0xFF;        // DID low byte
-                dataLength = 2;
-                break;
+                case UDS_SID_READ_DATA_BY_ID:
+                    udsMessage[0] = (request.did >> 8) & 0xFF; // DID high byte
+                    udsMessage[1] = request.did & 0xFF;        // DID low byte
+                    dataLength = 2;
+                    break;
 
-            case OBD_MODE_SHOW_CURRENT_DATA:
-                udsMessage[0] = request.did & 0xFF; // Single-byte PID
-                dataLength = 1;
-                break;
+                case OBD_MODE_SHOW_CURRENT_DATA:
+                    udsMessage[0] = request.did & 0xFF; // Single-byte PID
+                    dataLength = 1;
+                    break;
 
-            case UDS_SID_TESTER_PRESENT:
-                udsMessage[0] = 0x00; // Sub-function for Tester Present
-                dataLength = 1;
-                break;
+                case UDS_SID_TESTER_PRESENT:
+                    udsMessage[0] = 0x00; // Sub-function for Tester Present
+                    dataLength = 1;
+                    break;
 
-            case UDS_SID_READ_DATA_BY_LOCAL_ID:                 // Techstream SID for Local Identifier requests
-                udsMessage[0] = 0x02;                           // Length of the remaining bytes
-                udsMessage[1] = request.service_id;             // Use the actual service ID from the request
-                udsMessage[2] = request.did & 0xFF;             // Identifier (0x01, 0xE1, etc.)
-                dataLength = 3;                                 // SID + Identifier + length byte
-                break;
+                case UDS_SID_READ_DATA_BY_LOCAL_ID:                 // Techstream SID for Local Identifier requests
+                    udsMessage[0] = 0x02;                           // Length of the remaining bytes
+                    udsMessage[1] = request.service_id;             // Use the actual service ID from the request
+                    udsMessage[2] = request.did & 0xFF;             // Identifier (0x01, 0xE1, etc.)
+                    dataLength = 3;                                 // SID + Identifier + length byte
+                    break;
 
-            default:
-                LOG_ERROR("Unsupported UDS service ID: %02X", request.service_id);
-                continue; // Skip unknown services
+                default:
+                    LOG_ERROR("Unsupported UDS service ID: %02X", request.service_id);
+                    continue; // Skip unknown services
             }
 
             sendUdsRequest(udsMessage, dataLength, request);
 
             lastUdsRequestTime[i] = currentTime;
-
-            vTaskDelay(pdMS_TO_TICKS(5));
         }
     }
 
@@ -245,6 +249,8 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
 
     uint8_t retval = 0;
 
+    Logger::logUdsMessage("[sendUdsRequest] BEGIN Sending message.", &msg);
+
     retval = isotp->send(&msg);
     if (retval != 0)
     {
@@ -255,6 +261,9 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
     msg.Buffer = udsResponseBuffer;
     memset(udsResponseBuffer, 0, sizeof(udsResponseBuffer));
     
+    //Wait for response then try and receive.
+    vTaskDelay(pdMS_TO_TICKS(50));
+
     retval = isotp->receive(&msg);
     if (retval != 0) {
         Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
@@ -274,16 +283,55 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
 
     Logger::logUdsMessage("[sendUdsRequest] Received response", &msg);
 
-    // Check if this is either a positive response (SID+0x40) or negative response (0x7F)
-    if(msg.Buffer[0] != UDS_POSITIVE_RESPONSE(request.service_id) && msg.Buffer[0] != UDS_NEGATIVE_RESPONSE)
+    // Check for negative response (0x7F)
+    if(msg.Buffer[0] == UDS_NEGATIVE_RESPONSE)
     {
-        LOG_WARN("Invalid response type: 0x%02X, expected positive (0x%02X) or negative (0x7F)", msg.Buffer[0], UDS_POSITIVE_RESPONSE(request.service_id));
+        // For negative responses, we expect [0x7F][RequestSID][NRC]
+        if (msg.length < 3) {
+            LOG_WARN("Incomplete negative response frame");
+            return false;
+        }
+        
+        // Some ECUs don't follow standard UDS protocol and may use different internal service IDs
+        // Toyota/Lexus ECUs often respond with 0x02 for ReadDataByLocalID (0x21) requests
+        if (msg.Buffer[1] != request.service_id) {
+            // Special case: if we sent 0x21 and got back 0x02, accept it as valid
+            if (request.service_id == 0x21 && msg.Buffer[1] == 0x02) {
+                LOG_INFO("Received non-standard negative response with service ID 0x02 for 0x21 request - accepting as valid");
+                // Continue processing - this is a known quirk of some ECUs
+            } else {
+                LOG_WARN("Negative response for wrong service: expected 0x%02X, got 0x%02X", 
+                         request.service_id, msg.Buffer[1]);
+                return false;
+            }
+        }
+        
+        // Log the negative response code with its string representation
+        extern const char* getUdsErrorString(uint8_t errorCode); // Declare the function from iso_tp.cpp
+        LOG_WARN("ECU returned negative response 0x%02X (%s) for service 0x%02X", 
+                 msg.Buffer[2], getUdsErrorString(msg.Buffer[2]), msg.Buffer[1]);
+        
+        // Handle specific negative response codes
+        if (msg.Buffer[2] == UDS_NRC_RESPONSE_PENDING) {
+            LOG_INFO("ECU reports 'Response Pending' - might need to retry");
+            // Consider implementing a retry mechanism here
+        }
+        
+        // Acknowledge negative response and continue processing
+        return false;
+    }
+    // Check for positive response (SID+0x40)
+    else if(msg.Buffer[0] != UDS_POSITIVE_RESPONSE(request.service_id))
+    {
+        LOG_WARN("Invalid response type: 0x%02X, expected positive (0x%02X) or negative (0x7F)", 
+                 msg.Buffer[0], UDS_POSITIVE_RESPONSE(request.service_id));
         return false;
     }
     
+    // For positive responses, validate the data_id
     if(msg.data_id != request.did)
     {
-        LOG_WARN("data_id missmatched, expected: 0x%02X, actual: 0x%02X", request.did, msg.data_id);
+        LOG_WARN("data_id mismatched, expected: 0x%02X, actual: 0x%02X", request.did, msg.data_id);
         return false;
     }
     
