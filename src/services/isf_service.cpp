@@ -136,11 +136,9 @@ bool IsfService::initialize()
 bool IsfService::initialize_diagnostic_session()
 {
     const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(CANMessage);
-    unsigned long currentTime = millis();
-
+    
     for (int i = 0; i < SESSION_REQUESTS_SIZE; i++)
     {
-        
         LOG_INFO("Sending diagnostic session message to ID: 0x%X", isf_pid_session_requests[i].id);
         
         bool failed = mcp->sendMsgBuf(isf_pid_session_requests[i].id,
@@ -217,6 +215,28 @@ bool IsfService::beginSend()
                     break;
 
                 case UDS_SID_READ_DATA_BY_LOCAL_ID:                 // Techstream SID for Local Identifier requests
+                    /* 
+                    IMPORTANT: UDS Request Format for Toyota's READ_DATA_BY_LOCAL_ID
+                    ------------------------------------------------------------------------
+                    This format is based on Toyota's specific implementation of UDS protocol.
+                    The request follows a proprietary Toyota format where the first byte (0x02) 
+                    indicates the length of remaining data, not an ISO-TP length.
+                    
+                    What happens behind the scenes:
+                    1. We prepare message as: [0x02][0x21][0xXX] (length, SID, data ID)
+                    2. ISO-TP layer adds its own header: [ISO-TP header][0x02][0x21][0xXX]
+                    3. On the CAN bus, this appears as a single frame transmission
+                    
+                    NOTE: While CAN logs may show something like [0x04][0x21][0x02][0x21][0xXX],
+                    this discrepancy could be due to:
+                    - Logging tool interpretation
+                    - Hardware adapter formatting
+                    - Toyota-specific diagnostic protocol quirks
+                    
+                    The transaction fingerprinting approach (rx_id, tx_id, service_id, data_id)
+                    still works because these key identifiers remain consistent regardless of
+                    how the message is formatted at the CAN bus level.
+                    */
                     udsMessage[0] = 0x02;                           // Length of the remaining bytes
                     udsMessage[1] = request.service_id;             // Use the actual service ID from the request
                     udsMessage[2] = request.did & 0xFF;             // Identifier (0x01, 0xE1, etc.)
@@ -257,13 +277,9 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
         Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
         return false;
     }
-    
-    msg.Buffer = udsResponseBuffer;
-    memset(udsResponseBuffer, 0, sizeof(udsResponseBuffer));
-    
-    //Wait for response then try and receive.
-    vTaskDelay(pdMS_TO_TICKS(50));
 
+    vTaskDelay(pdMS_TO_TICKS(50));
+    
     retval = isotp->receive(&msg);
     if (retval != 0) {
         Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
@@ -300,8 +316,7 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
                 LOG_INFO("Received non-standard negative response with service ID 0x02 for 0x21 request - accepting as valid");
                 // Continue processing - this is a known quirk of some ECUs
             } else {
-                LOG_WARN("Negative response for wrong service: expected 0x%02X, got 0x%02X", 
-                         request.service_id, msg.Buffer[1]);
+                LOG_WARN("Negative response for wrong service: expected 0x%02X, got 0x%02X", request.service_id, msg.Buffer[1]);
                 return false;
             }
         }

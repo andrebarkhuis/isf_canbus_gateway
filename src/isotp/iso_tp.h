@@ -113,18 +113,15 @@ private:
   uint8_t rxLen;
   uint8_t rxBuffer[8];
   bool first_frame_received;
-  uint8_t can_send(uint32_t id, uint8_t len, uint8_t *data);
-  bool is_can_message_available(void);
-  uint8_t send_flow_control(struct Message_t *msg);
-  uint8_t send_single_frame(struct Message_t *msg);
-  uint8_t receive_single_frame(struct Message_t *msg);
-  uint8_t receive_consecutive_frame(struct Message_t *msg);
-  uint8_t receive_flow_control(struct Message_t *msg);
-  bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, unsigned actual_tx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
-  void reset_state();  // Reset buffer and internal state
   
-  // Frame handler functions
+  bool is_can_message_available(void);
+  bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, unsigned actual_tx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
+  void reset_state(); 
+
   uint8_t handle_first_frame(Message_t *msg);
   uint8_t handle_consecutive_frame(Message_t *msg);
   uint8_t handle_single_frame(Message_t *msg);
+  uint8_t send_flow_control(struct Message_t *msg);
+  uint8_t send_single_frame(struct Message_t *msg);
+  uint8_t send_first_frame(struct Message_t *msg);
 };

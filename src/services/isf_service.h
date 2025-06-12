@@ -69,8 +69,8 @@ const UDSRequest isf_uds_requests[] = {
     { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x51, .interval = 100, .param_name = "request-13" },
     { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-14" },
     { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-15" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-15" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xC2, .interval = 150, .param_name = "engine-code" }
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-15" },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xC2, .interval = 150, .param_name = "engine-code" }
 };
 
 const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(isf_pid_session_requests[0]);
