@@ -48,27 +48,27 @@ class IsoTp;
 
 //NB: Interval is set to 0 to disable the interval timer.
 const CANMessage isf_pid_session_requests[] = {
-    { .id = 0x700, .data = {0x02, 0x3E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 0, .param_name = "Tester present - Keep Alive" },
-    { .id = 0x7E0, .data = {0x02, 0x3E, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 0, .param_name = "Tester present - Keep Alive" }
+    { .id = 0x700, .data = {0x02, UDS_SID_TESTER_PRESENT, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 0, .param_name = "Tester present - Keep Alive" },
+    { .id = 0x7E0, .data = {0x02, UDS_SID_TESTER_PRESENT, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 0, .param_name = "Tester present - Keep Alive" }
 };
 
 const UDSRequest isf_uds_requests[] = {
 
     //Default pid to 0 for now since we making the uds requests using the local id data identifier.
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-1" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-2" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-3" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-3" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-4" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x07, .interval = 100, .param_name = "request-5" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x08, .interval = 100, .param_name = "request-6" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x22, .interval = 100, .param_name = "request-7" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x20, .interval = 100, .param_name = "request-7" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-8" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x37, .interval = 100, .param_name = "request-9" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x51, .interval = 100, .param_name = "request-13" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-14" },
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-15" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-1" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-2" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-3" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-3" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-4" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x07, .interval = 100, .param_name = "request-5" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x08, .interval = 100, .param_name = "request-6" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x22, .interval = 100, .param_name = "request-7" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x20, .interval = 100, .param_name = "request-7" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-8" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x37, .interval = 100, .param_name = "request-9" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x51, .interval = 100, .param_name = "request-13" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-14" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-15" },
     // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-15" },
     // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xC2, .interval = 150, .param_name = "engine-code" }
 };
@@ -88,7 +88,7 @@ public:
 private:
     bool initialize_diagnostic_session();
     bool beginSend();
-    bool sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const UDSRequest &request);
+    bool sendUdsRequest(Message_t& msg, const UDSRequest &request);
     bool processUdsResponse(uint8_t *data, uint8_t length, const UDSRequest &request);
     bool transformResponse(uint8_t *data, uint8_t length, const UDSRequest &request);
 
@@ -103,4 +103,7 @@ private:
 
     // Array tracking last request time for each UDS request
     unsigned long *lastUdsRequestTime = nullptr;
+
+    // Timestamp for the last diagnostic session initialization
+    unsigned long last_diagnostic_session_time_ = 0;
 };

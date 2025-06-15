@@ -152,7 +152,7 @@ bool IsfService::initialize_diagnostic_session()
             return false;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 
     return true;
@@ -172,10 +172,18 @@ void IsfService::listen()
     digitalWrite(LED_BUILTIN, HIGH);
 #endif
 
-    if (initialize_diagnostic_session())
+    unsigned long current_time = millis();
+
+    if (current_time - last_diagnostic_session_time_ >= 3000) 
     {
-        beginSend();    
+        if (initialize_diagnostic_session())
+        {
+            // Optionally, add logic here if the session initialization is successful
+        }
+        last_diagnostic_session_time_ = current_time;
     }
+    
+    beginSend();
 
 #ifdef LED_BUILTIN
     digitalWrite(LED_BUILTIN, LOW);
@@ -186,87 +194,69 @@ void IsfService::listen()
 bool IsfService::beginSend()
 {
     unsigned long currentTime = millis();
-
     for (int i = 0; i < ISF_UDS_REQUESTS_SIZE; i++)
     {
         if (currentTime - lastUdsRequestTime[i] >= isf_uds_requests[i].interval)
         {
-            const UDSRequest& request = isf_uds_requests[i];
-            
-            uint8_t udsMessage[8] = {0};
-            uint8_t dataLength = 0;
+            UDSRequest request = isf_uds_requests[i];
+
+            Message_t msg_to_send;
+            msg_to_send.tx_id = request.tx_id;
+            msg_to_send.rx_id = request.rx_id;
+            msg_to_send.service_id = request.service_id;
+            msg_to_send.data_id = request.did;
+
+            uint8_t payload[8] = {0};
 
             switch (request.service_id)
             {
                 case UDS_SID_READ_DATA_BY_ID:
-                    udsMessage[0] = (request.did >> 8) & 0xFF; // DID high byte
-                    udsMessage[1] = request.did & 0xFF;        // DID low byte
-                    dataLength = 2;
+                    payload[0] = (request.did >> 8) & 0xFF; // DID high byte
+                    payload[1] = request.did & 0xFF;        // DID low byte
+                    request.dataLength = 2;
                     break;
 
                 case OBD_MODE_SHOW_CURRENT_DATA:
-                    udsMessage[0] = request.did & 0xFF; // Single-byte PID
-                    dataLength = 1;
+                    payload[0] = request.did & 0xFF; // Single-byte PID
+                    request.dataLength = 1;
                     break;
 
                 case UDS_SID_TESTER_PRESENT:
-                    udsMessage[0] = 0x00; // Sub-function for Tester Present
-                    dataLength = 1;
                     break;
 
-                case UDS_SID_READ_DATA_BY_LOCAL_ID:                 // Techstream SID for Local Identifier requests
-                    /* 
-                    IMPORTANT: UDS Request Format for Toyota's READ_DATA_BY_LOCAL_ID
-                    ------------------------------------------------------------------------
-                    This format is based on Toyota's specific implementation of UDS protocol.
-                    The request follows a proprietary Toyota format where the first byte (0x02) 
-                    indicates the length of remaining data, not an ISO-TP length.
-                    
-                    What happens behind the scenes:
-                    1. We prepare message as: [0x02][0x21][0xXX] (length, SID, data ID)
-                    2. ISO-TP layer adds its own header: [ISO-TP header][0x02][0x21][0xXX]
-                    3. On the CAN bus, this appears as a single frame transmission
-                    
-                    NOTE: While CAN logs may show something like [0x04][0x21][0x02][0x21][0xXX],
-                    this discrepancy could be due to:
-                    - Logging tool interpretation
-                    - Hardware adapter formatting
-                    - Toyota-specific diagnostic protocol quirks
-                    
-                    The transaction fingerprinting approach (rx_id, tx_id, service_id, data_id)
-                    still works because these key identifiers remain consistent regardless of
-                    how the message is formatted at the CAN bus level.
-                    */
-                    udsMessage[0] = 0x02;                           // Length of the remaining bytes
-                    udsMessage[1] = request.service_id;             // Use the actual service ID from the request
-                    udsMessage[2] = request.did & 0xFF;             // Identifier (0x01, 0xE1, etc.)
-                    dataLength = 3;                                 // SID + Identifier + length byte
+                case UDS_SID_READ_DATA_BY_LOCAL_ID:              // Techstream SID for Local Identifier requests
+                    payload[0] = 0x02;                           // Length of the remaining bytes
+                    payload[1] = UDS_SID_READ_DATA_BY_LOCAL_ID;  // Use defined SID instead of hardcoded value
+                    payload[2] = isf_uds_requests[i].did & 0xFF; // Identifier (0x01, 0xE1, etc.)
+                    request.dataLength = 3;                      // SID + Identifier + length byte
                     break;
-
+    
                 default:
-                    LOG_ERROR("Unsupported UDS service ID: %02X", request.service_id);
-                    continue; // Skip unknown services
+                    LOG_ERROR("Unsupported UDS service ID for ISO-TP: %02X", request.service_id);
+                    break; // Skip unknown services
             }
 
-            sendUdsRequest(udsMessage, dataLength, request);
+            // Prepare the final UDS message. Length is 1 byte for SID + data length.
+            msg_to_send.length = 1 + request.dataLength;
+            uint8_t uds_frame_payload[msg_to_send.length];
+            uds_frame_payload[0] = request.service_id;
+            memcpy(uds_frame_payload + 1, payload, request.dataLength);
+            msg_to_send.Buffer = uds_frame_payload;
 
+            sendUdsRequest(msg_to_send, request);
+            
             lastUdsRequestTime[i] = currentTime;
+
+            vTaskDelay(pdMS_TO_TICKS(5));
         }
     }
-
     return true;
 }
+    
 
-bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const UDSRequest &request)
+
+bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
 {
-    Message_t msg;
-    msg.tx_id = request.tx_id;
-    msg.rx_id = request.rx_id;
-    msg.service_id = request.service_id;
-    msg.data_id = request.did;
-    msg.length = dataLength;
-    msg.Buffer = udsMessage;
-
     uint8_t retval = 0;
 
     Logger::logUdsMessage("[sendUdsRequest] BEGIN Sending message.", &msg);
@@ -277,9 +267,7 @@ bool IsfService::sendUdsRequest(uint8_t *udsMessage, uint8_t dataLength, const U
         Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
         return false;
     }
-
-    vTaskDelay(pdMS_TO_TICKS(50));
-    
+ 
     retval = isotp->receive(&msg);
     if (retval != 0) {
         Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);

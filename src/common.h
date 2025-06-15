@@ -90,6 +90,7 @@ struct UDSRequest
   uint16_t did = 0; // using 0 will match all dids in the map
   unsigned long interval;
   const char *param_name;
+  uint8_t dataLength; // Length of the UDS message payload (e.g., DID, PID, etc.)
 };
 
 namespace ISFCAN

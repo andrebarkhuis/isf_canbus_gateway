@@ -11,6 +11,7 @@ IsoTp::IsoTp(MCP_CAN *bus)
   reset_state(); // Initialize buffer on construction
 }
 
+
 // Convert UDS error code to string representation
 const char* getUdsErrorString(uint8_t errorCode) {
   switch(errorCode) {
@@ -179,11 +180,14 @@ uint8_t IsoTp::handle_single_frame(Message_t *msg)
   return 0;
 }
 
+
 uint8_t IsoTp::send_flow_control(struct Message_t *msg)
 {
   uint8_t TxBuf[8] = {0};
 
-  TxBuf[0] = N_PCI_FC | (msg->next_sequence & 0x0F);
+  TxBuf[0] = (N_PCI_FC | ISOTP_FC_CTS); // Explicitly Clear To Send (0x30)
+  TxBuf[1] = 0x00;                      // No block size limit
+  TxBuf[2] = 0x00;                      // No separation time required
 
   uint8_t result = _bus->sendMsgBuf(msg->tx_id, 0, 8, reinterpret_cast<byte *>(TxBuf)); // Cast to byte*
   if (result != 0) {
@@ -259,6 +263,11 @@ uint8_t IsoTp::send(Message_t *msg)
   return retval;
 }
 
+void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
+{
+  LOG_ERROR("UDS Negative Response for Service ID 0x%X: %s (0x%X)", serviceId, getUdsErrorString(nrc_code), nrc_code);
+}
+
 uint8_t IsoTp::receive(Message_t *msg)
 {
   reset_state();
@@ -274,15 +283,35 @@ uint8_t IsoTp::receive(Message_t *msg)
             
       _bus->readMsgBufID(&actual_rx_id, &rxLen, rxBuffer);
 
+      // Check for UDS Negative Response (0x7F)
+      // A UDS negative response typically has: 
+      // rxBuffer[0] = PCI (e.g. Single Frame type and length)
+      // rxBuffer[1] = 0x7F (Negative Response SID)
+      // rxBuffer[2] = Original SID that caused the error
+      // rxBuffer[3] = Negative Response Code (NRC)
+      if (rxLen >= 4 && rxBuffer[1] == UDS_NEGATIVE_RESPONSE) {
+        
+        msg->tp_state = ISOTP_ERROR;
+        uint8_t original_sid = rxBuffer[2];
+        uint8_t nrc_code = rxBuffer[3];
+        handle_udsError(original_sid, nrc_code);
+        
+        return 1;
+      }
+
       uint8_t pciType = rxBuffer[0] & 0xF0;
 
       if(pciType == N_PCI_FF) // First Frame
       {
+        LOG_DEBUG("Received first frame: rx_id=0x%lX, tx_id=0x%lX", actual_rx_id, msg->tx_id);
+        
         first_frame_received = true;  
 
         if(handle_first_frame(msg) == 0)
         {
           //NB: First frame received and processed successfully
+          //Reset timeout
+          startTime = millis();
           continue;
         }
       }
@@ -291,6 +320,8 @@ uint8_t IsoTp::receive(Message_t *msg)
         //NB: Extract sequence number from the CF frame to check if it is the next expected frame
         uint8_t seq_num = rxBuffer[0] & 0x0F;
         
+        LOG_DEBUG("Received consecutive frame: rx_id=0x%lX, tx_id=0x%lX, seq_num=%u", actual_rx_id, msg->tx_id, seq_num);
+
         //NB: Check if the received frame is the next expected frame, this is done to prevent out of order frames
         if(first_frame_received && is_next_consecutive_frame(msg, actual_rx_id, msg->tx_id, seq_num, msg->service_id, msg->data_id))
         {
@@ -335,7 +366,7 @@ uint8_t IsoTp::receive(Message_t *msg)
         }
       }
 
-      delay(1);
+      delay(5);
     }
   }
  

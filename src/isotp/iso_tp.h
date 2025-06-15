@@ -117,6 +117,7 @@ private:
   bool is_can_message_available(void);
   bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, unsigned actual_tx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
   void reset_state(); 
+  void handle_udsError(uint8_t serviceId, uint8_t nrc_code); 
 
   uint8_t handle_first_frame(Message_t *msg);
   uint8_t handle_consecutive_frame(Message_t *msg);
