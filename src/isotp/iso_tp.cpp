@@ -261,9 +261,10 @@ void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
   LOG_ERROR("UDS Negative Response for Service ID 0x%X: %s (0x%X)", serviceId, getUdsErrorString(nrc_code), nrc_code);
 }
 
-void IsoTp::receive_all_consecutive_frames(uint8_t seq_num, Message_t *msg)
+void IsoTp::receive_all_consecutive_frames(Message_t *msg)
 {
-    LOG_DEBUG("Receiving consecutive frames: tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, seq_num: %u", msg->tx_id, msg->rx_id, msg->service_id, seq_num);
+    //NB: Extract sequence number from the CF frame to check if it is the next expected frame
+    uint8_t seq_num = rxBuffer[0] & 0x0F;
     
     while (is_can_message_available())
     {
@@ -271,9 +272,11 @@ void IsoTp::receive_all_consecutive_frames(uint8_t seq_num, Message_t *msg)
         uint8_t rxLen;
         
         _bus->readMsgBufID(&actual_rx_id, &rxLen, rxBuffer);
-
+        
         if(is_next_consecutive_frame(msg, actual_rx_id, msg->tx_id, seq_num, msg->service_id, msg->data_id))
         {
+            LOG_DEBUG("Received consecutive frame: rx_id=0x%lX, tx_id=0x%lX, seq_num=%u", actual_rx_id, msg->tx_id, seq_num);
+            
             if(handle_consecutive_frame(msg) == 0)
             {
                 if(msg->tp_state == ISOTP_FINISHED)
@@ -338,12 +341,8 @@ uint8_t IsoTp::receive(Message_t *msg)
       }
       else if(pciType == N_PCI_CF) // Consecutive Frame
       {
-        //NB: Extract sequence number from the CF frame to check if it is the next expected frame
-        uint8_t seq_num = rxBuffer[0] & 0x0F;
-        
-        LOG_DEBUG("Received consecutive frame: rx_id=0x%lX, tx_id=0x%lX, seq_num=%u", actual_rx_id, msg->tx_id, seq_num);
-        
-        receive_all_consecutive_frames(seq_num, msg);
+
+        receive_all_consecutive_frames(msg);
 
         continue;
       }
