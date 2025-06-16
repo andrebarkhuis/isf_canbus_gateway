@@ -105,24 +105,17 @@ class IsoTp
 {
 public:
   IsoTp(MCP_CAN *bus);
-  uint8_t send(Message_t *msg);
-  uint8_t receive(Message_t *msg);
+  bool send(Message_t *msg);
+  bool receive(Message_t *msg);
   
 private:
   MCP_CAN *_bus;
-  uint8_t rxLen;
-  uint8_t rxBuffer[8];
-  bool first_frame_received;
   
   bool is_can_message_available(void);
-  bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, unsigned actual_tx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
-  void reset_state(); 
+  bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
   void handle_udsError(uint8_t serviceId, uint8_t nrc_code); 
-
-  uint8_t handle_first_frame(Message_t *msg);
-  uint8_t handle_consecutive_frame(Message_t *msg);
-  uint8_t handle_single_frame(Message_t *msg);
-  uint8_t send_flow_control(struct Message_t *msg);
-  uint8_t send_single_frame(struct Message_t *msg);
-  uint8_t send_first_frame(struct Message_t *msg);
+  bool handle_first_frame(Message_t *msg, uint8_t rxBuffer[]);
+  bool handle_single_frame(Message_t *msg, uint8_t rxBuffer[]);
+  bool send_flow_control(struct Message_t *msg);
+  bool send_single_frame(struct Message_t *msg);
 };

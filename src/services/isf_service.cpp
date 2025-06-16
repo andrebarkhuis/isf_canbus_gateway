@@ -253,12 +253,9 @@ bool IsfService::beginSend()
 
 bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
 {
-    uint8_t retval = 0;
-
     Logger::logUdsMessage("[sendUdsRequest] BEGIN Sending message.", &msg);
 
-    retval = isotp->send(&msg);
-    if (retval != 0)
+    if (!isotp->send(&msg))
     {
         Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
         return false;
@@ -266,59 +263,19 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
  
     vTaskDelay(pdMS_TO_TICKS(10));
 
-    retval = isotp->receive(&msg);
-    if (retval != 0) {
+    if (!isotp->receive(&msg))
+    {
         Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
         return false;
     }
     
-    if (msg.length < 3) {
+    if (msg.length < 3) 
+    {
         Logger::logUdsMessage("[sendUdsRequest] Incomplete response frame.", &msg);
         return false;
     }
     
-    // NB: Transaction fingerprinting: Check if the response matches the request
-    // In UDS protocol:
-    //  - For a positive response: service_id should be request.service_id + 0x40
-    //  - For a negative response: service_id will be 0x7F
-    // The data_id in the response should match the request's data_id
-
-    Logger::logUdsMessage("[sendUdsRequest] Received response", &msg);
-
-    // Check for negative response (0x7F)
-    if(msg.Buffer[0] == UDS_NEGATIVE_RESPONSE)
-    {
-        // For negative responses, we expect [0x7F][RequestSID][NRC]
-        if (msg.length < 3) {
-            LOG_WARN("Incomplete negative response frame");
-            return false;
-        }
-        
-        // Some ECUs don't follow standard UDS protocol and may use different internal service IDs
-        // Toyota/Lexus ECUs often respond with 0x02 for ReadDataByLocalID (0x21) requests
-        if (msg.Buffer[1] != request.service_id) {
-           LOG_WARN("Negative response for wrong service: expected 0x%02X, got 0x%02X", request.service_id, msg.Buffer[1]);
-           return false;
-        }
-        
-        extern const char* getUdsErrorString(uint8_t errorCode); // Declare the function from iso_tp.cpp
-        LOG_WARN("ECU returned negative response 0x%02X (%s) for service 0x%02X", msg.Buffer[2], getUdsErrorString(msg.Buffer[2]), msg.Buffer[1]);
-        
-        return false;
-    }
-    
-    if(msg.Buffer[0] != UDS_POSITIVE_RESPONSE(request.service_id))
-    {
-        LOG_WARN("Invalid response type: 0x%02X, expected positive (0x%02X) or negative (0x7F)", msg.Buffer[0], UDS_POSITIVE_RESPONSE(request.service_id));
-        return false;
-    }
-    
-    // if(msg.data_id != request.did)
-    // {
-    //     LOG_WARN("data_id mismatched, expected: 0x%02X, actual: 0x%02X", request.did, msg.data_id);
-    //     return false;
-    // }
-    
+    //Logger::logUdsMessage("[sendUdsRequest] Received response", &msg);
     // if (processUdsResponse(msg.Buffer, msg.length, request))
     // {
     //     LOG_INFO("UDS response parsed successfully. %s", request.param_name);
