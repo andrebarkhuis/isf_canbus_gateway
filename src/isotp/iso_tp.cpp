@@ -51,7 +51,7 @@ bool IsoTp::is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id
     
     // All criteria must match for a valid transaction
     if (idsMatch && serviceIdMatch && dataIdMatch) {
-      LOG_DEBUG("Consecutive Frame received: sequence number received: %u, expected sequence number: %u, received service ID: 0x%X, expected service ID: 0x%X, received data ID: 0x%X, expected data ID: 0x%X", 
+      LOG_DEBUG("CF received: sequence number received: %u, expected sequence number: %u, received service ID: 0x%X, expected service ID: 0x%X, received data ID: 0x%X, expected data ID: 0x%X", 
         actual_seq_num, msg->next_sequence, actual_serviceId, msg->service_id, actual_data_id, msg->data_id);
       return true;
     }
@@ -228,12 +228,14 @@ bool IsoTp::receive(Message_t *msg)
       uint8_t nrc_code = rxBuffer[3];
       handle_udsError(rxServiceId, nrc_code);
       
+      vTaskDelay(pdMS_TO_TICKS(1));
+
       return false;
     }
 
     if (rxId != msg->rx_id) 
     {
-      vTaskDelay(pdMS_TO_TICKS(10));
+      vTaskDelay(pdMS_TO_TICKS(1));
 
       continue; 
     }
@@ -244,12 +246,16 @@ bool IsoTp::receive(Message_t *msg)
     {
       LOG_DEBUG("Single Frame received");
 
+      vTaskDelay(pdMS_TO_TICKS(1));
+
       return handle_single_frame(msg, rxBuffer);
     }
     else if( pciType == N_PCI_FF) // First Frame
     {
       ff_received = true;
-       
+     
+      vTaskDelay(pdMS_TO_TICKS(1));
+      
       //FF example:
       //8,10,30,61,21,00,00,00,00
 
@@ -257,8 +263,8 @@ bool IsoTp::receive(Message_t *msg)
 
       if (handle_first_frame(msg, rxBuffer))
       {
-        LOG_DEBUG("First Frame handled successfully, tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, data_id: 0x%02X, sequence: %d", msg->tx_id, msg->rx_id, msg->service_id, msg->data_id, msg->next_sequence);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        LOG_DEBUG("First Frame handled successfully, tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, data_id: 0x%02X, sequence: %d", msg->tx_id, msg->rx_id, msg->service_id, msg->data_id, msg->sequence_number);
+        vTaskDelay(pdMS_TO_TICKS(1));
         continue;
       }
       else
@@ -270,6 +276,8 @@ bool IsoTp::receive(Message_t *msg)
     else if( pciType == N_PCI_CF) // Consecutive Frame
     {
       LOG_DEBUG("Consecutive Frame received");
+
+      vTaskDelay(pdMS_TO_TICKS(1));
 
       //CF example:
       // 21,80,02,00,80,00,00,00
@@ -305,13 +313,13 @@ bool IsoTp::receive(Message_t *msg)
           else 
           { 
             msg->tp_state = ISOTP_WAIT_DATA;
-            vTaskDelay(pdMS_TO_TICKS(10));
+            vTaskDelay(pdMS_TO_TICKS(1));
             continue;
           }
       }
     }
 
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
 
   return false;

@@ -174,14 +174,14 @@ void IsfService::listen()
 
     unsigned long current_time = millis();
 
-    if (current_time - last_diagnostic_session_time_ >= 3000) 
-    {
-        if (initialize_diagnostic_session())
-        {
-            // Optionally, add logic here if the session initialization is successful
-        }
-        last_diagnostic_session_time_ = current_time;
-    }
+    // if (current_time - last_diagnostic_session_time_ >= 3000) 
+    // {
+    //     if (initialize_diagnostic_session())
+    //     {
+    //         // Optionally, add logic here if the session initialization is successful
+    //     }
+    //     last_diagnostic_session_time_ = current_time;
+    // }
     
     beginSend();
 
@@ -193,6 +193,12 @@ void IsfService::listen()
 
 bool IsfService::beginSend()
 {
+    // If a UDS request is already in progress, don't start a new one
+    if (isUdsRequestInProgress) {
+        LOG_DEBUG("UDS request already in progress, skipping new send");
+        return false;
+    }
+
     unsigned long currentTime = millis();
     for (int i = 0; i < ISF_UDS_REQUESTS_SIZE; i++)
     {
@@ -245,7 +251,8 @@ bool IsfService::beginSend()
             
             lastUdsRequestTime[i] = currentTime;
 
-            vTaskDelay(pdMS_TO_TICKS(5));
+            //Delay to avoid flooding the bus
+            vTaskDelay(pdMS_TO_TICKS(50));
         }
     }
     return true;
@@ -253,6 +260,9 @@ bool IsfService::beginSend()
 
 bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
 {
+    // Set flag to indicate a UDS request is in progress
+    isUdsRequestInProgress = true;
+    
     Logger::logUdsMessage("[sendUdsRequest] BEGIN Sending message.", &msg);
 
     if (!isotp->send(&msg))
@@ -286,6 +296,9 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
     //     LOG_WARN("Failed to parse UDS response data. %s", request.param_name);
     //     return false;
     // }
+    
+    // Clear flag to indicate UDS request is complete
+    isUdsRequestInProgress = false;
     
     return true;
 }

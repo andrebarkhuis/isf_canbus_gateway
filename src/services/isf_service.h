@@ -98,6 +98,9 @@ private:
     // ISO-TP protocol handler for multi-frame messaging
     IsoTp *isotp = nullptr;
     
+    // Flag to track if a UDS request is currently in progress
+    bool isUdsRequestInProgress = false;
+    
     // Response buffer for UDS communications
     uint8_t udsResponseBuffer[MAX_MSGBUF];
 
