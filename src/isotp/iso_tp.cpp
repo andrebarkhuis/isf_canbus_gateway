@@ -78,16 +78,15 @@ uint8_t IsoTp::handle_first_frame(Message_t *msg)
   // Extract the service ID (typically the first data byte after length)
   uint8_t ff_service_id = rxBuffer[2];
   
-  // Extract the data ID (typically 2 bytes after service ID in most UDS messages)
-  uint16_t ff_data_id = (rxBuffer[3] << 8) | rxBuffer[4];
+  // Extract the data ID. If the service ID is 0x61 (positive response for UDS_SID_READ_DATA_BY_LOCAL_ID 0x21),
+  // the DID (LocalID) is 1 byte at rxBuffer[3]. Otherwise, assume 2 bytes for other services for now.
+  uint16_t ff_data_id = (ff_service_id == 0x61 && expected_length >= 1) ? rxBuffer[3] : ((expected_length >= 2) ? (rxBuffer[3] << 8) | rxBuffer[4] : 0); 
+  // Added expected_length checks to prevent reading past buffer if PDU is too short for DID.
   
-  // Initialize message tracking variables
   msg->length = expected_length;
   msg->service_id = ff_service_id;
   msg->data_id = ff_data_id;
   msg->tp_state = ISOTP_WAIT_DATA;
-  
-  // Initialize CF tracking variables
   msg->bytes_received = 6; // First frame already contains 6 bytes
   msg->remaining_bytes = expected_length - 6; // Remaining bytes to receive
   msg->next_sequence = 1; // First CF will have sequence number 1;
@@ -127,15 +126,10 @@ uint8_t IsoTp::handle_consecutive_frame(struct Message_t *msg)
     // Copy the data from the CF (skipping the first byte which is the PCI)
     memcpy(msg->Buffer + offset, rxBuffer + 1, bytes_to_copy);
     
-    // Update tracking counters
     msg->bytes_received += bytes_to_copy;
     msg->remaining_bytes -= bytes_to_copy;
-    
-    // Update sequence number for next CF, with wrap-around
     msg->next_sequence = (msg->next_sequence + 1) & 0x0F;
-    if (msg->next_sequence == 0) msg->next_sequence = 1; // Reset to 1 if it wraps to 0
     
-    // Update message state if we've received all the data
     if (msg->remaining_bytes == 0) {
       msg->tp_state = ISOTP_FINISHED;
       LOG_DEBUG("CF sequence complete all data received, iso_tp_state=%s, %u bytes received", msg->getStateStr().c_str(), msg->length);
@@ -179,7 +173,6 @@ uint8_t IsoTp::handle_single_frame(Message_t *msg)
 
   return 0;
 }
-
 
 uint8_t IsoTp::send_flow_control(struct Message_t *msg)
 {
@@ -268,6 +261,42 @@ void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
   LOG_ERROR("UDS Negative Response for Service ID 0x%X: %s (0x%X)", serviceId, getUdsErrorString(nrc_code), nrc_code);
 }
 
+void IsoTp::receive_all_consecutive_frames(uint8_t seq_num, Message_t *msg)
+{
+    LOG_DEBUG("Receiving consecutive frames: tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, seq_num: %u", msg->tx_id, msg->rx_id, msg->service_id, seq_num);
+    
+    while (is_can_message_available())
+    {
+        unsigned long actual_rx_id;
+        uint8_t rxLen;
+        
+        _bus->readMsgBufID(&actual_rx_id, &rxLen, rxBuffer);
+
+        if(is_next_consecutive_frame(msg, actual_rx_id, msg->tx_id, seq_num, msg->service_id, msg->data_id))
+        {
+            if(handle_consecutive_frame(msg) == 0)
+            {
+                if(msg->tp_state == ISOTP_FINISHED)
+                {
+                  return 0;
+                }
+                else if(msg->tp_state == ISOTP_ERROR)
+                {
+                  return 1;
+                }
+                else if(msg->tp_state == ISOTP_WAIT_DATA)
+                {
+                  continue;
+                }
+            }
+        }
+        else 
+        {
+          LOG_WARN("Received unexpected consecutive frame: rx_id=0x%lX, tx_id=0x%lX, seq_num=%u", actual_rx_id, msg->tx_id, seq_num);
+        }
+    }
+}
+
 uint8_t IsoTp::receive(Message_t *msg)
 {
   reset_state();
@@ -276,19 +305,12 @@ uint8_t IsoTp::receive(Message_t *msg)
 
   while ((millis() - startTime) < TIMEOUT_SESSION)
   {
-    // Keep reading all available frames
     while (is_can_message_available())
     {
       unsigned long actual_rx_id;
             
       _bus->readMsgBufID(&actual_rx_id, &rxLen, rxBuffer);
 
-      // Check for UDS Negative Response (0x7F)
-      // A UDS negative response typically has: 
-      // rxBuffer[0] = PCI (e.g. Single Frame type and length)
-      // rxBuffer[1] = 0x7F (Negative Response SID)
-      // rxBuffer[2] = Original SID that caused the error
-      // rxBuffer[3] = Negative Response Code (NRC)
       if (rxLen >= 4 && rxBuffer[1] == UDS_NEGATIVE_RESPONSE) {
         
         msg->tp_state = ISOTP_ERROR;
@@ -299,19 +321,18 @@ uint8_t IsoTp::receive(Message_t *msg)
         return 1;
       }
 
+      if (actual_rx_id != msg->rx_id) {
+        continue; 
+      }
+
       uint8_t pciType = rxBuffer[0] & 0xF0;
 
       if(pciType == N_PCI_FF) // First Frame
       {
-        LOG_DEBUG("Received first frame: rx_id=0x%lX, tx_id=0x%lX", actual_rx_id, msg->tx_id);
-        
         first_frame_received = true;  
 
         if(handle_first_frame(msg) == 0)
         {
-          //NB: First frame received and processed successfully
-          //Reset timeout
-          startTime = millis();
           continue;
         }
       }
@@ -321,33 +342,10 @@ uint8_t IsoTp::receive(Message_t *msg)
         uint8_t seq_num = rxBuffer[0] & 0x0F;
         
         LOG_DEBUG("Received consecutive frame: rx_id=0x%lX, tx_id=0x%lX, seq_num=%u", actual_rx_id, msg->tx_id, seq_num);
+        
+        receive_all_consecutive_frames(seq_num, msg);
 
-        //NB: Check if the received frame is the next expected frame, this is done to prevent out of order frames
-        if(first_frame_received && is_next_consecutive_frame(msg, actual_rx_id, msg->tx_id, seq_num, msg->service_id, msg->data_id))
-        {
-          if(handle_consecutive_frame(msg) == 0)
-          {
-            if(msg->tp_state == ISOTP_FINISHED)
-            {
-              //NB: Message received and processed successfully, happpy day.
-              return 0;
-            }
-            else if(msg->tp_state == ISOTP_ERROR)
-            {
-              //NB: Message received and processed failed, sad day.
-              return 1;
-            }
-            else if(msg->tp_state == ISOTP_WAIT_DATA)
-            {
-              //NB: Message received and processed successfully, happpy day.
-              continue;
-            }
-          }
-        }
-        else 
-        {
-          LOG_WARN("Received unexpected consecutive frame: rx_id=0x%lX, tx_id=0x%lX, seq_num=%u", actual_rx_id, msg->tx_id, seq_num);
-        }
+        continue;
       }
       else if(pciType == N_PCI_SF) // Single Frame
       {

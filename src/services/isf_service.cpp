@@ -211,18 +211,16 @@ bool IsfService::beginSend()
             switch (request.service_id)
             {
                 case UDS_SID_READ_DATA_BY_ID:
-                    payload[0] = (request.did >> 8) & 0xFF; // DID high byte
-                    payload[1] = request.did & 0xFF;        // DID low byte
-                    request.dataLength = 2;
-                    break;
+                    //Not Supported
+                    continue;
 
                 case OBD_MODE_SHOW_CURRENT_DATA:
-                    payload[0] = request.did & 0xFF; // Single-byte PID
-                    request.dataLength = 1;
-                    break;
+                    //Not Supported
+                    continue;
 
                 case UDS_SID_TESTER_PRESENT:
-                    break;
+                    //Not Supported
+                    continue;
 
                 case UDS_SID_READ_DATA_BY_LOCAL_ID:              // Techstream SID for Local Identifier requests
                     payload[0] = 0x02;                           // Length of the remaining bytes
@@ -233,7 +231,7 @@ bool IsfService::beginSend()
     
                 default:
                     LOG_ERROR("Unsupported UDS service ID for ISO-TP: %02X", request.service_id);
-                    break; // Skip unknown services
+                    continue;
             }
 
             // Prepare the final UDS message. Length is 1 byte for SID + data length.
@@ -252,8 +250,6 @@ bool IsfService::beginSend()
     }
     return true;
 }
-    
-
 
 bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
 {
@@ -268,6 +264,8 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
         return false;
     }
  
+    vTaskDelay(pdMS_TO_TICKS(10));
+
     retval = isotp->receive(&msg);
     if (retval != 0) {
         Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
@@ -299,65 +297,46 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
         // Some ECUs don't follow standard UDS protocol and may use different internal service IDs
         // Toyota/Lexus ECUs often respond with 0x02 for ReadDataByLocalID (0x21) requests
         if (msg.Buffer[1] != request.service_id) {
-            // Special case: if we sent 0x21 and got back 0x02, accept it as valid
-            if (request.service_id == 0x21 && msg.Buffer[1] == 0x02) {
-                LOG_INFO("Received non-standard negative response with service ID 0x02 for 0x21 request - accepting as valid");
-                // Continue processing - this is a known quirk of some ECUs
-            } else {
-                LOG_WARN("Negative response for wrong service: expected 0x%02X, got 0x%02X", request.service_id, msg.Buffer[1]);
-                return false;
-            }
+           LOG_WARN("Negative response for wrong service: expected 0x%02X, got 0x%02X", request.service_id, msg.Buffer[1]);
+           return false;
         }
         
-        // Log the negative response code with its string representation
         extern const char* getUdsErrorString(uint8_t errorCode); // Declare the function from iso_tp.cpp
-        LOG_WARN("ECU returned negative response 0x%02X (%s) for service 0x%02X", 
-                 msg.Buffer[2], getUdsErrorString(msg.Buffer[2]), msg.Buffer[1]);
+        LOG_WARN("ECU returned negative response 0x%02X (%s) for service 0x%02X", msg.Buffer[2], getUdsErrorString(msg.Buffer[2]), msg.Buffer[1]);
         
-        // Handle specific negative response codes
-        if (msg.Buffer[2] == UDS_NRC_RESPONSE_PENDING) {
-            LOG_INFO("ECU reports 'Response Pending' - might need to retry");
-            // Consider implementing a retry mechanism here
-        }
-        
-        // Acknowledge negative response and continue processing
-        return false;
-    }
-    // Check for positive response (SID+0x40)
-    else if(msg.Buffer[0] != UDS_POSITIVE_RESPONSE(request.service_id))
-    {
-        LOG_WARN("Invalid response type: 0x%02X, expected positive (0x%02X) or negative (0x7F)", 
-                 msg.Buffer[0], UDS_POSITIVE_RESPONSE(request.service_id));
         return false;
     }
     
-    // For positive responses, validate the data_id
-    if(msg.data_id != request.did)
+    if(msg.Buffer[0] != UDS_POSITIVE_RESPONSE(request.service_id))
     {
-        LOG_WARN("data_id mismatched, expected: 0x%02X, actual: 0x%02X", request.did, msg.data_id);
+        LOG_WARN("Invalid response type: 0x%02X, expected positive (0x%02X) or negative (0x7F)", msg.Buffer[0], UDS_POSITIVE_RESPONSE(request.service_id));
         return false;
     }
     
-    //Now we 100% sure that the response is valid and which we expect, so we can process it.
-    if (processUdsResponse(msg.Buffer, msg.length, request))
-    {
-        LOG_INFO("UDS response parsed successfully. %s", request.param_name);
-        return true;
-    }
-    else
-    {
-        LOG_WARN("Failed to parse UDS response data. %s", request.param_name);
-        return false;
-    }
+    // if(msg.data_id != request.did)
+    // {
+    //     LOG_WARN("data_id mismatched, expected: 0x%02X, actual: 0x%02X", request.did, msg.data_id);
+    //     return false;
+    // }
     
-    return false;
+    // if (processUdsResponse(msg.Buffer, msg.length, request))
+    // {
+    //     LOG_INFO("UDS response parsed successfully. %s", request.param_name);
+    //     return true;
+    // }
+    // else
+    // {
+    //     LOG_WARN("Failed to parse UDS response data. %s", request.param_name);
+    //     return false;
+    // }
+    
+    return true;
 }
 
 bool IsfService::processUdsResponse(uint8_t *data, uint8_t length, const UDSRequest &request)
 {
     if (data == nullptr || length == 0)
     {
-        //This should never happen, highlights a coding error
         LOG_ERROR("Invalid UDS response data");
         return false;
     }
@@ -365,12 +344,12 @@ bool IsfService::processUdsResponse(uint8_t *data, uint8_t length, const UDSRequ
     //For now we only support Read Data By Local ID and Read Data By ID
     switch (request.service_id)
     {
-    case UDS_SID_READ_DATA_BY_LOCAL_ID: // Local Identifier (Techstream)
-    case UDS_SID_READ_DATA_BY_ID:
-        return transformResponse(data, length, request);
-    default:
-        LOG_ERROR("Unsupported response SID: %02X", request.service_id);
-        return false;
+        case UDS_SID_READ_DATA_BY_LOCAL_ID: // Local Identifier (Techstream)
+        case UDS_SID_READ_DATA_BY_ID:
+            return transformResponse(data, length, request);
+        default:
+            LOG_ERROR("Unsupported response SID: %02X", request.service_id);
+            return false;
     }
 }
 
@@ -419,16 +398,14 @@ uint32_t extract_raw_data(
 
     if (byte_pos < 0 || byte_pos >= data_len)
     {
-        LOG_ERROR("Byte position out of range: %d (needs 1 byte, buffer len = %d) for parameter: %s",
-                      byte_pos, data_len, parameter_name.c_str());
+        LOG_ERROR("Byte position out of range: %d (needs 1 byte, buffer len = %d) for parameter: %s", byte_pos, data_len, parameter_name.c_str());
         return 0;
     }
 
     int max_bytes = (bit_offset + bit_length + 7) / 8;
     if (byte_pos + max_bytes > data_len)
     {
-        LOG_ERROR("Byte position out of range: %d (needs %d bytes, buffer len = %d) for parameter: %s",
-                      byte_pos, max_bytes, data_len, parameter_name.c_str());
+        LOG_ERROR("Byte position out of range: %d (needs %d bytes, buffer len = %d) for parameter: %s", byte_pos, max_bytes, data_len, parameter_name.c_str());
         return 0;
     }
 
