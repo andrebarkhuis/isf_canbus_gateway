@@ -55,7 +55,7 @@ const CANMessage isf_pid_session_requests[] = {
 const UDSRequest isf_uds_requests[] = {
 
     //Default pid to 0 for now since we making the uds requests using the local id data identifier.
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-1" },
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-1", .dataLength = 4 },
     // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-2" },
     // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-3" },
     // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-3" },
@@ -99,7 +99,7 @@ private:
     IsoTp *isotp = nullptr;
     
     // Flag to track if a UDS request is currently in progress
-    bool isUdsRequestInProgress = false;
+    bool is_session_active = false;
     
     // Response buffer for UDS communications
     uint8_t udsResponseBuffer[MAX_MSGBUF];

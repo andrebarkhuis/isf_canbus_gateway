@@ -102,7 +102,7 @@ void setup()
     Serial.println("Starting setup.");
 
     pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, HIGH); // Assume active LOW
+    digitalWrite(LED_BUILTIN, HIGH);
 
     // Initialize the serial mutex
     serialMutex = xSemaphoreCreateMutex();

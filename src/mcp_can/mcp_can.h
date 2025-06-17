@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _MCP_CAN_H
+#define _MCP_CAN_H
 
 #include <stdint.h>
 #include "mcp_can.h"
@@ -96,3 +97,5 @@ public:
     byte isExtendedFrame(void);                                                 // did we recieve 29bit frame?
     byte peekMsgId(unsigned long *ID, byte *ext);
 };
+
+#endif

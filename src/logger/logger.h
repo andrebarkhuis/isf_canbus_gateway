@@ -1,15 +1,11 @@
-#pragma once
+#ifndef _LOGGER_H
+#define _LOGGER_H
 
 #include <Arduino.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "../common.h"
 #include <string>
-
-#define LOG_ERROR 1
-#define LOG_WARN 2
-#define LOG_INFO 3
-#define LOG_DEBUG 4
 
 class Logger
 {
@@ -24,7 +20,7 @@ public:
 
     static void setMutex(SemaphoreHandle_t mutex);
     static SemaphoreHandle_t getMutex();
-    static void begin(int level = LOG_INFO, unsigned long baudRate = 115200);
+    static void begin(int level = 1, unsigned long baudRate = 115200);
 
     static void error(const char* func, const char *format, ...);
     static void warn(const char* func, const char *format, ...);
@@ -42,3 +38,5 @@ private:
 #define LOG_WARN(format, ...) Logger::warn(__FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_INFO(format, ...) Logger::info(__FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_DEBUG(format, ...) Logger::debug(__FUNCTION__, format, ##__VA_ARGS__)
+
+#endif

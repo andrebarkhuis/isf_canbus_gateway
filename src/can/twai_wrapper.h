@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _TWAI_WRAPPER_H
+#define _TWAI_WRAPPER_H
 
 #include <Arduino.h>
 #include <driver/twai.h>
@@ -75,3 +76,5 @@ public:
      */
     bool receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len, bool &extended);
 };
+
+#endif

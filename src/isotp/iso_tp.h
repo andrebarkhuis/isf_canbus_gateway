@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ISOTP_H
+#define _ISOTP_H
 
 #include "../mcp_can/mcp_can.h"
 #include "../common.h"
@@ -25,6 +26,7 @@
 #define TIMEOUT_SESSION 1000 /* Timeout between successful send and receive (N_As) */
 #define TIMEOUT_FC 1000      /* Timeout between FF and FC or Block CF and FC (N_Bs) */
 #define TIMEOUT_CF 1000      /* Timeout between CFs (N_Cr) */
+#define TIMEOUT_FRAME_WAIT 250 /* Timeout to wait for next frame if none available */
 #define MAX_FCWAIT_FRAME 128
 
 #define MAX_MSGBUF 128 /* Received Message Buffer. Depends on uC ressources! Should be enough for our needs */
@@ -111,7 +113,7 @@ public:
 private:
   MCP_CAN *_bus;
   
-  bool is_can_message_available(void);
+  bool can_read_message(unsigned long &rxId, uint8_t &rxLen, uint8_t *rxBuffer);
   bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
   void handle_udsError(uint8_t serviceId, uint8_t nrc_code); 
   bool handle_first_frame(Message_t *msg, uint8_t rxBuffer[]);
@@ -119,3 +121,5 @@ private:
   bool send_flow_control(struct Message_t *msg);
   bool send_single_frame(struct Message_t *msg);
 };
+
+#endif

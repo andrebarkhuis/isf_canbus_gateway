@@ -81,7 +81,7 @@ bool IsfService::initialize()
     init_udsDefinitions();
 
     // Create MCP_CAN with specific CS pin
-    mcp = new MCP_CAN();
+    mcp = new MCP_CAN(10);
     if (mcp == nullptr)
     {
         LOG_ERROR("Failed to create MCP_CAN instance.");
@@ -171,7 +171,6 @@ void IsfService::listen()
 #ifdef LED_BUILTIN
     digitalWrite(LED_BUILTIN, HIGH);
 #endif
-
     unsigned long current_time = millis();
 
     // if (current_time - last_diagnostic_session_time_ >= 3000) 
@@ -193,8 +192,7 @@ void IsfService::listen()
 
 bool IsfService::beginSend()
 {
-    // If a UDS request is already in progress, don't start a new one
-    if (isUdsRequestInProgress) {
+    if (is_session_active) {
         LOG_DEBUG("UDS request already in progress, skipping new send");
         return false;
     }
@@ -237,6 +235,7 @@ bool IsfService::beginSend()
     
                 default:
                     LOG_ERROR("Unsupported UDS service ID for ISO-TP: %02X", request.service_id);
+                    vTaskDelay(pdMS_TO_TICKS(1));
                     continue;
             }
 
@@ -252,7 +251,7 @@ bool IsfService::beginSend()
             lastUdsRequestTime[i] = currentTime;
 
             //Delay to avoid flooding the bus
-            vTaskDelay(pdMS_TO_TICKS(50));
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
     }
     return true;
@@ -260,28 +259,30 @@ bool IsfService::beginSend()
 
 bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
 {
-    // Set flag to indicate a UDS request is in progress
-    isUdsRequestInProgress = true;
+    is_session_active = true;
     
     Logger::logUdsMessage("[sendUdsRequest] BEGIN Sending message.", &msg);
 
     if (!isotp->send(&msg))
     {
         Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
+        is_session_active = false;
         return false;
     }
  
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(5));
 
     if (!isotp->receive(&msg))
     {
         Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
+        is_session_active = false;
         return false;
     }
     
     if (msg.length < 3) 
     {
         Logger::logUdsMessage("[sendUdsRequest] Incomplete response frame.", &msg);
+        is_session_active = false;
         return false;
     }
     
@@ -296,9 +297,8 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
     //     LOG_WARN("Failed to parse UDS response data. %s", request.param_name);
     //     return false;
     // }
-    
-    // Clear flag to indicate UDS request is complete
-    isUdsRequestInProgress = false;
+
+    is_session_active = false;
     
     return true;
 }
