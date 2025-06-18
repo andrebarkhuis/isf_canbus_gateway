@@ -53,6 +53,23 @@ struct Message_t
   //The state of the message.
   isotp_states_t tp_state = ISOTP_IDLE;
 
+  void reset()
+  {
+    length = 0;
+    sequence_number = 1;
+    next_sequence = 1;
+    bytes_received = 0;
+    remaining_bytes = 0;
+    blocksize = 0;
+    tx_id = 0;
+    rx_id = 0;
+    service_id = 0;
+    data_id = 0;
+    Buffer = nullptr;
+    tp_state = ISOTP_IDLE;
+  }
+
+
   std::string getStateStr() const
   {
     switch (tp_state)

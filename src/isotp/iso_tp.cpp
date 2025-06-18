@@ -123,7 +123,7 @@ bool IsoTp::send_flow_control(struct Message_t *msg)
 
   TxBuf[0] = (N_PCI_FC | ISOTP_FC_CTS); // Explicitly Clear To Send (0x30)
   TxBuf[1] = 0x00;                      // No block size limit
-  TxBuf[2] = 0x00;                      // No separation time required
+  TxBuf[2] = 0x10;                      // 10ms separation time required
 
   uint8_t result = _bus->sendMsgBuf(msg->tx_id, 0, 8, reinterpret_cast<byte *>(TxBuf)); // Cast to byte*
   if (result != 0) 
@@ -224,9 +224,8 @@ bool IsoTp::receive(Message_t *msg)
         
         uint8_t nrc_code = rxBuffer[3];
         handle_udsError(rxServiceId, nrc_code);
-        
-        vTaskDelay(pdMS_TO_TICKS(1));
-
+       
+        msg->reset();
         return false;
       }
 
@@ -235,8 +234,6 @@ bool IsoTp::receive(Message_t *msg)
       if(pciType == N_PCI_SF) // Single Frame
       {
         LOG_DEBUG("Single Frame received");
-
-        vTaskDelay(pdMS_TO_TICKS(1));
 
         return handle_single_frame(msg, rxBuffer);
       }
@@ -258,6 +255,7 @@ bool IsoTp::receive(Message_t *msg)
         }
         else
         {
+          msg->reset();
           return false;
         }
 
@@ -309,14 +307,14 @@ bool IsoTp::receive(Message_t *msg)
             else 
             { 
               msg->tp_state = ISOTP_WAIT_DATA;
-              vTaskDelay(pdMS_TO_TICKS(1));
               continue;
             }
         }
       }
 
-      vTaskDelay(pdMS_TO_TICKS(10));
+      vTaskDelay(pdMS_TO_TICKS(1));
     }
 
+  msg->reset();
   return false;
 }
