@@ -81,7 +81,7 @@ bool IsfService::initialize()
     init_udsDefinitions();
 
     // Create MCP_CAN with specific CS pin
-    mcp = new MCP_CAN(10);
+    mcp = new MCP_CAN();
     if (mcp == nullptr)
     {
         LOG_ERROR("Failed to create MCP_CAN instance.");
@@ -264,6 +264,14 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
     }
  
     vTaskDelay(pdMS_TO_TICKS(5));
+
+    msg.tp_state = ISOTP_WAIT_FC;
+    msg.bytes_received = 0;
+    msg.remaining_bytes = 0;
+    msg.sequence_number = 0;
+    msg.next_sequence = 0;
+    msg.blocksize = 0;
+    memset(msg.Buffer, 0, sizeof(msg.Buffer));
 
     if (!isotp->receive(&msg))
     {

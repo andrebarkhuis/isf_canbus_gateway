@@ -184,33 +184,39 @@ void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
 
 bool IsoTp::can_read_message(unsigned long &rxId, uint8_t &rxLen, uint8_t *rxBuffer)
 {
-  if (_bus->checkReceive() == CAN_MSGAVAIL) {
-    
-    memset(rxBuffer, 0, 8);
+  bool msgReceived;
+  int mcp_int = 0;
 
-    _bus->readMsgBufID(&rxId, &rxLen, rxBuffer);
-    
+  if (mcp_int)
+    msgReceived = (!digitalRead(mcp_int));                     // IRQ: if pin is low, read receive buffer
+  else
+    msgReceived = (_bus->checkReceive() == CAN_MSGAVAIL);       // No IRQ: poll receive buffer
+
+  if (msgReceived)
+  {
+     memset(rxBuffer,0,sizeof(rxBuffer));       // Cleanup Buffer
+     _bus->readMsgBufID(&rxId, &rxLen, rxBuffer); // Read data: buf = data byte(s)
+
     return true;
   }
-  
+
   return false;
 }
 
 bool IsoTp::receive(Message_t *msg)
 {
-  while(msg->tp_state!=ISOTP_FINISHED && msg->tp_state!=ISOTP_ERROR)
+
+  LOG_DEBUG("Before while loop: state=%s, tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, length: %d", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->service_id, msg->length);
+
+  uint32_t rxId;
+  uint8_t rxLen;
+  uint8_t rxBuffer[8] = {0};
+  uint8_t rxServiceId = rxBuffer[2];
+  uint32_t startTime = millis();
+  
+  while (can_read_message(rxId, rxLen, rxBuffer) && (millis() - startTime) < UDS_TIMEOUT)
   {
-      uint32_t rxId;
-      uint8_t rxLen;
-      uint8_t rxBuffer[8] = {0};
-      uint8_t rxServiceId = rxBuffer[2];
-      
-      if (can_read_message(rxId, rxLen, rxBuffer)==false)
-      {
-        vTaskDelay(pdMS_TO_TICKS(1));
-        LOG_DEBUG("No message available");
-        continue;
-      }
+      LOG_DEBUG("Inside while loop: state=%s, tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, length: %d", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->service_id, msg->length);
     
       if (rxLen >= 4 && rxBuffer[1] == UDS_NEGATIVE_RESPONSE) 
       {
@@ -260,8 +266,6 @@ bool IsoTp::receive(Message_t *msg)
       {
         LOG_DEBUG("Consecutive Frame received");
 
-        vTaskDelay(pdMS_TO_TICKS(1));
-
         //CF example:
         // 21,80,02,00,80,00,00,00
         // 22,00,00,00,00,00,00,00
@@ -271,7 +275,7 @@ bool IsoTp::receive(Message_t *msg)
         // 26,01,00,00,0C,8F,34,1B
 
         uint8_t uds_seq_num = rxBuffer[0] & 0x0F;
-          
+        
         // Check if this is the expected consecutive frame with the correct sequence number
         if(is_next_consecutive_frame(msg, rxId, uds_seq_num, msg->service_id, msg->data_id) && uds_seq_num == msg->next_sequence)
         {
@@ -311,7 +315,7 @@ bool IsoTp::receive(Message_t *msg)
         }
       }
 
-      vTaskDelay(pdMS_TO_TICKS(1));
+      vTaskDelay(pdMS_TO_TICKS(10));
     }
 
   return false;
