@@ -39,7 +39,6 @@ void isfTask(void *parameter)
 
     if (!isfService->initialize())
     {
-
         LOG_ERROR("Failed to initialize ISF CAN");
 
         vTaskDelete(NULL); // Terminate task if init fails
@@ -49,7 +48,6 @@ void isfTask(void *parameter)
     {
         try
         {
-            // The "listen" method is the main loop that receives and sends canbus messages continuously.
             isfService->listen();
         }
         catch (...)
@@ -79,7 +77,6 @@ void gt86Task(void *parameter)
     {
         try
         {
-            // The "listen" method is the main loop that receives and sends canbus messages continuously.
             gt86Service->listen();
         }
         catch (...)

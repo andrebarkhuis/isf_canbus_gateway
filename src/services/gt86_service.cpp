@@ -20,49 +20,17 @@ Gt86Service::~Gt86Service()
 bool Gt86Service::initialize()
 {
     bool result = twaiWrapper->initialize();
-
-// Replace direct Serial print statements with Logger calls
-#ifdef DEBUG_GT86
-    LOG_INFO("running on core %d", xPortGetCoreID());
-#endif
     vTaskDelay(pdMS_TO_TICKS(10));
-
     return result;
 }
 
 void Gt86Service::listen()
 {
-// Check if LED_BUILTIN is defined
-#ifdef LED_BUILTIN
-    // Blink LED to indicate task is running
-    digitalWrite(LED_BUILTIN, HIGH);
-#endif
-
-    // Send periodic messages with proper error handling
-    bool sendResult = sendPidRequests();
-    if (!sendResult)
-    {
-#ifdef DEBUG_GT86
-        LOG_WARN("Error during message sending");
-#endif
-    }
-
+    sendPidRequests();
+    
     vTaskDelay(pdMS_TO_TICKS(5));
 
-    // Process incoming messages with proper error handling
-    bool receiveResult = handleIncomingMessages();
-    if (!receiveResult)
-    {
-#ifdef DEBUG_GT86
-        LOG_WARN("Error during message receiving");
-#endif
-    }
-
-#ifdef LED_BUILTIN
-    digitalWrite(LED_BUILTIN, LOW);
-#endif
-
-    vTaskDelay(pdMS_TO_TICKS(5));
+    handleIncomingMessages();
 }
 
 bool Gt86Service::sendPidRequests()
@@ -72,14 +40,10 @@ bool Gt86Service::sendPidRequests()
 
     for (int i = 0; i < GT86_CAN_MESSAGES_COUNT; i++) // Iterate through all messages
     {
-        // Ensure there's enough time between messages based on their interval
         if (currentTime - lastMessageTime[i] >= GT86_PID_MESSAGES[i].interval)
         {
             if (!twaiWrapper->sendMessage(GT86_PID_MESSAGES[i]))
             {
-#ifdef DEBUG_GT86
-                LOG_WARN("Failed to send message ID: 0x%x", GT86_PID_MESSAGES[i].id);
-#endif
                 success = false;
             }
             else
@@ -107,13 +71,9 @@ bool Gt86Service::handleIncomingMessages()
     bool extended;
     int messagesProcessed = 0;
 
-    // Process messages with a reasonable limit
     while (twaiWrapper->receiveMessage(id, data, len, extended) && messagesProcessed < 5)
     {
         messagesProcessed++;
-#ifdef DEBUG_GT86
-        Logger::logCANMessage("[GT86:handleIncomingMessages]", id, data, len, true, false);
-#endif
     }
     return success;
 }

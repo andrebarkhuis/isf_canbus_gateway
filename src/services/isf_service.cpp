@@ -164,13 +164,9 @@ bool IsfService::initialize_diagnostic_session()
  * This method should be called periodically from a task loop to:
  * 1. Send scheduled UDS requests to the ECU
  * 2. Process incoming CAN messages
- * 3. Blink activity LED to indicate operation
  */
 void IsfService::listen()
 {
-#ifdef LED_BUILTIN
-    digitalWrite(LED_BUILTIN, HIGH);
-#endif
     unsigned long current_time = millis();
 
     // if (current_time - last_diagnostic_session_time_ >= 3000) 
@@ -181,12 +177,9 @@ void IsfService::listen()
     //     }
     //     last_diagnostic_session_time_ = current_time;
     // }
-    
+        
     beginSend();
 
-#ifdef LED_BUILTIN
-    digitalWrite(LED_BUILTIN, LOW);
-#endif
     vTaskDelay(pdMS_TO_TICKS(5)); 
 }
 
