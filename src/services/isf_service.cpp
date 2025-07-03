@@ -190,62 +190,56 @@ bool IsfService::beginSend()
         return false;
     }
 
-    unsigned long currentTime = millis();
     for (int i = 0; i < ISF_UDS_REQUESTS_SIZE; i++)
     {
-        if (currentTime - lastUdsRequestTime[i] >= isf_uds_requests[i].interval)
+        UDSRequest request = isf_uds_requests[i];
+
+        Message_t msg_to_send;
+        msg_to_send.tx_id = request.tx_id;
+        msg_to_send.rx_id = request.rx_id;
+        msg_to_send.service_id = request.service_id;
+        msg_to_send.data_id = request.did;
+
+        uint8_t payload[8] = {0};
+
+        switch (request.service_id)
         {
-            UDSRequest request = isf_uds_requests[i];
+            case UDS_SID_READ_DATA_BY_ID:
+                //Not Supported
+                continue;
 
-            Message_t msg_to_send;
-            msg_to_send.tx_id = request.tx_id;
-            msg_to_send.rx_id = request.rx_id;
-            msg_to_send.service_id = request.service_id;
-            msg_to_send.data_id = request.did;
+            case OBD_MODE_SHOW_CURRENT_DATA:
+                //Not Supported
+                continue;
 
-            uint8_t payload[8] = {0};
+            case UDS_SID_TESTER_PRESENT:
+                //Not Supported
+                continue;
 
-            switch (request.service_id)
-            {
-                case UDS_SID_READ_DATA_BY_ID:
-                    //Not Supported
-                    continue;
+            case UDS_SID_READ_DATA_BY_LOCAL_ID:              // Techstream SID for Local Identifier requests
+                payload[0] = 0x02;                           // Length of the remaining bytes
+                payload[1] = UDS_SID_READ_DATA_BY_LOCAL_ID;  // Use defined SID instead of hardcoded value
+                payload[2] = isf_uds_requests[i].did & 0xFF; // Identifier (0x01, 0xE1, etc.)
+                request.dataLength = 3;                      // SID + Identifier + length byte
+                break;
 
-                case OBD_MODE_SHOW_CURRENT_DATA:
-                    //Not Supported
-                    continue;
-
-                case UDS_SID_TESTER_PRESENT:
-                    //Not Supported
-                    continue;
-
-                case UDS_SID_READ_DATA_BY_LOCAL_ID:              // Techstream SID for Local Identifier requests
-                    payload[0] = 0x02;                           // Length of the remaining bytes
-                    payload[1] = UDS_SID_READ_DATA_BY_LOCAL_ID;  // Use defined SID instead of hardcoded value
-                    payload[2] = isf_uds_requests[i].did & 0xFF; // Identifier (0x01, 0xE1, etc.)
-                    request.dataLength = 3;                      // SID + Identifier + length byte
-                    break;
-    
-                default:
-                    LOG_ERROR("Unsupported UDS service ID for ISO-TP: %02X", request.service_id);
-                    vTaskDelay(pdMS_TO_TICKS(1));
-                    continue;
-            }
-
-            // Prepare the final UDS message. Length is 1 byte for SID + data length.
-            msg_to_send.length = 1 + request.dataLength;
-            uint8_t uds_frame_payload[msg_to_send.length];
-            uds_frame_payload[0] = request.service_id;
-            memcpy(uds_frame_payload + 1, payload, request.dataLength);
-            msg_to_send.Buffer = uds_frame_payload;
-
-            sendUdsRequest(msg_to_send, request);
-            
-            lastUdsRequestTime[i] = currentTime;
-
-            //Delay to avoid flooding the bus
-            vTaskDelay(pdMS_TO_TICKS(10));
+            default:
+                LOG_ERROR("Unsupported UDS service ID for ISO-TP: %02X", request.service_id);
+                vTaskDelay(pdMS_TO_TICKS(1));
+                continue;
         }
+
+        // Prepare the final UDS message. Length is 1 byte for SID + data length.
+        msg_to_send.length = 1 + request.dataLength;
+        uint8_t uds_frame_payload[msg_to_send.length];
+        uds_frame_payload[0] = request.service_id;
+        memcpy(uds_frame_payload + 1, payload, request.dataLength);
+        msg_to_send.Buffer = uds_frame_payload;
+
+        sendUdsRequest(msg_to_send, request);
+        
+        //Delay to avoid flooding the bus
+        vTaskDelay(pdMS_TO_TICKS(10000));
     }
     return true;
 }
@@ -260,34 +254,29 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
     {
         Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
         is_session_active = false;
+        msg.reset();
         return false;
     }
- 
-    vTaskDelay(pdMS_TO_TICKS(5));
-
-    msg.tp_state = ISOTP_WAIT_FC;
-    msg.bytes_received = 0;
-    msg.remaining_bytes = 0;
-    msg.sequence_number = 0;
-    msg.next_sequence = 0;
-    msg.blocksize = 0;
-    memset(msg.Buffer, 0, sizeof(msg.Buffer));
+     
+    msg.reset();
 
     if (!isotp->receive(&msg))
     {
         Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
         is_session_active = false;
+        msg.reset();    
         return false;
     }
     
-    if (msg.length < 3) 
-    {
-        Logger::logUdsMessage("[sendUdsRequest] Incomplete response frame.", &msg);
-        is_session_active = false;
-        return false;
-    }
+    // if (msg.length < 3) 
+    // {
+    //     Logger::logUdsMessage("[sendUdsRequest] Incomplete response frame.", &msg);
+    //     is_session_active = false;
+    //     msg.reset();
+    //     return false;
+    // }
     
-    //Logger::logUdsMessage("[sendUdsRequest] Received response", &msg);
+    // Logger::logUdsMessage("[sendUdsRequest] Received response", &msg);
     // if (processUdsResponse(msg.Buffer, msg.length, request))
     // {
     //     LOG_INFO("UDS response parsed successfully. %s", request.param_name);

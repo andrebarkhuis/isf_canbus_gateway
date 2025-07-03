@@ -45,13 +45,13 @@ bool IsoTp::is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id
     
     // All criteria must match for a valid transaction
     if (idsMatch && serviceIdMatch && dataIdMatch) {
-      // LOG_DEBUG("CF received: sequence number received: %u, expected sequence number: %u, received service ID: 0x%X, expected service ID: 0x%X, received data ID: 0x%X, expected data ID: 0x%X", 
-      //   actual_seq_num, msg->next_sequence, actual_serviceId, msg->service_id, actual_data_id, msg->data_id);
+      LOG_DEBUG("CF received: sequence number received: %u, expected sequence number: %u, received service ID: 0x%X, expected service ID: 0x%X, received data ID: 0x%X, expected data ID: 0x%X", 
+        actual_seq_num, msg->next_sequence, actual_serviceId, msg->service_id, actual_data_id, msg->data_id);
       return true;
     }
 
-    // LOG_WARN("Unexpected CF received: sequence number received: %u, expected sequence number: %u, received service ID: 0x%X, expected service ID: 0x%X, received data ID: 0x%X, expected data ID: 0x%X", 
-    //   actual_seq_num, msg->next_sequence, actual_serviceId, msg->service_id, actual_data_id, msg->data_id);
+    LOG_WARN("Unexpected CF received: sequence number received: %u, expected sequence number: %u, received service ID: 0x%X, expected service ID: 0x%X, received data ID: 0x%X, expected data ID: 0x%X", 
+      actual_seq_num, msg->next_sequence, actual_serviceId, msg->service_id, actual_data_id, msg->data_id);
 
     return false;
 }
@@ -150,9 +150,7 @@ bool IsoTp::send_single_frame(struct Message_t *msg)
   }
 
   uint8_t TxBuf[8] = {0};
-
   TxBuf[0] = N_PCI_SF | (msg->length & 0x0F);
-
   memcpy(TxBuf + 1, msg->Buffer, msg->length);
 
   uint8_t result = _bus->sendMsgBuf(msg->tx_id, 0, 8, reinterpret_cast<byte *>(TxBuf)); // Cast to byte*
@@ -184,30 +182,17 @@ void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
 
 bool IsoTp::can_read_message(unsigned long &rxId, uint8_t &rxLen, uint8_t *rxBuffer)
 {
-  bool msgReceived;
-  int mcp_int = 0;
+    int val = _bus->readMsgBufID(&rxId, &rxLen, rxBuffer); // Read data: buf = data byte(s)
+    if (val == CAN_MSGAVAIL)
+    {
+      return true;
+    }
 
-  if (mcp_int)
-    msgReceived = (!digitalRead(mcp_int));                     // IRQ: if pin is low, read receive buffer
-  else
-    msgReceived = (_bus->checkReceive() == CAN_MSGAVAIL);       // No IRQ: poll receive buffer
-
-  if (msgReceived)
-  {
-     memset(rxBuffer,0,sizeof(rxBuffer));       // Cleanup Buffer
-     _bus->readMsgBufID(&rxId, &rxLen, rxBuffer); // Read data: buf = data byte(s)
-
-    return true;
-  }
-
-  return false;
+    return false;
 }
 
 bool IsoTp::receive(Message_t *msg)
 {
-
-  LOG_DEBUG("Before while loop: state=%s, tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, length: %d", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->service_id, msg->length);
-
   uint32_t rxId;
   uint8_t rxLen;
   uint8_t rxBuffer[8] = {0};
@@ -221,11 +206,8 @@ bool IsoTp::receive(Message_t *msg)
       if (rxLen >= 4 && rxBuffer[1] == UDS_NEGATIVE_RESPONSE) 
       {
         msg->tp_state = ISOTP_ERROR;
-        
         uint8_t nrc_code = rxBuffer[3];
         handle_udsError(rxServiceId, nrc_code);
-       
-        msg->reset();
         return false;
       }
 
@@ -306,6 +288,8 @@ bool IsoTp::receive(Message_t *msg)
             } 
             else 
             { 
+              //Wait for next Consecutive Frame
+              startTime = millis();
               msg->tp_state = ISOTP_WAIT_DATA;
               continue;
             }

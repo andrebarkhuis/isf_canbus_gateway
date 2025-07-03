@@ -56,8 +56,8 @@ struct Message_t
   void reset()
   {
     length = 0;
-    sequence_number = 1;
-    next_sequence = 1;
+    sequence_number = 0;
+    next_sequence = 0;
     bytes_received = 0;
     remaining_bytes = 0;
     blocksize = 0;
@@ -65,8 +65,8 @@ struct Message_t
     rx_id = 0;
     service_id = 0;
     data_id = 0;
-    Buffer = nullptr;
     tp_state = ISOTP_IDLE;
+    memset(Buffer, 0, sizeof(Buffer));
   }
 
 

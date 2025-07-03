@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _ISF_SERVICE_H
+#define _ISF_SERVICE_H
 
 #include <Arduino.h>
 #include "../common.h"
@@ -110,3 +111,5 @@ private:
     // Timestamp for the last diagnostic session initialization
     unsigned long last_diagnostic_session_time_ = 0;
 };
+
+#endif // _ISF_SERVICE_H
