@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include "../common.h"
-#include "../mcp_can/mcp_can.h"
+#include "../can/twai_wrapper.h"
 #include "../isotp/iso_tp.h"
 
 
@@ -42,7 +42,7 @@ enum UnitType {
     UNIT_MASS_AIR_FLOW = 75 // MAF Sensors (filtered & raw values)
 };
 
-class MCP_CAN;
+class TwaiWrapper;
 class IsoTp;
 
 #define DEBUG_ISF
@@ -94,7 +94,7 @@ private:
     bool transformResponse(uint8_t *data, uint8_t length, const UDSRequest &request);
 
     // CAN bus interface for communication with ECUs
-    MCP_CAN *mcp = nullptr;
+    TwaiWrapper *twai = nullptr;
 
     // ISO-TP protocol handler for multi-frame messaging
     IsoTp *isotp = nullptr;

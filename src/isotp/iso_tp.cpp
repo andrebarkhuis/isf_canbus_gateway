@@ -1,11 +1,11 @@
 #include <SPI.h>
 #include <Arduino.h>
 #include "iso_tp.h"
-#include "../mcp_can/mcp_can.h"
+#include "../can/twai_wrapper.h"
 #include "../logger/logger.h"
 
 
-IsoTp::IsoTp(MCP_CAN *bus)
+IsoTp::IsoTp(TwaiWrapper *bus)
 {
   _bus = bus;
 }

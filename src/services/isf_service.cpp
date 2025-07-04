@@ -1,5 +1,5 @@
 #include "isf_service.h"
-#include "../mcp_can/mcp_can.h"
+#include "../can/twai_wrapper.h"
 #include "../logger/logger.h"
 #include "../uds/uds_mapper.h"
 #include "../isotp/iso_tp.h"
@@ -63,7 +63,7 @@ IsfService::IsfService()
 IsfService::~IsfService()
 {
     delete isotp;
-    delete mcp;
+    delete twai;
     delete[] lastUdsRequestTime; // Clean up the array
 }
 
@@ -80,32 +80,32 @@ bool IsfService::initialize()
     // Initialize UDS response mappings
     init_udsDefinitions();
 
-    // Create MCP_CAN with specific CS pin
-    mcp = new MCP_CAN();
-    if (mcp == nullptr)
+    // Create TwaiWrapper instance
+    twai = new TwaiWrapper();
+    if (twai == nullptr)
     {
-        LOG_ERROR("Failed to create MCP_CAN instance.");
+        LOG_ERROR("Failed to create TwaiWrapper instance.");
         return false;
     }
     else
     {
-        LOG_INFO("MCP_CAN instance created successfully.");
+        LOG_INFO("TwaiWrapper instance created successfully.");
     }
 
-    // Initialize the MCP_CAN directly
-    byte initResult = mcp->begin();
-    if (initResult != CAN_OK)
+    // Initialize the TwaiWrapper directly
+    bool initResult = twai->initialize();
+    if (!initResult)
     {
-        LOG_ERROR("MCP_CAN initialization failed. Error code: %d", initResult);
+        LOG_ERROR("TwaiWrapper initialization failed.");
         return false;
     }
     else
     {
-        LOG_INFO("MCP_CAN initialized successfully. Code: %d", initResult);
+        LOG_INFO("TwaiWrapper initialized successfully.");
     }
 
     // Create IsoTp instance
-    isotp = new IsoTp(mcp);
+    isotp = new IsoTp(twai);
     if (isotp == nullptr)
     {
         LOG_ERROR("Failed to create IsoTp instance.");
@@ -141,10 +141,13 @@ bool IsfService::initialize_diagnostic_session()
     {
         LOG_INFO("Sending diagnostic session message to ID: 0x%X", isf_pid_session_requests[i].id);
         
-        bool failed = mcp->sendMsgBuf(isf_pid_session_requests[i].id,
-                                        isf_pid_session_requests[i].extended ? 1 : 0,
-                                        isf_pid_session_requests[i].len,
-                                        const_cast<byte *>(isf_pid_session_requests[i].data));
+        CANMessage msg;
+        msg.id = isf_pid_session_requests[i].id;
+        msg.extended = isf_pid_session_requests[i].extended;
+        msg.length = isf_pid_session_requests[i].len;
+        memcpy(msg.data, isf_pid_session_requests[i].data, msg.length);
+        
+        bool failed = !twai->sendMessage(msg);
         if (failed)
         {
             LOG_ERROR("Failed to send session request for ID: 0x%X", isf_pid_session_requests[i].id);

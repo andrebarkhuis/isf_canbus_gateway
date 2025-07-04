@@ -1,7 +1,7 @@
 #ifndef _ISOTP_H
 #define _ISOTP_H
 
-#include "../mcp_can/mcp_can.h"
+#include "../can/twai_wrapper.h"
 #include "../common.h"
 #include <stdint.h> // Add explicit include for standard integer types
 
@@ -106,12 +106,12 @@
 class IsoTp
 {
 public:
-  IsoTp(MCP_CAN *bus);
+    IsoTp(TwaiWrapper *bus);
   bool send(Message_t *msg);
   bool receive(Message_t *msg);
   
 private:
-  MCP_CAN *_bus;
+    TwaiWrapper *_bus;
   
   bool can_read_message(unsigned long &rxId, uint8_t &rxLen, uint8_t *rxBuffer);
   bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
