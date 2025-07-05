@@ -20,10 +20,14 @@ bool TwaiWrapper::initialize()
     // Configure TWAI driver with proper casting for GPIO pins
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)TWAI_TX, (gpio_num_t)TWAI_RX, TWAI_MODE_NORMAL);
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS(); // 500 kbps
-    twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+    twai_filter_config_t filter_config = {
+        .acceptance_code = (static_cast<uint32_t>(0x7E8) << 21),   // Shift into position
+        .acceptance_mask = ~(static_cast<uint32_t>(0x7F0) << 21),  // Only accept 0x7E8–0x7B0 range
+        .single_filter = true               // Use single filter for all RX
+    };
 
     // Install and start TWAI driver
-    esp_err_t result = twai_driver_install(&g_config, &t_config, &f_config);
+    esp_err_t result = twai_driver_install(&g_config, &t_config, &filter_config);
     if (result != ESP_OK)
     {
 #ifdef DEBUG

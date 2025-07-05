@@ -534,21 +534,21 @@ byte MCP_CAN::begin()
 
     byte res = mcp2515_init(CAN_500KBPS);
 
-    // Write full masks
-    write_Mask(0, 0, 0x7FF);
-    write_Mask(1, 0, 0x7FF);
+    // // Write full masks
+    // write_Mask(0, 0, 0x7FF);
+    // write_Mask(1, 0, 0x7FF);
 
-    // Write filters
-    write_Filt(0, 0, 0x7E8);
-    write_Filt(1, 0, 0x7E0);
-    write_Filt(2, 0, 0x7C8);
-    write_Filt(3, 0, 0x7C0);
-    write_Filt(4, 0, 0x7B8);
-    write_Filt(5, 0, 0x7B0);
+    // // Write filters
+    // write_Filt(0, 0, 0x7E8);
+    // write_Filt(1, 0, 0x7E0);
+    // write_Filt(2, 0, 0x7C8);
+    // write_Filt(3, 0, 0x7C0);
+    // write_Filt(4, 0, 0x7B8);
+    // write_Filt(5, 0, 0x7B0);
 
-    delay(5);
+    // delay(5);
 
-    res = mcp2515_setCANCTRL_Mode(MODE_NORMAL);
+    // res = mcp2515_setCANCTRL_Mode(MODE_NORMAL);
 
     return ((res == MCP2515_OK) ? CAN_OK : CAN_FAILINIT);
 }
