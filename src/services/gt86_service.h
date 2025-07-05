@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../can/twai_wrapper.h"
+#include "../mcp_can/mcp_can.h"
 #include "../common.h"
 
 // GT86 CAN messages to be sent periodically
@@ -62,7 +62,7 @@ const int GT86_CAN_MESSAGES_COUNT = sizeof(GT86_PID_MESSAGES) / sizeof(GT86_PID_
 class Gt86Service
 {
 private:
-    TwaiWrapper *twaiWrapper;
+    MCP_CAN *mcp; // Using MCP_CAN library for CAN communication
 
 
     unsigned long *lastMessageTime;
@@ -78,6 +78,6 @@ private:
 public:
     Gt86Service();
     ~Gt86Service();
-    bool initialize();
-    void listen();
+    bool initialize(); // Initialize MCP_CAN controller
+    void listen(); // Periodically send PID requests and process incoming messages
 };

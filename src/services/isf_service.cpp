@@ -139,18 +139,14 @@ bool IsfService::initialize_diagnostic_session()
     
     for (int i = 0; i < SESSION_REQUESTS_SIZE; i++)
     {
-        LOG_INFO("Sending diagnostic session message to ID: 0x%X", isf_pid_session_requests[i].id);
+        CANMessage msg = isf_pid_session_requests[i];
+
+        LOG_INFO("Sending diagnostic session message to ID: 0x%X", msg.id);
         
-        CANMessage msg;
-        msg.id = isf_pid_session_requests[i].id;
-        msg.extended = isf_pid_session_requests[i].extended;
-        msg.length = isf_pid_session_requests[i].len;
-        memcpy(msg.data, isf_pid_session_requests[i].data, msg.length);
-        
-        bool failed = !twai->sendMessage(msg);
+        bool failed = !twai->sendMessage(msg.id, msg.data, (uint8_t)msg.len, msg.extended);
         if (failed)
         {
-            LOG_ERROR("Failed to send session request for ID: 0x%X", isf_pid_session_requests[i].id);
+            LOG_ERROR("Failed to send session request for ID: 0x%X", msg.id);
 
             return false;
         }

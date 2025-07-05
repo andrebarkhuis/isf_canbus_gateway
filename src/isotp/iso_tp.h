@@ -111,7 +111,7 @@ public:
   bool receive(Message_t *msg);
   
 private:
-    TwaiWrapper *_bus;
+    TwaiWrapper *_twaiWrapper;
   
   bool can_read_message(unsigned long &rxId, uint8_t &rxLen, uint8_t *rxBuffer);
   bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);

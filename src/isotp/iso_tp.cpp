@@ -7,7 +7,7 @@
 
 IsoTp::IsoTp(TwaiWrapper *bus)
 {
-  _bus = bus;
+  _twaiWrapper = bus;
 }
 
 
@@ -108,6 +108,7 @@ bool IsoTp::handle_single_frame(Message_t *msg, uint8_t rxBuffer[])
     data_id = (rxBuffer[2] << 8) | (msg->length >= 4 ? rxBuffer[3] : 0);
   }
   
+  //Read the data into the buffer
   memcpy(msg->Buffer, rxBuffer + 1, msg->length); // Skip PCI, SF uses len bytes
     
   LOG_DEBUG("Single frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, service_id=0x%X, data_id=0x%X", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->length, service_id, data_id);
@@ -125,7 +126,7 @@ bool IsoTp::send_flow_control(struct Message_t *msg)
   TxBuf[1] = 0x00;                      // No block size limit
   TxBuf[2] = 0x10;                      // 10ms separation time required
 
-  uint8_t result = _bus->sendMsgBuf(msg->tx_id, 0, 8, reinterpret_cast<byte *>(TxBuf)); // Cast to byte*
+  uint8_t result = _twaiWrapper->sendMessage(msg->tx_id, reinterpret_cast<byte *>(TxBuf), (uint8_t)8, false); // Cast to byte*
   if (result != 0) 
   {
     msg->tp_state = ISOTP_ERROR;
@@ -153,7 +154,7 @@ bool IsoTp::send_single_frame(struct Message_t *msg)
   TxBuf[0] = N_PCI_SF | (msg->length & 0x0F);
   memcpy(TxBuf + 1, msg->Buffer, msg->length);
 
-  uint8_t result = _bus->sendMsgBuf(msg->tx_id, 0, 8, reinterpret_cast<byte *>(TxBuf)); // Cast to byte*
+  uint8_t result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8, false); // Cast to byte*
   if (result != 0) 
   {
     msg->tp_state = ISOTP_ERROR;
@@ -163,7 +164,7 @@ bool IsoTp::send_single_frame(struct Message_t *msg)
 
   msg->tp_state = ISOTP_FINISHED;
 
-  LOG_DEBUG("Single-frame sent: tx_id: 0x%lX, rx_id: 0x%lX, length: %d, service_id: 0x%02X", msg->tx_id, msg->rx_id, msg->length, msg->service_id);
+  LOG_DEBUG("Single-frame sent: tx_id: 0x%lX, rx_id: 0x%lX, length: %d, service_id: 0x%02X", msg->tx_id, msg->rx_id, 8, msg->service_id);
   
   return true;
 }
@@ -182,12 +183,6 @@ void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
 
 bool IsoTp::can_read_message(unsigned long &rxId, uint8_t &rxLen, uint8_t *rxBuffer)
 {
-    int val = _bus->readMsgBufID(&rxId, &rxLen, rxBuffer); // Read data: buf = data byte(s)
-    if (val == CAN_MSGAVAIL)
-    {
-      return true;
-    }
-
     return false;
 }
 

@@ -1,4 +1,5 @@
 #include "twai_wrapper.h"
+#include <string.h>
 #include "../logger/logger.h"
 
 // Ensure constructor is properly defined
@@ -28,7 +29,6 @@ bool TwaiWrapper::initialize()
 #ifdef DEBUG
         LOG_ERROR("Failed to install TWAI driver: %d", result);
 #endif
-
         return false;
     }
 
@@ -38,7 +38,6 @@ bool TwaiWrapper::initialize()
 #ifdef DEBUG
         LOG_ERROR("Failed to start TWAI driver: %d", result);
 #endif
-
         return false;
     }
 
@@ -49,20 +48,19 @@ bool TwaiWrapper::initialize()
     return true;
 }
 
-bool TwaiWrapper::sendMessage(const CANMessage &msg)
+bool TwaiWrapper::sendMessage(uint32_t id, uint8_t *data, uint8_t len, bool extended)
 {
-    // Prepare TWAI message
-    twai_message_t twai_msg = {};
-    twai_msg.identifier = msg.id;
-    twai_msg.extd = msg.extended ? 1 : 0;
-    twai_msg.data_length_code = msg.len;
-    memcpy(twai_msg.data, msg.data, msg.len);
+    twai_message_t msg;
+    msg.identifier = id;
+    msg.extd = extended ? 1 : 0;
+    msg.data_length_code = len;
+    memcpy(msg.data, data, len);
 
     // Send message with a timeout
-    esp_err_t result = twai_transmit(&twai_msg, pdMS_TO_TICKS(100)); // 100ms timeout
+    esp_err_t result = twai_transmit(&msg, pdMS_TO_TICKS(10)); // 10ms timeout
 
 #ifdef DEBUG
-    Logger::logCANMessage(BUS_NAME, msg.id, msg.data, msg.len, (result == ESP_OK), true);
+    Logger::logCANMessage(BUS_NAME, msg.identifier, msg.data, msg.data_length_code, (result == ESP_OK), true);
 #endif
 
 #ifdef DEBUG

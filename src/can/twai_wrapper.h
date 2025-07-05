@@ -20,7 +20,7 @@ class TwaiWrapper
 {
 private:
     /** Bus identifier for logging purposes */
-    static constexpr const char *BUS_NAME = "GT86";
+    static constexpr const char *BUS_NAME = "ISF";
 
     /** GPIO pin for TWAI TX (transmit) */
     static const unsigned TWAI_TX = 7;
@@ -60,18 +60,21 @@ public:
     /**
      * @brief Send a CAN message to the GT86 CAN bus
      *
-     * @param msg CANMessage object containing ID, data, and length
+     * @param id Reference to the ID of the message to send
+     * @param data Buffer to the data to send
+     * @param len Reference to the length of the data to send
+     * @param extended Reference to whether the message used extended ID
      * @return true if message was sent successfully
      */
-    bool sendMessage(const CANMessage &msg);
+    bool sendMessage(uint32_t id, uint8_t *data, uint8_t len, bool extended);
 
     /**
      * @brief Check if a CAN message is available and receive it
      *
-     * @param id Reference to store the received ID
-     * @param data Buffer to store the received data
-     * @param len Reference to store the received data length
-     * @param extended Reference to store whether the message used extended ID
+     * @param id Reference to the ID of the received message
+     * @param data Buffer to the data of the received message
+     * @param len Reference to the length of the data of the received message
+     * @param extended Reference to whether the message used extended ID
      * @return true if a message was received
      */
     bool receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len, bool &extended);

@@ -4,24 +4,25 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 
+
 Gt86Service::Gt86Service()
 {
-    twaiWrapper = new TwaiWrapper();                                // Make sure to initialize the pointer
-    lastMessageTime = new unsigned long[GT86_CAN_MESSAGES_COUNT](); // () initializes all elements to 0
+    mcp = new MCP_CAN(10); // Initialize MCP_CAN with CS pin 10
+    lastMessageTime = new unsigned long[GT86_CAN_MESSAGES_COUNT](); // initialize all elements to 0
 }
 
 Gt86Service::~Gt86Service()
 {
     // Clean up dynamically allocated objects
-    delete twaiWrapper;
+    delete mcp;
     delete[] lastMessageTime;
 }
 
 bool Gt86Service::initialize()
 {
-    bool result = twaiWrapper->initialize();
+    byte res = mcp->begin();
     vTaskDelay(pdMS_TO_TICKS(10));
-    return result;
+    return res == CAN_OK;
 }
 
 void Gt86Service::listen()
@@ -40,9 +41,11 @@ bool Gt86Service::sendPidRequests()
 
     for (int i = 0; i < GT86_CAN_MESSAGES_COUNT; i++) // Iterate through all messages
     {
-        if (currentTime - lastMessageTime[i] >= GT86_PID_MESSAGES[i].interval)
+        CANMessage msg = GT86_PID_MESSAGES[i];
+        
+        if (currentTime - lastMessageTime[i] >= msg.interval)
         {
-            if (!twaiWrapper->sendMessage(GT86_PID_MESSAGES[i]))
+            if (mcp->sendMsgBuf(msg.id, static_cast<byte>(msg.extended), msg.len, (byte *)msg.data) != CAN_OK)
             {
                 success = false;
             }
@@ -71,7 +74,7 @@ bool Gt86Service::handleIncomingMessages()
     bool extended;
     int messagesProcessed = 0;
 
-    while (twaiWrapper->receiveMessage(id, data, len, extended) && messagesProcessed < 5)
+    while (mcp->checkReceive() == CAN_MSGAVAIL && messagesProcessed < 5)
     {
         messagesProcessed++;
     }
