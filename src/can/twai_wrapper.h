@@ -6,9 +6,8 @@
 #include "../logger/logger.h"
 #include "../common.h"
 
-// #ifndef DEBUG
-// #define DEBUG  // Enable debug mode
-// #endif
+#define TWAI_DEBUG  0// Enable debug mode
+#define TWAI_INFO_PRINT 0
 
 /**
  * @brief Specialized wrapper for ESP32's TWAI (Two-Wire Automotive Interface) CAN controller
@@ -19,9 +18,6 @@
 class TwaiWrapper
 {
 private:
-    /** Bus identifier for logging purposes */
-    static constexpr const char *BUS_NAME = "ISF";
-
     /** GPIO pin for TWAI TX (transmit) */
     static const unsigned TWAI_TX = 7;
 

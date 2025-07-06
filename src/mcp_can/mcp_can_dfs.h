@@ -6,7 +6,7 @@
 #include <inttypes.h>
 
 // if print debug information
-//#define DEBUG_EN        0
+#define DEBUG_MCP_CAN        0
 
 // Begin mt
 

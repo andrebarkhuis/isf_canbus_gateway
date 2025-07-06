@@ -68,10 +68,10 @@ bool Gt86Service::sendPidRequests()
 bool Gt86Service::handleIncomingMessages()
 {
     bool success = true;
-    uint32_t id;
-    uint8_t data[8];
-    uint8_t len;
-    bool extended;
+    // uint32_t id;
+    // uint8_t data[8];
+    // uint8_t len;
+    // bool extended;
     int messagesProcessed = 0;
 
     while (mcp->checkReceive() == CAN_MSGAVAIL && messagesProcessed < 5)

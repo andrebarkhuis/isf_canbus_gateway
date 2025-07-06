@@ -5,8 +5,8 @@
 #include "../common.h"
 #include <stdint.h> // Add explicit include for standard integer types
 
-// #define ISO_TP_DEBUG
-// #define ISO_TP_INFO_PRINT
+#define ISO_TP_DEBUG 0
+#define ISO_TP_INFO_PRINT 0
 
 #define CAN_MAX_DLEN 8 // Not extended CAN
 
