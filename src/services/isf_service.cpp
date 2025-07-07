@@ -247,11 +247,15 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
 {
     is_session_active = true;
     
-    Logger::logUdsMessage("[sendUdsRequest] BEGIN Sending message.", &msg);
+    #ifdef DEBUG_ISF
+        Logger::logUdsMessage("[sendUdsRequest] BEGIN Sending message.", &msg);
+    #endif
 
     if (!isotp->send(&msg))
     {
-        Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
+        #ifdef DEBUG_ISF
+            Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
+        #endif
         is_session_active = false;
         msg.reset();
         return false;
@@ -261,7 +265,9 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
 
     if (!isotp->receive(&msg))
     {
-        Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
+        #ifdef DEBUG_ISF
+            Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
+        #endif
         is_session_active = false;
         msg.reset();    
         return false;
@@ -351,20 +357,26 @@ uint32_t extract_raw_data(
 {
     if (!data)
     {
-        LOG_ERROR("Null data pointer for parameter: %s", parameter_name.c_str());
+        #ifdef DEBUG_ISF
+            LOG_ERROR("Null data pointer for parameter: %s", parameter_name.c_str());
+        #endif
         return 0;
     }
 
     if (byte_pos < 0 || byte_pos >= data_len)
     {
-        LOG_ERROR("Byte position out of range: %d (needs 1 byte, buffer len = %d) for parameter: %s", byte_pos, data_len, parameter_name.c_str());
+        #ifdef DEBUG_ISF
+            LOG_ERROR("Byte position out of range: %d (needs 1 byte, buffer len = %d) for parameter: %s", byte_pos, data_len, parameter_name.c_str());
+        #endif
         return 0;
     }
 
     int max_bytes = (bit_offset + bit_length + 7) / 8;
     if (byte_pos + max_bytes > data_len)
     {
-        LOG_ERROR("Byte position out of range: %d (needs %d bytes, buffer len = %d) for parameter: %s", byte_pos, max_bytes, data_len, parameter_name.c_str());
+        #ifdef DEBUG_ISF
+            LOG_ERROR("Byte position out of range: %d (needs %d bytes, buffer len = %d) for parameter: %s", byte_pos, max_bytes, data_len, parameter_name.c_str());
+        #endif
         return 0;
     }
 

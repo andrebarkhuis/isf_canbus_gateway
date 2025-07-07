@@ -3,6 +3,9 @@
 #include "../mcp_can/mcp_can.h"
 #include "../common.h"
 
+
+//#define DEBUG_GT86_SERVICE        0
+
 // GT86 CAN messages to be sent periodically
 const CANMessage GT86_PID_MESSAGES[] = {
     // CAN ID: 0xD1 (209) - Vehicle Speed & Brake Data

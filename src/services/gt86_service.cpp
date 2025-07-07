@@ -21,7 +21,9 @@ Gt86Service::~Gt86Service()
 bool Gt86Service::initialize()
 {
     byte res = mcp->begin();
-    LOG_INFO("MCP_CAN initialized with result: %d", res);
+    #ifdef DEBUG_GT86_SERVICE
+        LOG_INFO("MCP_CAN initialized with result: %d", res);
+    #endif
     vTaskDelay(pdMS_TO_TICKS(10));
     return res == CAN_OK;
 }
@@ -49,12 +51,16 @@ bool Gt86Service::sendPidRequests()
             
             if (mcp->sendMsgBuf(msg.id, 0, 8, reinterpret_cast<byte *>(msg.data)) != CAN_OK)
             {
-                LOG_ERROR("Failed to send message ID: 0x%X, %s", msg.id, msg.param_name.c_str());
+                #ifdef DEBUG_GT86_SERVICE
+                    LOG_ERROR("Failed to send message ID: 0x%X, %s", msg.id, msg.param_name.c_str());
+                #endif
                 success = false;
             }
             else
             {
-                LOG_INFO("Sent message ID: 0x%X, %s", msg.id, msg.param_name.c_str());
+                #ifdef DEBUG_GT86_SERVICE
+                    LOG_INFO("Sent message ID: 0x%X, %s", msg.id, msg.param_name.c_str());
+                #endif
                 lastMessageTime[i] = currentTime;
             }
 

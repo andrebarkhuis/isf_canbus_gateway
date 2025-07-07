@@ -170,8 +170,8 @@ bool IsoTp::send_single_frame(struct Message_t *msg)
   TxBuf[0] = N_PCI_SF | (msg->length & 0x0F);
   memcpy(TxBuf + 1, msg->Buffer, msg->length);
 
-  uint8_t result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8, false); // Cast to byte*
-  if (result != 0) 
+  bool result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8, false); // Cast to byte*
+  if (!result) 
   {
     msg->tp_state = ISOTP_ERROR;
     #ifdef ISO_TP_DEBUG

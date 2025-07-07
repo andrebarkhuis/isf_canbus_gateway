@@ -60,7 +60,7 @@ bool TwaiWrapper::sendMessage(uint32_t id, uint8_t *data, uint8_t len, bool exte
     msg.data_length_code = len;
     memcpy(msg.data, data, len);
 
-    esp_err_t result = twai_transmit(&msg, pdMS_TO_TICKS(10));
+    esp_err_t result = twai_transmit(&msg, pdMS_TO_TICKS(100));
 
 #ifdef TWAI_DEBUG
     Logger::logCANMessage("TWAI", msg.identifier, msg.data, msg.data_length_code, (result == ESP_OK), true);
