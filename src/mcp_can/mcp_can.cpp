@@ -548,7 +548,7 @@ byte MCP_CAN::begin()
 
     // delay(5);
 
-    // res = mcp2515_setCANCTRL_Mode(MODE_NORMAL);
+    res = mcp2515_setCANCTRL_Mode(MODE_NORMAL);
 
     return ((res == MCP2515_OK) ? CAN_OK : CAN_FAILINIT);
 }

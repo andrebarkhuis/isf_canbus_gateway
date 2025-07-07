@@ -5,8 +5,8 @@
 #include "../common.h"
 #include <stdint.h> // Add explicit include for standard integer types
 
-#define ISO_TP_DEBUG 0
-#define ISO_TP_INFO_PRINT 0
+//#define ISO_TP_DEBUG 0
+//#define ISO_TP_INFO_PRINT 0
 
 #define CAN_MAX_DLEN 8 // Not extended CAN
 
@@ -113,7 +113,6 @@ public:
 private:
     TwaiWrapper *_twaiWrapper;
   
-  bool can_read_message(unsigned long &rxId, uint8_t &rxLen, uint8_t *rxBuffer);
   bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
   void handle_udsError(uint8_t serviceId, uint8_t nrc_code); 
   bool handle_first_frame(Message_t *msg, uint8_t rxBuffer[]);

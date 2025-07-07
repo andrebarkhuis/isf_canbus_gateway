@@ -21,9 +21,9 @@ bool TwaiWrapper::initialize()
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)TWAI_TX, (gpio_num_t)TWAI_RX, TWAI_MODE_NORMAL);
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS(); // 500 kbps
     twai_filter_config_t filter_config = {
-        .acceptance_code = (static_cast<uint32_t>(0x7E8) << 21),   // Shift into position
-        .acceptance_mask = ~(static_cast<uint32_t>(0x7F0) << 21),  // Only accept 0x7E8–0x7B0 range
-        .single_filter = true               // Use single filter for all RX
+        // .acceptance_code = (static_cast<uint32_t>(0x7E8) << 21),   // Shift into position
+        // .acceptance_mask = ~(static_cast<uint32_t>(0x7F0) << 21),  // Only accept 0x7E8–0x7B0 range
+        // .single_filter = true               // Use single filter for all RX
     };
 
     // Install and start TWAI driver
@@ -60,8 +60,7 @@ bool TwaiWrapper::sendMessage(uint32_t id, uint8_t *data, uint8_t len, bool exte
     msg.data_length_code = len;
     memcpy(msg.data, data, len);
 
-    // Send message with a timeout
-    esp_err_t result = twai_transmit(&msg, pdMS_TO_TICKS(10)); // 10ms timeout
+    esp_err_t result = twai_transmit(&msg, pdMS_TO_TICKS(10));
 
 #ifdef TWAI_DEBUG
     Logger::logCANMessage("TWAI", msg.identifier, msg.data, msg.data_length_code, (result == ESP_OK), true);
@@ -78,14 +77,12 @@ bool TwaiWrapper::receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len, bool
 {
     twai_message_t twai_msg;
 
-    // Try to receive a message with timeout
-    esp_err_t result = twai_receive(&twai_msg, pdMS_TO_TICKS(10)); // 10ms timeout
+    esp_err_t result = twai_receive(&twai_msg, pdMS_TO_TICKS(10));
     if (result != ESP_OK)
     {
-        return false; // No message received
+        return false;
     }
 
-    // Fill the output parameters
     id = twai_msg.identifier;
     extended = twai_msg.extd;
     len = twai_msg.data_length_code;

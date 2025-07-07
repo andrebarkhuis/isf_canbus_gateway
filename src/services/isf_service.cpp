@@ -166,7 +166,7 @@ bool IsfService::initialize_diagnostic_session()
  */
 void IsfService::listen()
 {
-    unsigned long current_time = millis();
+    //unsigned long current_time = millis();
 
     // if (current_time - last_diagnostic_session_time_ >= 3000) 
     // {
@@ -238,7 +238,7 @@ bool IsfService::beginSend()
         sendUdsRequest(msg_to_send, request);
         
         //Delay to avoid flooding the bus
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
     return true;
 }

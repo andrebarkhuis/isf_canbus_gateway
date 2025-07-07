@@ -134,7 +134,6 @@ void setup()
 
 void loop()
 {
-
     if (isfTaskHandle != NULL && eTaskGetState(isfTaskHandle) == eDeleted)
     {
         LOG_ERROR("ISF task crashed - attempting restart.");
