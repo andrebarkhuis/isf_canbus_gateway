@@ -1,4 +1,5 @@
 #include "twai_wrapper.h"
+#include "esp_err.h"  // Required for error name helpers
 #include <string.h>
 #include "../logger/logger.h"
 
@@ -17,17 +18,12 @@ TwaiWrapper::~TwaiWrapper()
 
 bool TwaiWrapper::initialize()
 {
-    // Configure TWAI driver with proper casting for GPIO pins
     twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT((gpio_num_t)TWAI_TX, (gpio_num_t)TWAI_RX, TWAI_MODE_NORMAL);
-    twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS(); // 500 kbps
-    twai_filter_config_t filter_config = {
-        // .acceptance_code = (static_cast<uint32_t>(0x7E8) << 21),   // Shift into position
-        // .acceptance_mask = ~(static_cast<uint32_t>(0x7F0) << 21),  // Only accept 0x7E8–0x7B0 range
-        // .single_filter = true               // Use single filter for all RX
-    };
+    g_config.rx_queue_len = 32;
 
-    // Install and start TWAI driver
-    esp_err_t result = twai_driver_install(&g_config, &t_config, &filter_config);
+    twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
+    twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+    esp_err_t result = twai_driver_install(&g_config, &t_config, &f_config);
     if (result != ESP_OK)
     {
 #ifdef TWAI_DEBUG
@@ -77,15 +73,17 @@ bool TwaiWrapper::receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len, bool
 {
     twai_message_t twai_msg;
 
-    esp_err_t result = twai_receive(&twai_msg, pdMS_TO_TICKS(10));
+    esp_err_t result = twai_receive(&twai_msg, pdMS_TO_TICKS(50));
     if (result != ESP_OK)
     {
+        LOG_ERROR("Failed to receive message: %s (%d)", esp_err_to_name(result), result);
         return false;
     }
-
+       
     id = twai_msg.identifier;
     extended = twai_msg.extd;
     len = twai_msg.data_length_code;
+
     memcpy(data, twai_msg.data, len);
 
 #ifdef TWAI_INFO_PRINT

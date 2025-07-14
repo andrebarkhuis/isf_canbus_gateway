@@ -5,7 +5,7 @@
 #include "../common.h"
 #include <stdint.h> // Add explicit include for standard integer types
 
-#define ISO_TP_DEBUG 0
+//#define ISO_TP_DEBUG 0
 #define ISO_TP_INFO_PRINT 0
 
 #define CAN_MAX_DLEN 8 // Not extended CAN
@@ -33,7 +33,7 @@
 
 #define MAX_DATA (MAX_MSGBUF - 1)
 #define UDS_RETRY 3
-#define UDS_TIMEOUT 1000 // 500 -> 5000
+#define UDS_TIMEOUT 10000 // 500 -> 5000
 #define UDS_KEEPALIVE 3000
 
 /* OBD-II Modes */
@@ -107,18 +107,21 @@ class IsoTp
 {
 public:
     IsoTp(TwaiWrapper *bus);
-  bool send(Message_t *msg);
-  bool receive(Message_t *msg);
+    bool send(Message_t *msg);
+    bool receive(Message_t *msg);
   
-private:
+private:  
     TwaiWrapper *_twaiWrapper;
   
-  bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
-  void handle_udsError(uint8_t serviceId, uint8_t nrc_code); 
-  bool handle_first_frame(Message_t *msg, uint8_t rxBuffer[]);
-  bool handle_single_frame(Message_t *msg, uint8_t rxBuffer[]);
-  bool send_flow_control(struct Message_t *msg);
-  bool send_single_frame(struct Message_t *msg);
+    static constexpr std::array<uint32_t, 3> SUPPORTED_DIAGNOSTIC_IDS = { 0x7E8, 0x7E0,0x700 };
+
+    bool isSupportedDiagnosticId(uint32_t rxId);
+    bool is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id);
+    void handle_udsError(uint8_t serviceId, uint8_t nrc_code); 
+    bool handle_first_frame(Message_t *msg, uint8_t rxBuffer[]);
+    bool handle_single_frame(Message_t *msg, uint8_t rxBuffer[]);
+    bool send_flow_control(struct Message_t *msg);
+    bool send_single_frame(struct Message_t *msg);
 };
 
 #endif

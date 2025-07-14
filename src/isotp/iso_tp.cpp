@@ -155,47 +155,40 @@ bool IsoTp::send_flow_control(struct Message_t *msg)
   return true;
 }
 
-bool IsoTp::send_single_frame(struct Message_t *msg)
-{
-  if (msg->length > 7) 
-  {
-    msg->tp_state = ISOTP_ERROR;
-    #ifdef ISO_TP_DEBUG
-      LOG_ERROR("Message too long for single frame: tx_id: 0x%lX, rx_id: 0x%lX, length: %d (max: 7), state: %s", msg->tx_id, msg->rx_id, msg->length, msg->getStateStr().c_str());
-    #endif
-    return false; // Error, too much data for single frame
-  }
-
-  uint8_t TxBuf[8] = {0};
-  TxBuf[0] = N_PCI_SF | (msg->length & 0x0F);
-  memcpy(TxBuf + 1, msg->Buffer, msg->length);
-
-  bool result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8, false); // Cast to byte*
-  if (!result) 
-  {
-    msg->tp_state = ISOTP_ERROR;
-    #ifdef ISO_TP_DEBUG
-      LOG_ERROR("Failed to send single-frame: tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, state: %s", msg->tx_id, msg->rx_id, msg->service_id, msg->getStateStr().c_str());
-    #endif
-    return false;
-  }
-
-  msg->tp_state = ISOTP_FINISHED;
-
-  #ifdef ISO_TP_DEBUG
-    LOG_DEBUG("Single-frame sent: tx_id: 0x%lX, rx_id: 0x%lX, length: %d, service_id: 0x%02X", msg->tx_id, msg->rx_id, 8, msg->service_id);
-  #endif
-  
-  return true;
-}
-
 bool IsoTp::send(Message_t *msg)
 {
     #ifdef ISO_TP_DEBUG
       LOG_DEBUG("Sending UDS message: tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, length: %d", msg->tx_id, msg->rx_id, msg->service_id, msg->length);
     #endif
 
-    return send_single_frame(msg); 
+    if (msg->length > 7) 
+    {
+      msg->tp_state = ISOTP_ERROR;
+      #ifdef ISO_TP_DEBUG
+        LOG_ERROR("Message too long for single frame: tx_id: 0x%lX, rx_id: 0x%lX, length: %d (max: 7), state: %s", msg->tx_id, msg->rx_id, msg->length, msg->getStateStr().c_str());
+      #endif
+      return false; // Error, too much data for single frame
+    }
+  
+    uint8_t TxBuf[8] = {0};
+    TxBuf[0] = N_PCI_SF | (msg->length & 0x0F);
+    memcpy(TxBuf + 1, msg->Buffer, msg->length);
+  
+    bool result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8, false); // Cast to byte*
+    if (!result) 
+    {
+      msg->tp_state = ISOTP_ERROR;
+      #ifdef ISO_TP_DEBUG
+        LOG_ERROR("Failed to send single-frame: tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, state: %s", msg->tx_id, msg->rx_id, msg->service_id, msg->getStateStr().c_str());
+      #endif
+      return false;
+    }
+  
+    msg->tp_state = ISOTP_FINISHED;
+  
+    #ifdef ISO_TP_INFO_PRINT
+    Logger::logUdsMessage("IsoTp:send_single_frame", msg);
+    #endif
 }
 
 void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
@@ -203,34 +196,47 @@ void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
   LOG_ERROR("UDS Negative Response for Service ID 0x%X: %s (0x%X)", serviceId, getUdsErrorString(nrc_code), nrc_code);
 }
 
+bool IsoTp::isSupportedDiagnosticId(uint32_t rxId) {
+  return std::find(SUPPORTED_DIAGNOSTIC_IDS.begin(), SUPPORTED_DIAGNOSTIC_IDS.end(), rxId) != SUPPORTED_DIAGNOSTIC_IDS.end();
+}
+
 bool IsoTp::receive(Message_t *msg)
 {
   uint32_t rxId;
   uint8_t rxLen;
   uint8_t rxBuffer[8] = {0};
-  uint8_t rxServiceId = rxBuffer[2];
   uint32_t startTime = millis();
   bool extended;
 
   while (_twaiWrapper->receiveMessage(rxId, rxBuffer, rxLen, extended) && (millis() - startTime) < UDS_TIMEOUT)
   {
-     #ifdef ISO_TP_DEBUG
-       LOG_DEBUG("Inside while loop: state=%s, tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, length: %d", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->service_id, msg->length);
-     #endif
-    
       if (rxLen >= 4 && rxBuffer[1] == UDS_NEGATIVE_RESPONSE) 
       {
         msg->tp_state = ISOTP_ERROR;
         uint8_t nrc_code = rxBuffer[3];
-        handle_udsError(rxServiceId, nrc_code);
+        handle_udsError(msg->service_id, nrc_code);
         return false;
       }
 
-      uint8_t pciType = rxBuffer[0] & 0xF0;
+      if (!isSupportedDiagnosticId(rxId)) {
+        LOG_DEBUG("Skipping message with ID 0x%lX", rxId);
+        continue;
+      }
+
+      msg->rx_id = rxId;
+      msg->service_id = rxBuffer[2];
+      msg->length = rxLen;
+      memcpy(msg->Buffer, rxBuffer, rxLen);
+
+      #ifdef ISO_TP_INFO_PRINT
+        Logger::logUdsMessage("IsoTp:receive inside while loop", msg);
+      #endif
+     
+     uint8_t pciType = rxBuffer[0] & 0xF0;
 
       if(pciType == N_PCI_SF) // Single Frame
       {
-        #ifdef ISO_TP_DEBUG
+        #ifdef ISO_TP_INFO_PRINT
             LOG_DEBUG("Single Frame received");
         #endif
 
@@ -243,13 +249,13 @@ bool IsoTp::receive(Message_t *msg)
         //FF example:
         //8,10,30,61,21,00,00,00,00
 
-        #ifdef ISO_TP_DEBUG
+        #ifdef ISO_TP_INFO_PRINT
             LOG_DEBUG("First Frame received");
         #endif
 
         if (handle_first_frame(msg, rxBuffer))
         {
-          #ifdef ISO_TP_DEBUG
+          #ifdef ISO_TP_INFO_PRINT
             LOG_DEBUG("First Frame handled successfully, tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, data_id: 0x%02X, sequence: %d", 
             msg->tx_id, msg->rx_id, msg->service_id, msg->data_id, msg->sequence_number);
           #endif
@@ -265,7 +271,7 @@ bool IsoTp::receive(Message_t *msg)
       }
       else if( pciType == N_PCI_CF) // Consecutive Frame
       {
-        #ifdef ISO_TP_DEBUG
+        #ifdef ISO_TP_INFO_PRINT
             LOG_DEBUG("Consecutive Frame received");
         #endif
 
@@ -282,7 +288,7 @@ bool IsoTp::receive(Message_t *msg)
         // Check if this is the expected consecutive frame with the correct sequence number
         if(is_next_consecutive_frame(msg, rxId, uds_seq_num, msg->service_id, msg->data_id) && uds_seq_num == msg->next_sequence)
         {
-            #ifdef ISO_TP_DEBUG
+            #ifdef ISO_TP_INFO_PRINT
               LOG_DEBUG("Matching CF received with expected sequence %u", uds_seq_num);
             #endif
                     

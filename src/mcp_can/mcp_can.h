@@ -10,9 +10,6 @@
 typedef uint8_t byte;
 #endif
 
-// Debug mode - uncomment to enable debug output
-// #define DEBUG_EN 1
-
 #define MAX_CHAR_IN_MESSAGE 8
 
 class MCP_CAN

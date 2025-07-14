@@ -6,8 +6,8 @@
 #include "../logger/logger.h"
 #include "../common.h"
 
-//#define TWAI_DEBUG  0// Enable debug mode
-//#define TWAI_INFO_PRINT 0
+#define TWAI_DEBUG  0// Enable debug mode
+#define TWAI_INFO_PRINT 0
 
 /**
  * @brief Specialized wrapper for ESP32's TWAI (Two-Wire Automotive Interface) CAN controller
@@ -31,6 +31,8 @@ private:
      * from the TWAI driver and logs them appropriately.
      */
     void checkAlerts();
+
+    bool isAcceptedDiagnosticId(uint16_t rxId);
 
 public:
     /**
