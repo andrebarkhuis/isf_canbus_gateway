@@ -54,25 +54,24 @@ const CANMessage isf_pid_session_requests[] = {
 };
 
 const UDSRequest isf_uds_requests[] = {
-
-    //Default pid to 0 for now since we making the uds requests using the local id data identifier.
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-1", .dataLength = 4 },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-2" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-3" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-3" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-4" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x07, .interval = 100, .param_name = "request-5" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x08, .interval = 100, .param_name = "request-6" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x22, .interval = 100, .param_name = "request-7" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x20, .interval = 100, .param_name = "request-7" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-8" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x37, .interval = 100, .param_name = "request-9" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x51, .interval = 100, .param_name = "request-13" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-14" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = UDS_SID_READ_DATA_BY_LOCAL_ID, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-15" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-15" },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xC2, .interval = 150, .param_name = "engine-code" }
+    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-1",  .length = 4, .payload = {0x21, 0x02, 0x21, 0x01 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-2",  .length = 3, .payload = { 0x02, 0x21, 0x03 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-3",  .length = 3, .payload = { 0x02, 0x21, 0x04 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-3",  .length = 3, .payload = { 0x02, 0x21, 0x05 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-4",  .length = 3, .payload = { 0x02, 0x21, 0x06 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x07, .interval = 100, .param_name = "request-5",  .length = 3, .payload = { 0x02, 0x21, 0x07 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x08, .interval = 100, .param_name = "request-6",  .length = 3, .payload = { 0x02, 0x21, 0x08 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x22, .interval = 100, .param_name = "request-7",  .length = 3, .payload = { 0x02, 0x21, 0x22 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x20, .interval = 100, .param_name = "request-7",  .length = 3, .payload = { 0x02, 0x21, 0x20 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-8",  .length = 3, .payload = { 0x02, 0x21, 0x25 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x37, .interval = 100, .param_name = "request-9",  .length = 3, .payload = { 0x02, 0x21, 0x37 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x51, .interval = 100, .param_name = "request-13", .length = 3, .payload = { 0x02, 0x21, 0x51 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-14", .length = 3, .payload = { 0x02, 0x21, 0x82 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-15", .length = 3, .payload = { 0x02, 0x21, 0x83 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-15", .length = 3, .payload = { 0x02, 0x21, 0xE1 } },
+    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xC2, .interval = 150, .param_name = "engine-code", .length = 3, .payload = { 0x02, 0x21, 0xC2 } }
 };
+
 
 const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(isf_pid_session_requests[0]);
 const int ISF_UDS_REQUESTS_SIZE = sizeof(isf_uds_requests) / sizeof(isf_uds_requests[0]);

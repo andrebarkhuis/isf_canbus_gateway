@@ -26,6 +26,8 @@ typedef enum
   ISOTP_ERROR
 } isotp_states_t;
 
+#define MAX_UDS_PAYLOAD_LEN 128
+
 struct Message_t
 {
   //Expected length of the complete uds message with all its Consecutive Frames included.
@@ -49,15 +51,15 @@ struct Message_t
   //The data_id of the message.
   uint16_t data_id = 0;
   //The buffer of the message.
-  uint8_t *Buffer;
+  uint8_t Buffer[MAX_UDS_PAYLOAD_LEN] = {0};
   //The state of the message.
   isotp_states_t tp_state = ISOTP_IDLE;
 
   void reset()
   {
     length = 0;
-    sequence_number = 0;
-    next_sequence = 0;
+    sequence_number = 1;
+    next_sequence = 1;
     bytes_received = 0;
     remaining_bytes = 0;
     blocksize = 0;
@@ -68,7 +70,6 @@ struct Message_t
     tp_state = ISOTP_IDLE;
     memset(Buffer, 0, sizeof(Buffer));
   }
-
 
   std::string getStateStr() const
   {
@@ -100,14 +101,15 @@ struct Message_t
 
 struct UDSRequest
 {
-  uint32_t tx_id; // ecu_id
-  uint32_t rx_id;
-  uint8_t service_id; 
-  uint16_t pid = 0; // using 0 will match all pids in the map
-  uint16_t did = 0; // using 0 will match all dids in the map
-  unsigned long interval;
-  const char *param_name;
-  uint8_t dataLength; // Length of the UDS message payload (e.g., DID, PID, etc.)
+  uint32_t tx_id;         // ECU transmit ID
+  uint32_t rx_id;         // ECU response ID
+  uint8_t service_id;     // UDS service identifier (e.g., 0x21, 0x22, etc.)
+  uint16_t pid = 0;       // OBD PID (optional)
+  uint16_t did = 0;       // UDS DID (optional)
+  unsigned long interval; // Polling interval (e.g., 100ms)
+  const char* param_name; // Display name / label
+  uint8_t length;     // Total length of payload[] (excluding CAN overhead)
+  uint8_t payload[8];     // The actual request payload
 };
 
 namespace ISFCAN

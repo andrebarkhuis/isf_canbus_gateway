@@ -143,7 +143,7 @@ bool IsfService::initialize_diagnostic_session()
 
         LOG_INFO("Sending diagnostic session message to ID: 0x%X", msg.id);
         
-        bool failed = !twai->sendMessage(msg.id, msg.data, (uint8_t)msg.len, msg.extended);
+        bool failed = !twai->sendMessage(msg.id, msg.data, (uint8_t)msg.len);
         if (failed)
         {
             LOG_ERROR("Failed to send session request for ID: 0x%X", msg.id);
@@ -191,55 +191,22 @@ bool IsfService::beginSend()
 
     for (int i = 0; i < ISF_UDS_REQUESTS_SIZE; i++)
     {
-        UDSRequest request = isf_uds_requests[i];
+        const UDSRequest& request = isf_uds_requests[i];
 
         Message_t msg_to_send;
         msg_to_send.tx_id = request.tx_id;
         msg_to_send.rx_id = request.rx_id;
         msg_to_send.service_id = request.service_id;
         msg_to_send.data_id = request.did;
+        msg_to_send.length = request.length;
 
-        uint8_t payload[8] = {0};
-
-        switch (request.service_id)
-        {
-            case UDS_SID_READ_DATA_BY_ID:
-                //Not Supported
-                continue;
-
-            case OBD_MODE_SHOW_CURRENT_DATA:
-                //Not Supported
-                continue;
-
-            case UDS_SID_TESTER_PRESENT:
-                //Not Supported
-                continue;
-
-            case UDS_SID_READ_DATA_BY_LOCAL_ID:              // Techstream SID for Local Identifier requests
-                payload[0] = 0x02;                           // Length of the remaining bytes
-                payload[1] = UDS_SID_READ_DATA_BY_LOCAL_ID;  // Use defined SID instead of hardcoded value
-                payload[2] = isf_uds_requests[i].did & 0xFF; // Identifier (0x01, 0xE1, etc.)
-                request.dataLength = 3;                      // SID + Identifier + length byte
-                break;
-
-            default:
-                LOG_ERROR("Unsupported UDS service ID for ISO-TP: %02X", request.service_id);
-                vTaskDelay(pdMS_TO_TICKS(1));
-                continue;
-        }
-
-        // Prepare the final UDS message. Length is 1 byte for SID + data length.
-        msg_to_send.length = 1 + request.dataLength;
-        uint8_t uds_frame_payload[msg_to_send.length];
-        uds_frame_payload[0] = request.service_id;
-        memcpy(uds_frame_payload + 1, payload, request.dataLength);
-        msg_to_send.Buffer = uds_frame_payload;
+        memcpy(msg_to_send.Buffer, request.payload, request.length);
 
         sendUdsRequest(msg_to_send, request);
-        
-        //Delay to avoid flooding the bus
+
         vTaskDelay(pdMS_TO_TICKS(100));
     }
+
     return true;
 }
 

@@ -130,7 +130,7 @@ bool IsoTp::send_flow_control(uint32_t tx_id)
   TxBuf[1] = 0x00;                      // No block size limit
   TxBuf[2] = 0x00;                      // No separation time required
 
-  bool result = _twaiWrapper->sendMessage(0x7E0, TxBuf, 8, false);
+  bool result = _twaiWrapper->sendMessage(0x7E0, TxBuf, 8);
   if (!result) 
   {
     #ifdef ISO_TP_DEBUG
@@ -162,7 +162,7 @@ bool IsoTp::send(Message_t *msg)
     TxBuf[0] = N_PCI_SF | (msg->length & 0x0F);
     memcpy(TxBuf + 1, msg->Buffer, msg->length);
   
-    bool result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8, false); 
+    bool result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8); 
     if (!result) 
     {
       msg->tp_state = ISOTP_ERROR;
@@ -196,9 +196,8 @@ bool IsoTp::receive(Message_t *msg)
   uint8_t rxLen;
   uint8_t rxBuffer[8] = {0};
   uint32_t startTime = millis();
-  bool extended;
 
-  while (_twaiWrapper->receiveMessage(rxId, rxBuffer, rxLen, extended) && (millis() - startTime) < UDS_TIMEOUT)
+  while (_twaiWrapper->receiveMessage(rxId, rxBuffer, rxLen) && (millis() - startTime) < UDS_TIMEOUT)
   {
       if (rxLen >= 4 && rxBuffer[1] == UDS_NEGATIVE_RESPONSE) 
       {
