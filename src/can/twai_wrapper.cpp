@@ -26,7 +26,7 @@ bool TwaiWrapper::initialize()
     esp_err_t result = twai_driver_install(&g_config, &t_config, &f_config);
     if (result != ESP_OK)
     {
-#ifdef TWAI_DEBUG
+#ifdef TWAI_INFO_PRINT
         LOG_ERROR("Failed to install TWAI driver: %d", result);
 #endif
         return false;
@@ -35,7 +35,7 @@ bool TwaiWrapper::initialize()
     result = twai_start();
     if (result != ESP_OK)
     {
-#ifdef TWAI_DEBUG
+#ifdef TWAI_INFO_PRINT
         LOG_ERROR("Failed to start TWAI driver: %d", result);
 #endif
         return false;
@@ -48,116 +48,34 @@ bool TwaiWrapper::initialize()
     return true;
 }
 
-bool TwaiWrapper::sendMessage(uint32_t id, uint8_t *data, uint8_t len, bool extended)
+bool TwaiWrapper::sendMessage(uint32_t id, uint8_t *data, uint8_t len)
 {
-    twai_message_t msg;
+    twai_message_t msg = {};
     msg.identifier = id;
-    msg.extd = extended ? 1 : 0;
+    msg.extd = 0;
     msg.data_length_code = len;
     memcpy(msg.data, data, len);
 
-    esp_err_t result = twai_transmit(&msg, pdMS_TO_TICKS(100));
-
-#ifdef TWAI_DEBUG
-    Logger::logCANMessage("TWAI", msg.identifier, msg.data, msg.data_length_code, (result == ESP_OK), true);
-#endif
-
-#ifdef TWAI_DEBUG
-    checkAlerts();
-#endif
+    esp_err_t result = twai_transmit(&msg, 10);
 
     return (result == ESP_OK);
 }
 
-bool TwaiWrapper::receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len, bool &extended)
+bool TwaiWrapper::receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len)
 {
     twai_message_t twai_msg;
 
-    esp_err_t result = twai_receive(&twai_msg, pdMS_TO_TICKS(50));
-    if (result != ESP_OK)
+    while (twai_receive(&twai_msg, 0) == ESP_OK) 
     {
-        LOG_ERROR("Failed to receive message: %s (%d)", esp_err_to_name(result), result);
-        return false;
+        id = twai_msg.identifier;
+        len = twai_msg.data_length_code;
+
+        memcpy(data, twai_msg.data, len);
+
+        return true;
     }
-       
-    id = twai_msg.identifier;
-    extended = twai_msg.extd;
-    len = twai_msg.data_length_code;
 
-    memcpy(data, twai_msg.data, len);
-
-#ifdef TWAI_INFO_PRINT
-    Logger::logCANMessage("TWAI", id, data, len, true, false);
-#endif
-
-    return true;
+    return false;
 }
 
-void TwaiWrapper::checkAlerts()
-{
-    uint32_t alerts;
-    esp_err_t alert_result = twai_read_alerts(&alerts, pdMS_TO_TICKS(10));
 
-    // Handle ESP_ERR_TIMEOUT (263) silently as it's expected when no alerts are pending
-    if (alert_result == ESP_ERR_TIMEOUT)
-    {
-        return; // No alerts available, just return silently
-    }
-    else if (alert_result != ESP_OK)
-    {
-        // Only log other errors
-        static unsigned long lastErrorLogTime = 0;
-        unsigned long currentTime = millis();
-
-        // Limit logging frequency to avoid serial spam
-        if (currentTime - lastErrorLogTime > 5000)
-        { // Log once every 5 seconds at most
-#ifdef TWAI_DEBUG
-            LOG_WARN("Failed to read TWAI alerts: %d", alert_result);
-#endif
-            lastErrorLogTime = currentTime;
-        }
-        return;
-    }
-
-    // Check for bus errors
-    if (alerts & TWAI_ALERT_BUS_ERROR)
-    {
-#ifdef TWAI_DEBUG
-        LOG_WARN("Bus error detected on TWAI bus");
-#endif
-    }
-
-    // Check if receive queue is full
-    if (alerts & TWAI_ALERT_RX_QUEUE_FULL)
-    {
-#ifdef TWAI_DEBUG
-        LOG_WARN("Receive queue full on TWAI bus");
-#endif
-    }
-
-    // Check for other important alerts
-    if (alerts & TWAI_ALERT_TX_FAILED)
-    {
-#ifdef TWAI_DEBUG
-        LOG_WARN("TX failed on TWAI bus");
-#endif
-    }
-
-    if (alerts & TWAI_ALERT_ERR_PASS)
-    {
-#ifdef TWAI_DEBUG
-        LOG_WARN("TWAI bus entered error passive state");
-#endif
-    }
-
-    if (alerts & TWAI_ALERT_BUS_OFF)
-    {
-#ifdef TWAI_DEBUG
-        LOG_ERROR("TWAI bus is off - attempting recovery");
-#endif
-        // Attempt to recover the bus
-        twai_stop();
-        twai_start();
-    }
-}

@@ -61,10 +61,9 @@ public:
      * @param id Reference to the ID of the message to send
      * @param data Buffer to the data to send
      * @param len Reference to the length of the data to send
-     * @param extended Reference to whether the message used extended ID
      * @return true if message was sent successfully
      */
-    bool sendMessage(uint32_t id, uint8_t *data, uint8_t len, bool extended);
+    bool sendMessage(uint32_t id, uint8_t *data, uint8_t len);
 
     /**
      * @brief Check if a CAN message is available and receive it
@@ -72,10 +71,9 @@ public:
      * @param id Reference to the ID of the received message
      * @param data Buffer to the data of the received message
      * @param len Reference to the length of the data of the received message
-     * @param extended Reference to whether the message used extended ID
      * @return true if a message was received
      */
-    bool receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len, bool &extended);
+    bool receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len);
 };
 
 #endif

@@ -238,7 +238,7 @@ bool IsfService::beginSend()
         sendUdsRequest(msg_to_send, request);
         
         //Delay to avoid flooding the bus
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
     return true;
 }

@@ -81,21 +81,15 @@ bool IsoTp::handle_first_frame(Message_t *msg, uint8_t rxBuffer[])
    /* copy the first received data bytes */
    memcpy(msg->Buffer,rxBuffer+2,6); // Skip 2 bytes PCI, FF must have 6 bytes!
 
-  #ifdef ISO_TP_DEBUG
-    LOG_DEBUG("First-frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, bytes_received=%u, remaining=%u, service_id=0x%X, data_id=0x%X", 
-           msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, expected_length, 
-           msg->bytes_received, msg->remaining_bytes, ff_service_id, ff_data_id);
-  #endif
+  LOG_DEBUG("First-frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, bytes_received=%u, remaining=%u, service_id=0x%X, data_id=0x%X", 
+        msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, expected_length, 
+        msg->bytes_received, msg->remaining_bytes, ff_service_id, ff_data_id);
 
-  if (!send_flow_control(msg))
+  if (!send_flow_control(msg->tx_id))
   {
     msg->tp_state = ISOTP_ERROR;
 
-    #ifdef ISO_TP_DEBUG
-      LOG_ERROR("Failed to send Flow-Control after First-Frame: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, service_id=0x%X, data_id=0x%X", msg->getStateStr().c_str(), 
-              msg->tx_id, msg->rx_id, expected_length, ff_service_id, ff_data_id);
-    #endif
-    
+    LOG_ERROR("Flow-Control Frame: tx_id=0x%lX", msg->tx_id);
     return false;
   }
   
@@ -120,13 +114,13 @@ bool IsoTp::handle_single_frame(Message_t *msg, uint8_t rxBuffer[])
   memcpy(msg->Buffer, rxBuffer + 1, msg->length); // Skip PCI, SF uses len bytes
     
   #ifdef ISO_TP_DEBUG
-    LOG_DEBUG("Single frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, service_id=0x%X, data_id=0x%X", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->length, service_id, data_id);
+    //LOG_DEBUG("Single frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, service_id=0x%X, data_id=0x%X", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->length, service_id, data_id);
   #endif
 
   return true;
 }
 
-bool IsoTp::send_flow_control(struct Message_t *msg)
+bool IsoTp::send_flow_control(uint32_t tx_id)
 {
   // FC example: 30,00,00,00,00,00,00,00
 
@@ -134,23 +128,17 @@ bool IsoTp::send_flow_control(struct Message_t *msg)
 
   TxBuf[0] = (N_PCI_FC | ISOTP_FC_CTS); // Explicitly Clear To Send (0x30)
   TxBuf[1] = 0x00;                      // No block size limit
-  TxBuf[2] = 0x10;                      // 10ms separation time required
+  TxBuf[2] = 0x00;                      // No separation time required
 
-  uint8_t result = _twaiWrapper->sendMessage(msg->tx_id, reinterpret_cast<byte *>(TxBuf), (uint8_t)8, false); // Cast to byte*
-  if (result != 0) 
+  bool result = _twaiWrapper->sendMessage(0x7E0, TxBuf, 8, false);
+  if (!result) 
   {
-    msg->tp_state = ISOTP_ERROR;
     #ifdef ISO_TP_DEBUG
-      LOG_ERROR("Failed to send flow-control: tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, state: %s", msg->tx_id, msg->rx_id, msg->service_id, msg->getStateStr().c_str());
+    LOG_ERROR("Failed to send Flow-Control Frame: tx_id: 0x%lX", tx_id);
     #endif
+
     return false;
   }
-
-  #ifdef ISO_TP_DEBUG
-    LOG_DEBUG("Flow-control sent: tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X", msg->tx_id, msg->rx_id, msg->service_id);
-  #endif
-
-  msg->tp_state = ISOTP_WAIT_DATA;
 
   return true;
 }
@@ -174,7 +162,7 @@ bool IsoTp::send(Message_t *msg)
     TxBuf[0] = N_PCI_SF | (msg->length & 0x0F);
     memcpy(TxBuf + 1, msg->Buffer, msg->length);
   
-    bool result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8, false); // Cast to byte*
+    bool result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8, false); 
     if (!result) 
     {
       msg->tp_state = ISOTP_ERROR;
@@ -189,6 +177,8 @@ bool IsoTp::send(Message_t *msg)
     #ifdef ISO_TP_INFO_PRINT
     Logger::logUdsMessage("IsoTp:send_single_frame", msg);
     #endif
+
+    return true;
 }
 
 void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
@@ -219,7 +209,9 @@ bool IsoTp::receive(Message_t *msg)
       }
 
       if (!isSupportedDiagnosticId(rxId)) {
-        LOG_DEBUG("Skipping message with ID 0x%lX", rxId);
+        #ifdef ISO_TP_DEBUG
+          //LOG_DEBUG("Skipping message with ID 0x%lX", rxId);
+        #endif
         continue;
       }
 
@@ -227,10 +219,6 @@ bool IsoTp::receive(Message_t *msg)
       msg->service_id = rxBuffer[2];
       msg->length = rxLen;
       memcpy(msg->Buffer, rxBuffer, rxLen);
-
-      #ifdef ISO_TP_INFO_PRINT
-        Logger::logUdsMessage("IsoTp:receive inside while loop", msg);
-      #endif
      
      uint8_t pciType = rxBuffer[0] & 0xF0;
 
@@ -244,8 +232,6 @@ bool IsoTp::receive(Message_t *msg)
       }
       else if( pciType == N_PCI_FF) // First Frame
       {
-        vTaskDelay(pdMS_TO_TICKS(1));
-        
         //FF example:
         //8,10,30,61,21,00,00,00,00
 
@@ -256,10 +242,8 @@ bool IsoTp::receive(Message_t *msg)
         if (handle_first_frame(msg, rxBuffer))
         {
           #ifdef ISO_TP_INFO_PRINT
-            LOG_DEBUG("First Frame handled successfully, tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, data_id: 0x%02X, sequence: %d", 
-            msg->tx_id, msg->rx_id, msg->service_id, msg->data_id, msg->sequence_number);
+            LOG_DEBUG("First Frame handled successfully");
           #endif
-          vTaskDelay(pdMS_TO_TICKS(1));
           continue;
         }
         else

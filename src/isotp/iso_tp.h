@@ -5,7 +5,7 @@
 #include "../common.h"
 #include <stdint.h> // Add explicit include for standard integer types
 
-//#define ISO_TP_DEBUG 0
+#define ISO_TP_DEBUG 0
 #define ISO_TP_INFO_PRINT 0
 
 #define CAN_MAX_DLEN 8 // Not extended CAN
@@ -120,8 +120,7 @@ private:
     void handle_udsError(uint8_t serviceId, uint8_t nrc_code); 
     bool handle_first_frame(Message_t *msg, uint8_t rxBuffer[]);
     bool handle_single_frame(Message_t *msg, uint8_t rxBuffer[]);
-    bool send_flow_control(struct Message_t *msg);
-    bool send_single_frame(struct Message_t *msg);
+    bool send_flow_control(uint32_t tx_id);
 };
 
 #endif
