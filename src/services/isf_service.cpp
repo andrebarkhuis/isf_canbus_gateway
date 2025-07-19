@@ -227,8 +227,6 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
         msg.reset();
         return false;
     }
-     
-    msg.reset();
 
     if (!isotp->receive(&msg))
     {
@@ -259,9 +257,9 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
     //     LOG_WARN("Failed to parse UDS response data. %s", request.param_name);
     //     return false;
     // }
-
-    is_session_active = false;
     
+    msg.reset();
+    is_session_active = false;
     return true;
 }
 

@@ -56,7 +56,7 @@ bool TwaiWrapper::sendMessage(uint32_t id, uint8_t *data, uint8_t len)
     msg.data_length_code = len;
     memcpy(msg.data, data, len);
 
-    esp_err_t result = twai_transmit(&msg, 10);
+    esp_err_t result = twai_transmit(&msg, pdMS_TO_TICKS(5));
 
     return (result == ESP_OK);
 }
@@ -65,16 +65,12 @@ bool TwaiWrapper::receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len)
 {
     twai_message_t twai_msg;
 
-    while (twai_receive(&twai_msg, 0) == ESP_OK) 
-    {
+    if (twai_receive(&twai_msg, pdMS_TO_TICKS(5)) == ESP_OK) {
         id = twai_msg.identifier;
         len = twai_msg.data_length_code;
-
         memcpy(data, twai_msg.data, len);
-
         return true;
     }
-
     return false;
 }
 

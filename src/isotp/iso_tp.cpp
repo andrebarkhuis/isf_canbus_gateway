@@ -114,7 +114,7 @@ bool IsoTp::handle_single_frame(Message_t *msg, uint8_t rxBuffer[])
   memcpy(msg->Buffer, rxBuffer + 1, msg->length); // Skip PCI, SF uses len bytes
     
   #ifdef ISO_TP_DEBUG
-    //LOG_DEBUG("Single frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, service_id=0x%X, data_id=0x%X", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->length, service_id, data_id);
+    LOG_DEBUG("Single frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, service_id=0x%X, data_id=0x%X", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->length, service_id, data_id);
   #endif
 
   return true;
@@ -124,13 +124,15 @@ bool IsoTp::send_flow_control(uint32_t tx_id)
 {
   // FC example: 30,00,00,00,00,00,00,00
 
+  LOG_DEBUG("Flow-Control Frame: tx_id=0x%lX", tx_id);
+
   uint8_t TxBuf[8] = {0};
 
   TxBuf[0] = (N_PCI_FC | ISOTP_FC_CTS); // Explicitly Clear To Send (0x30)
   TxBuf[1] = 0x00;                      // No block size limit
   TxBuf[2] = 0x00;                      // No separation time required
 
-  bool result = _twaiWrapper->sendMessage(0x7E0, TxBuf, 8);
+  bool result = _twaiWrapper->sendMessage(tx_id, TxBuf, 8);
   if (!result) 
   {
     #ifdef ISO_TP_DEBUG
@@ -174,7 +176,7 @@ bool IsoTp::send(Message_t *msg)
   
     msg->tp_state = ISOTP_FINISHED;
   
-    #ifdef ISO_TP_INFO_PRINT
+    #ifdef ISO_TP_DEBUG
     Logger::logUdsMessage("IsoTp:send_single_frame", msg);
     #endif
 
@@ -193,13 +195,21 @@ bool IsoTp::isSupportedDiagnosticId(uint32_t rxId) {
 bool IsoTp::receive(Message_t *msg)
 {
   uint32_t rxId;
-  uint8_t rxLen;
+  uint8_t rxLen = 0;
   uint8_t rxBuffer[8] = {0};
   uint32_t startTime = millis();
 
   while (_twaiWrapper->receiveMessage(rxId, rxBuffer, rxLen) && (millis() - startTime) < UDS_TIMEOUT)
   {
-      if (rxLen >= 4 && rxBuffer[1] == UDS_NEGATIVE_RESPONSE) 
+      if (!isSupportedDiagnosticId(rxId)) {
+        continue;
+      }
+
+      // Safety: Cap rxLen to 8 to prevent buffer overflow
+      if (rxLen > 8) rxLen = 8;
+
+      // Handle UDS Negative Response: [0x03] [0x7F] [original SID] [NRC]
+      if ((rxBuffer[0] & 0xF0) == N_PCI_SF && rxLen >= 4 && rxBuffer[1] == UDS_NEGATIVE_RESPONSE) 
       {
         msg->tp_state = ISOTP_ERROR;
         uint8_t nrc_code = rxBuffer[3];
@@ -207,19 +217,13 @@ bool IsoTp::receive(Message_t *msg)
         return false;
       }
 
-      if (!isSupportedDiagnosticId(rxId)) {
-        #ifdef ISO_TP_DEBUG
-          //LOG_DEBUG("Skipping message with ID 0x%lX", rxId);
-        #endif
-        continue;
-      }
-
       msg->rx_id = rxId;
       msg->service_id = rxBuffer[2];
-      msg->length = rxLen;
+    
+
       memcpy(msg->Buffer, rxBuffer, rxLen);
      
-     uint8_t pciType = rxBuffer[0] & 0xF0;
+      uint8_t pciType = rxBuffer[0] & 0xF0;
 
       if(pciType == N_PCI_SF) // Single Frame
       {
@@ -227,16 +231,13 @@ bool IsoTp::receive(Message_t *msg)
             LOG_DEBUG("Single Frame received");
         #endif
 
+        msg->length = rxLen;
         return handle_single_frame(msg, rxBuffer);
       }
-      else if( pciType == N_PCI_FF) // First Frame
+      else if(pciType == N_PCI_FF) // First Frame
       {
         //FF example:
         //8,10,30,61,21,00,00,00,00
-
-        #ifdef ISO_TP_INFO_PRINT
-            LOG_DEBUG("First Frame received");
-        #endif
 
         if (handle_first_frame(msg, rxBuffer))
         {
@@ -250,14 +251,9 @@ bool IsoTp::receive(Message_t *msg)
           msg->reset();
           return false;
         }
-
       }
-      else if( pciType == N_PCI_CF) // Consecutive Frame
+      else if(pciType == N_PCI_CF) // Consecutive Frame
       {
-        #ifdef ISO_TP_INFO_PRINT
-            LOG_DEBUG("Consecutive Frame received");
-        #endif
-
         //CF example:
         // 21,80,02,00,80,00,00,00
         // 22,00,00,00,00,00,00,00
@@ -271,7 +267,7 @@ bool IsoTp::receive(Message_t *msg)
         // Check if this is the expected consecutive frame with the correct sequence number
         if(is_next_consecutive_frame(msg, rxId, uds_seq_num, msg->service_id, msg->data_id) && uds_seq_num == msg->next_sequence)
         {
-            #ifdef ISO_TP_INFO_PRINT
+            #ifdef ISO_TP_DEBUG
               LOG_DEBUG("Matching CF received with expected sequence %u", uds_seq_num);
             #endif
                     
@@ -304,6 +300,11 @@ bool IsoTp::receive(Message_t *msg)
             if (msg->remaining_bytes == 0) 
             {
               msg->tp_state = ISOTP_FINISHED;
+              #ifdef ISO_TP_INFO_PRINT
+                LOG_DEBUG("Completed: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, bytes_received=%u, remaining=%u, service_id=0x%X, data_id=0x%X", 
+                    msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->length, 
+                    msg->bytes_received, msg->remaining_bytes, msg->service_id, msg->data_id);
+              #endif
               return true;
             } 
             else 
@@ -314,10 +315,18 @@ bool IsoTp::receive(Message_t *msg)
               continue;
             }
         }
+        else
+        {
+            // Unexpected CF, log and skip
+            #ifdef ISO_TP_DEBUG
+              LOG_ERROR("Unexpected CF: got seq %u, expected %u", uds_seq_num, msg->next_sequence);
+            #endif
+            continue;
+        }
       }
 
       vTaskDelay(pdMS_TO_TICKS(1));
-    }
+  }
 
   msg->reset();
   return false;
