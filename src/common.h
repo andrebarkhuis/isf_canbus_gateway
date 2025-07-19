@@ -33,7 +33,7 @@ struct Message_t
   //Expected length of the complete uds message with all its Consecutive Frames included.
   uint16_t length = 0;
   //The current Sequence number of the consecutive frame received.
-  uint8_t sequence_number = 1;
+  uint8_t sequence_number = 0;
   //The next expected sequence number for consecutive frames
   uint8_t next_sequence = 1;
   //Tracks how many bytes have been received so far
@@ -58,7 +58,7 @@ struct Message_t
   void reset()
   {
     length = 0;
-    sequence_number = 1;
+    sequence_number = 0;
     next_sequence = 1;
     bytes_received = 0;
     remaining_bytes = 0;

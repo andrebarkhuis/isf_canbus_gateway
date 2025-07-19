@@ -29,35 +29,9 @@ const char* getUdsErrorString(uint8_t errorCode) {
   } 
 }
 
-bool IsoTp::is_next_consecutive_frame(Message_t *msg, unsigned long actual_rx_id, uint8_t actual_seq_num, uint8_t actual_serviceId, uint16_t actual_data_id)
+bool IsoTp::is_next_consecutive_frame(Message_t *msg, uint8_t actual_seq_num)
 {
-    // Use transaction fingerprinting to validate if this is the next frame in our current transaction
-    // Check if rx_id, service_id, and data_id match our expected transaction
-    
-    // Match the IDs (CAN addressing)
-    bool idsMatch = (actual_rx_id == msg->rx_id);
-    
-    // Match the service ID - typically the response service ID = request service ID + 0x40
-    bool serviceIdMatch = (actual_serviceId == msg->service_id);
-    
-    // Match the data ID - should be the same in request and response
-    bool dataIdMatch = (actual_data_id == msg->data_id);
-    
-    // All criteria must match for a valid transaction
-    if (idsMatch && serviceIdMatch && dataIdMatch) {
-      #ifdef ISO_TP_DEBUG
-        LOG_DEBUG("CF received: sequence number received: %u, expected sequence number: %u, received service ID: 0x%X, expected service ID: 0x%X, received data ID: 0x%X, expected data ID: 0x%X", 
-          actual_seq_num, msg->next_sequence, actual_serviceId, msg->service_id, actual_data_id, msg->data_id);
-      #endif
-      return true;
-    }
-
-    #ifdef ISO_TP_DEBUG
-      LOG_WARN("Unexpected CF received: sequence number received: %u, expected sequence number: %u, received service ID: 0x%X, expected service ID: 0x%X, received data ID: 0x%X, expected data ID: 0x%X", 
-        actual_seq_num, msg->next_sequence, actual_serviceId, msg->service_id, actual_data_id, msg->data_id);
-    #endif
-
-    return false;
+  return actual_seq_num == msg->next_sequence;
 }
 
 bool IsoTp::handle_first_frame(Message_t *msg, uint8_t rxBuffer[])
@@ -75,16 +49,17 @@ bool IsoTp::handle_first_frame(Message_t *msg, uint8_t rxBuffer[])
   msg->tp_state = ISOTP_WAIT_FC;
   msg->bytes_received = 6; // First frame already contains 6 bytes
   msg->remaining_bytes = expected_length - 6; // Remaining bytes to receive
-  msg->sequence_number = 1; // First CF will have sequence number 1;
-  msg->next_sequence = 2;
+  msg->sequence_number = 0; // First CF will have sequence number 1;
+  msg->next_sequence = 1;
 
-   /* copy the first received data bytes */
-   memcpy(msg->Buffer,rxBuffer+2,6); // Skip 2 bytes PCI, FF must have 6 bytes!
+  /* copy the first received data bytes */
+  memcpy(msg->Buffer, rxBuffer + 2, 6);  // Copy first data chunk (after PCI)
 
   LOG_DEBUG("First-frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, bytes_received=%u, remaining=%u, service_id=0x%X, data_id=0x%X", 
-        msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, expected_length, 
-        msg->bytes_received, msg->remaining_bytes, ff_service_id, ff_data_id);
+    msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, expected_length, 
+    msg->bytes_received, msg->remaining_bytes, ff_service_id, ff_data_id);
 
+  //TEST: Confirm. sending to tx_id, could be a toyota implementation. Usually Flow control should be sent to the ECU that responded. msg.rx_id is the ECU that responded.
   if (!send_flow_control(msg->tx_id))
   {
     msg->tp_state = ISOTP_ERROR;
@@ -192,6 +167,56 @@ bool IsoTp::isSupportedDiagnosticId(uint32_t rxId) {
   return std::find(SUPPORTED_DIAGNOSTIC_IDS.begin(), SUPPORTED_DIAGNOSTIC_IDS.end(), rxId) != SUPPORTED_DIAGNOSTIC_IDS.end();
 }
 
+bool IsoTp::handle_consecutive_frame(Message_t *msg, const uint8_t *rxBuffer, uint8_t rxLen)
+{
+    if (rxLen < 2) {
+        // Not enough data to process a CF
+        #ifdef ISO_TP_DEBUG
+            LOG_WARN("CF frame too short: rxLen = %u", rxLen);
+        #endif
+        return false;
+    }
+
+    uint8_t sequence_num = rxBuffer[0] & 0x0F;
+
+    if (sequence_num != msg->next_sequence) {
+        #ifdef ISO_TP_DEBUG
+            LOG_WARN("CF sequence mismatch: got %u, expected %u", sequence_num, msg->next_sequence);
+        #endif
+        return false;
+    }
+
+    uint16_t bytes_to_copy = (msg->remaining_bytes > 7) ? 7 : msg->remaining_bytes;
+    uint16_t offset = msg->bytes_received;
+
+    if (offset + bytes_to_copy > MAX_UDS_PAYLOAD_LEN) {
+        #ifdef ISO_TP_DEBUG
+            LOG_ERROR("Buffer overflow prevented: offset + bytes_to_copy = %u > %u", offset + bytes_to_copy, MAX_UDS_PAYLOAD_LEN);
+        #endif
+        return false;
+    }
+
+    memcpy(msg->Buffer + offset, rxBuffer + 1, bytes_to_copy);
+    msg->bytes_received += bytes_to_copy;
+    msg->remaining_bytes -= bytes_to_copy;
+
+    msg->sequence_number = sequence_num;
+    msg->next_sequence = (sequence_num + 1) & 0x0F;
+
+    #ifdef ISO_TP_INFO_PRINT
+        LOG_DEBUG("Appended CF: seq=%u, copied=%u, total_received=%u, remaining=%u", 
+                  sequence_num, bytes_to_copy, msg->bytes_received, msg->remaining_bytes);
+    #endif
+
+    if (msg->remaining_bytes == 0) {
+        msg->tp_state = ISOTP_FINISHED;
+        return true;
+    } else {
+        msg->tp_state = ISOTP_WAIT_DATA;
+        return false;
+    }
+}
+
 bool IsoTp::receive(Message_t *msg)
 {
   uint32_t rxId;
@@ -218,10 +243,6 @@ bool IsoTp::receive(Message_t *msg)
       }
 
       msg->rx_id = rxId;
-      msg->service_id = rxBuffer[2];
-    
-
-      memcpy(msg->Buffer, rxBuffer, rxLen);
      
       uint8_t pciType = rxBuffer[0] & 0xF0;
 
@@ -262,66 +283,17 @@ bool IsoTp::receive(Message_t *msg)
         // 25,00,00,2C,7E,29,55,2C
         // 26,01,00,00,0C,8F,34,1B
 
-        uint8_t uds_seq_num = rxBuffer[0] & 0x0F;
-        
-        // Check if this is the expected consecutive frame with the correct sequence number
-        if(is_next_consecutive_frame(msg, rxId, uds_seq_num, msg->service_id, msg->data_id) && uds_seq_num == msg->next_sequence)
+        if(handle_consecutive_frame(msg, rxBuffer, rxLen))
         {
-            #ifdef ISO_TP_DEBUG
-              LOG_DEBUG("Matching CF received with expected sequence %u", uds_seq_num);
-            #endif
-                    
-            uint16_t bytes_to_copy = (msg->remaining_bytes > 7) ? 7 : msg->remaining_bytes;
-            uint16_t offset = msg->bytes_received;
-            
-            #ifdef ISO_TP_DEBUG
-                LOG_DEBUG("Consecutive Frame received: bytes_to_copy: %u, offset: %u, before[received: %u, remaining: %u]", bytes_to_copy, offset, msg->bytes_received, msg->remaining_bytes);
-            #endif
-            
-            memcpy(msg->Buffer + offset, rxBuffer + 1, bytes_to_copy);
-
-            msg->bytes_received += bytes_to_copy;
-            
-            if (bytes_to_copy > msg->remaining_bytes) {
-                #ifdef ISO_TP_DEBUG
-                    LOG_ERROR("Remaining bytes underflow prevented: bytes_to_copy %u > remaining %u", bytes_to_copy, msg->remaining_bytes);
-                #endif
-                msg->remaining_bytes = 0;
-            } else {
-                msg->remaining_bytes -= bytes_to_copy;
-            }
-            
-            msg->next_sequence = (msg->next_sequence + 1) & 0x0F;
-            
-            #ifdef ISO_TP_DEBUG
-                LOG_DEBUG("After CF processing: received: %u, remaining: %u", msg->bytes_received, msg->remaining_bytes);
-            #endif
-
-            if (msg->remaining_bytes == 0) 
-            {
-              msg->tp_state = ISOTP_FINISHED;
-              #ifdef ISO_TP_INFO_PRINT
-                LOG_DEBUG("Completed: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, bytes_received=%u, remaining=%u, service_id=0x%X, data_id=0x%X", 
-                    msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->length, 
-                    msg->bytes_received, msg->remaining_bytes, msg->service_id, msg->data_id);
-              #endif
-              return true;
-            } 
-            else 
-            { 
-              //Wait for next Consecutive Frame
-              startTime = millis();
-              msg->tp_state = ISOTP_WAIT_DATA;
-              continue;
-            }
+          #ifdef ISO_TP_INFO_PRINT
+            LOG_DEBUG("Consecutive Frame handled successfully. Len %d, received %d, remaining %d", msg->length, msg->bytes_received, msg->remaining_bytes);
+          #endif
+          return true;
         }
         else
         {
-            // Unexpected CF, log and skip
-            #ifdef ISO_TP_DEBUG
-              LOG_ERROR("Unexpected CF: got seq %u, expected %u", uds_seq_num, msg->next_sequence);
-            #endif
-            continue;
+          startTime = millis();
+          continue;
         }
       }
 
