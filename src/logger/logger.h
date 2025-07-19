@@ -26,9 +26,6 @@ public:
     static void warn(const char* func, const char *format, ...);
     static void info(const char* func, const char *format, ...);
     static void debug(const char* func, const char *format, ...);
-    
-    static void logCANMessage(const char *busName, uint32_t id, const uint8_t *data, uint8_t len, bool success, bool isTx, const char *description = nullptr);
-    static void logUdsMessage(const char *description, const Message_t *msg);
 
 private:
     static std::string formatData(const uint8_t *data, uint8_t len);
@@ -38,5 +35,4 @@ private:
 #define LOG_WARN(format, ...) Logger::warn(__FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_INFO(format, ...) Logger::info(__FUNCTION__, format, ##__VA_ARGS__)
 #define LOG_DEBUG(format, ...) Logger::debug(__FUNCTION__, format, ##__VA_ARGS__)
-
 #endif

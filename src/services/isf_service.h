@@ -89,8 +89,8 @@ private:
     bool initialize_diagnostic_session();
     bool beginSend();
     bool sendUdsRequest(Message_t& msg, const UDSRequest &request);
-    bool processUdsResponse(uint8_t *data, uint8_t length, const UDSRequest &request);
-    bool transformResponse(uint8_t *data, uint8_t length, const UDSRequest &request);
+    bool processUdsResponse(Message_t& msg, const UDSRequest &request);
+    bool transformResponse(Message_t& msg, const UDSRequest &request);
 
     // CAN bus interface for communication with ECUs
     TwaiWrapper *twai = nullptr;

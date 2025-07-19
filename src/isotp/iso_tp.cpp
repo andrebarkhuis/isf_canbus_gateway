@@ -40,8 +40,6 @@ bool IsoTp::handle_first_frame(Message_t *msg, uint8_t rxBuffer[])
   // First 4 bits from rxBuffer[0] & 0x0F (high nibble)
   // Last 8 bits from rxBuffer[1] (low byte)
   uint16_t expected_length = ((rxBuffer[0] & 0x0F) << 8) | rxBuffer[1];
-  uint8_t ff_service_id = rxBuffer[2];
-  uint16_t ff_data_id = rxBuffer[3];  
   
   //8,10,30,61,21,00,00,00,00
 
@@ -55,9 +53,13 @@ bool IsoTp::handle_first_frame(Message_t *msg, uint8_t rxBuffer[])
   /* copy the first received data bytes */
   memcpy(msg->Buffer, rxBuffer + 2, 6);  // Copy first data chunk (after PCI)
 
-  LOG_DEBUG("First-frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, bytes_received=%u, remaining=%u, service_id=0x%X, data_id=0x%X", 
-    msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, expected_length, 
-    msg->bytes_received, msg->remaining_bytes, ff_service_id, ff_data_id);
+  #ifdef ISO_TP_DEBUG
+    uint8_t ff_service_id = rxBuffer[2];
+    uint16_t ff_data_id = rxBuffer[3];  
+    LOG_DEBUG("First-frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, bytes_received=%u, remaining=%u, service_id=0x%X, data_id=0x%X", 
+      msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, expected_length, 
+      msg->bytes_received, msg->remaining_bytes, ff_service_id, ff_data_id);
+  #endif
 
   //TEST: Confirm. sending to tx_id, could be a toyota implementation. Usually Flow control should be sent to the ECU that responded. msg.rx_id is the ECU that responded.
   if (!send_flow_control(msg->tx_id))
@@ -249,7 +251,7 @@ bool IsoTp::receive(Message_t *msg)
       if(pciType == N_PCI_SF) // Single Frame
       {
         #ifdef ISO_TP_INFO_PRINT
-            LOG_DEBUG("Single Frame received");
+            LOG_DEBUG("Single-Frame received");
         #endif
 
         msg->length = rxLen;
@@ -263,7 +265,7 @@ bool IsoTp::receive(Message_t *msg)
         if (handle_first_frame(msg, rxBuffer))
         {
           #ifdef ISO_TP_INFO_PRINT
-            LOG_DEBUG("First Frame handled successfully");
+            LOG_DEBUG("First-Frame handled successfully");
           #endif
           continue;
         }
@@ -286,7 +288,7 @@ bool IsoTp::receive(Message_t *msg)
         if(handle_consecutive_frame(msg, rxBuffer, rxLen))
         {
           #ifdef ISO_TP_INFO_PRINT
-            LOG_DEBUG("Consecutive Frame handled successfully. Len %d, received %d, remaining %d", msg->length, msg->bytes_received, msg->remaining_bytes);
+            LOG_DEBUG("Consecutive-Frame handled successfully. Len %d, received %d, remaining %d", msg->length, msg->bytes_received, msg->remaining_bytes);
           #endif
           return true;
         }

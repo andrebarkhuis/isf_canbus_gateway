@@ -213,16 +213,9 @@ bool IsfService::beginSend()
 bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
 {
     is_session_active = true;
-    
-    #ifdef DEBUG_ISF
-        Logger::logUdsMessage("[sendUdsRequest] BEGIN Sending message.", &msg);
-    #endif
 
     if (!isotp->send(&msg))
     {
-        #ifdef DEBUG_ISF
-            Logger::logUdsMessage("[sendUdsRequest] Error sending message.", &msg);
-        #endif
         is_session_active = false;
         msg.reset();
         return false;
@@ -230,53 +223,26 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
 
     if (!isotp->receive(&msg))
     {
-        #ifdef DEBUG_ISF
-            Logger::logUdsMessage("[sendUdsRequest] Error receiving message.", &msg);
-        #endif
         is_session_active = false;
         msg.reset();    
         return false;
     }
     
-    // if (msg.length < 3) 
-    // {
-    //     Logger::logUdsMessage("[sendUdsRequest] Incomplete response frame.", &msg);
-    //     is_session_active = false;
-    //     msg.reset();
-    //     return false;
-    // }
-    
-    // Logger::logUdsMessage("[sendUdsRequest] Received response", &msg);
-    // if (processUdsResponse(msg.Buffer, msg.length, request))
-    // {
-    //     LOG_INFO("UDS response parsed successfully. %s", request.param_name);
-    //     return true;
-    // }
-    // else
-    // {
-    //     LOG_WARN("Failed to parse UDS response data. %s", request.param_name);
-    //     return false;
-    // }
+    processUdsResponse(msg, request);
     
     msg.reset();
     is_session_active = false;
     return true;
 }
 
-bool IsfService::processUdsResponse(uint8_t *data, uint8_t length, const UDSRequest &request)
+bool IsfService::processUdsResponse(Message_t& msg, const UDSRequest &request)
 {
-    if (data == nullptr || length == 0)
-    {
-        LOG_ERROR("Invalid UDS response data");
-        return false;
-    }
-
     //For now we only support Read Data By Local ID and Read Data By ID
     switch (request.service_id)
     {
         case UDS_SID_READ_DATA_BY_LOCAL_ID: // Local Identifier (Techstream)
         case UDS_SID_READ_DATA_BY_ID:
-            return transformResponse(data, length, request);
+            return transformResponse(msg, request);
         default:
             LOG_ERROR("Unsupported response SID: %02X", request.service_id);
             return false;
@@ -614,31 +580,10 @@ void log_signals(const std::vector<SignalValue> &signals, const uint8_t *data, s
  * @return true     if at least one signal was successfully extracted and processed
  * @return false    if no signals could be extracted
  */
-bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSRequest &request)
+bool IsfService::transformResponse(Message_t& msg, const UDSRequest &request)
 {
     // Extract DID from the response if possible
     uint16_t responseDID = request.did; // Default to requested DID
-    
-    // Check if we have enough data to extract the response DID
-    if (length >= 3 && data[0] == (request.service_id + 0x40)) {
-        
-        // Standard UDS response format: [service_id+0x40][DID_MSB][DID_LSB][data...]
-        if (request.service_id == UDS_SID_READ_DATA_BY_ID && length >= 4) {
-            // For service 0x22 (ReadDataByID), the response has the DID in bytes 1-2
-            responseDID = (data[1] << 8) | data[2];
-            // Adjust response data pointer and length to skip header
-            data += 3;  // Skip service ID and DID bytes
-            length -= 3;
-        } 
-        else if (request.service_id == UDS_SID_READ_DATA_BY_LOCAL_ID) {
-            // For Toyota-specific local ID (service 0x21)
-            // Response format is [0x61][LocalID][data...]
-            responseDID = data[1];
-            // Adjust response data pointer and length to skip header
-            data += 2;  // Skip service ID and local ID byte
-            length -= 2;
-        }
-    }
     
     // Now look up definitions using the extracted response DID if possible
     auto definitionsRange = udsMap.equal_range(std::make_tuple(request.tx_id, request.pid, responseDID));
@@ -666,7 +611,7 @@ bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSReque
 
     // Skip global length validation and handle partial responses
     // Instead of requiring the entire expected payload, we'll extract what we can
-    std::vector<SignalValue> extractedSignals = get_signal_values(data, length, signalGroups);
+    std::vector<SignalValue> extractedSignals = get_signal_values(msg.Buffer, msg.length, signalGroups);
 
     if (extractedSignals.empty())
     {
@@ -675,7 +620,7 @@ bool IsfService::transformResponse(uint8_t *data, uint8_t length, const UDSReque
     }
 
     // Log the extracted signals with the raw data for traceability
-    log_signals(extractedSignals, data, length, request.rx_id);
+    log_signals(extractedSignals, msg.Buffer, msg.length, request.rx_id);
 
     return true;
 }
