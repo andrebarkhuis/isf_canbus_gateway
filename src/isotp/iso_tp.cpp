@@ -101,7 +101,9 @@ bool IsoTp::send_flow_control(uint32_t tx_id)
 {
   // FC example: 30,00,00,00,00,00,00,00
 
-  LOG_DEBUG("Flow-Control Frame: tx_id=0x%lX", tx_id);
+  #ifdef ISO_TP_DEBUG
+    LOG_DEBUG("Flow-Control Frame: tx_id=0x%lX", tx_id);
+  #endif
 
   uint8_t TxBuf[8] = {0};
 
