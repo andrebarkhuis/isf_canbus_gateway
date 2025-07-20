@@ -280,7 +280,7 @@ uint32_t extract_raw_data(
     if (byte_pos < 0 || byte_pos >= data_len)
     {
         #ifdef DEBUG_ISF
-            LOG_ERROR("Byte position out of range: %d (needs 1 byte, buffer len = %d) for parameter: %s", byte_pos, data_len, parameter_name.c_str());
+            LOG_ERROR("Out of range: %d (needs 1 byte, buffer len = %d) for parameter: %s", byte_pos, data_len, parameter_name.c_str());
         #endif
         return 0;
     }
@@ -289,16 +289,16 @@ uint32_t extract_raw_data(
     if (byte_pos + max_bytes > data_len)
     {
         #ifdef DEBUG_ISF
-            LOG_ERROR("Byte position out of range: %d (needs %d bytes, buffer len = %d) for parameter: %s", byte_pos, max_bytes, data_len, parameter_name.c_str());
+            LOG_ERROR("Out of range: %d (needs %d bytes, buffer len = %d) for parameter: %s", byte_pos, max_bytes, data_len, parameter_name.c_str());
         #endif
         return 0;
     }
 
-    uint32_t raw = 0;
+    int raw = 0;
     memcpy(&raw, &data[byte_pos], 4); // Safe: already checked bounds
     raw >>= bit_offset;
 
-    uint32_t mask = (1ULL << bit_length) - 1;
+    int mask = (1 << bit_length) - 1;
     return raw & mask;
 }
 
@@ -473,23 +473,27 @@ void log_signals(const std::vector<SignalValue> &signals)
  */
 bool IsfService::transformResponse(Message_t& msg, const UDSRequest &request)
 {
-    LOG_DEBUG("UdsRequest: SID=0x%02X, DID=0x%04X | UDSResponse: SID=0x%02X, DID=0x%04X", request.service_id, request.did, msg.service_id, msg.data_id);
-    
     // 1. look up definitions using the extracted response DID if possible
     auto matchingDefinitions = udsMap.equal_range(std::make_tuple(request.tx_id, msg.data_id));
+    
+    // 2. For each definition, extract the signal
+    std::vector<SignalValue> extractedSignals;
+    for (auto it = matchingDefinitions.first; it != matchingDefinitions.second; ++it) 
+    {
+        const UdsDefinition& def = it->second;
 
-    // 2. Group the definitions by their physical location in the data
-    
+        double raw_value = extract_raw_data(msg.Buffer, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, def.parameter_name);
 
-    // 3. Group the definitions by their physical location in the data using byte_pos and bit_offset_position
-    
-
-    // 4. Check if any definitions were found
-    
-    // 5. Extract the signals
-    
-    // Log the extracted signals with the raw data for traceability
-    //log_signals(get_signal_values(msg));
+        if(def.is_calculated_value)
+        {
+            double decoded_value = raw_value * def.scaling_factor + def.offset_value;
+            //LOG_DEBUG("Parameter: %s data_id: %u (position=%d, offset=%d, length=%d) raw_value: %u calculated_value: %u", def.parameter_name.c_str(), def.uds_data_identifier_hex, def.byte_position, def.bit_offset_position, def.bit_length, raw_value, decoded_value);
+        }
+        else
+        {
+            //LOG_DEBUG("Parameter: %s data_id: %u (position=%d, offset=%d, length=%d) raw_value: %u", def.parameter_name.c_str(), def.uds_data_identifier_hex, def.byte_position, def.bit_offset_position, def.bit_length, raw_value);
+        }
+    }
 
     return true;
 }

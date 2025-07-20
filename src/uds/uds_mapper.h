@@ -9,33 +9,31 @@
 struct UdsDefinition
 {
     // raw metadata
-    std::uint16_t obd2_request_id_hex;
-    std::uint16_t parameter_id_hex;
-    std::uint16_t uds_data_identifier_hex;
-    std::uint8_t  unit_type;
-    std::uint8_t  byte_position;
-    std::uint8_t  bit_offset_position;
-    float         scaling_factor;
-    float         offset_value;
-    bool          is_calculated_value;               // set by the c’tor
-    std::uint8_t  bit_length;
+    uint16_t obd2_request_id_hex;
+    uint16_t uds_data_identifier_hex;
+    uint8_t  unit_type;
+    uint8_t  byte_position;
+    uint8_t  bit_offset_position;
+    double   scaling_factor;
+    double   offset_value;
+    bool     is_calculated_value;               // set by the c’tor
+    uint8_t  bit_length;
     std::string   parameter_name;
-    std::optional<float>        parameter_value;
+    std::optional<double>        parameter_value;
     std::optional<std::string>   parameter_display_value;
 
     /* ── ctor #1 : calculated signal ──────────────────────────── */
-    constexpr UdsDefinition(std::uint16_t obd2_id,
-        std::uint16_t param_id,
-        std::uint16_t data_id,
-        std::uint8_t  unit,
-        std::uint8_t  byte_pos,
-        std::uint8_t  bit_offs,
-        float         scale,
-        float         offs,
-        std::uint8_t  bits,
+    constexpr UdsDefinition(
+        uint16_t obd2_id,
+        uint16_t data_id,
+        uint8_t  unit,
+        uint8_t  byte_pos,
+        uint8_t  bit_offs,
+        double   scale,
+        double   offs,
+        uint8_t  bits,
         std::string   name)
         : obd2_request_id_hex   { obd2_id }
-        , parameter_id_hex      { param_id }
         , uds_data_identifier_hex{ data_id }
         , unit_type             { unit }
         , byte_position         { byte_pos }
@@ -52,20 +50,19 @@ struct UdsDefinition
     /* ── ctor #2 : enumerated / fixed value ───────────────────── */
     /*  enumerated / fixed value  (11 args — no scale)          *
      *  scale and offset fall back to 1.0 / 0.0 by default      */
-    constexpr UdsDefinition(std::uint16_t obd2_id,
-        std::uint16_t param_id,
-        std::uint16_t data_id,
-        std::uint8_t  unit,
-        std::uint8_t  byte_pos,
-        std::uint8_t  bit_offs,
-        std::uint8_t  bits,
+    constexpr UdsDefinition(
+        uint16_t obd2_id,
+        uint16_t data_id,
+        uint8_t  unit,
+        uint8_t  byte_pos,
+        uint8_t  bit_offs,
+        uint8_t  bits,
         std::string   name,
-        float         enum_value,
+        uint8_t  enum_value,
         std::string   display,
-        float         scale = 1.0,
-        float         offs  = 0.0)
+        double   scale = 1.0,
+        double   offs  = 0.0)
         : obd2_request_id_hex   { obd2_id }
-        , parameter_id_hex      { param_id }
         , uds_data_identifier_hex{ data_id }
         , unit_type             { unit }
         , byte_position         { byte_pos }
@@ -80,20 +77,16 @@ struct UdsDefinition
     {}
 };
 
-/* ── map setup (unchanged) ─────────────────────────────────────── */
-using uds_key = std::tuple<std::uint16_t, std::uint16_t>;
+using uds_key = std::tuple<uint16_t, uint16_t>; // {tx_id, data_id}
 
-#if __cpp_lib_tuple >= 201907L
-struct uds_key_hash : std::hash<uds_key> {};
-#else
 struct uds_key_hash {
-    std::size_t operator()(const uds_key& k) const noexcept {
-        auto h1 = std::hash<std::uint16_t>{}(std::get<0>(k));
-        auto h2 = std::hash<std::uint16_t>{}(std::get<1>(k));
+    size_t operator()(const uds_key& k) const noexcept {
+        auto h1 = std::hash<uint16_t>{}(std::get<0>(k));
+        auto h2 = std::hash<uint16_t>{}(std::get<1>(k));
         return h1 ^ (h2 << 1);
     }
 };
-#endif
 
 inline std::unordered_multimap<uds_key, UdsDefinition, uds_key_hash> udsMap;
-void init_udsDefinitions();     // defined in a .cpp
+
+void init_udsDefinitions();
