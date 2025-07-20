@@ -12,35 +12,31 @@ struct UdsDefinition
     std::uint16_t obd2_request_id_hex;
     std::uint16_t parameter_id_hex;
     std::uint16_t uds_data_identifier_hex;
-    bool          is_signed;
-    int           unit_type;
-    int           byte_position;
-    int           bit_offset_position;
-    double        scaling_factor;
-    double        offset_value;
+    std::uint8_t  unit_type;
+    std::uint8_t  byte_position;
+    std::uint8_t  bit_offset_position;
+    float         scaling_factor;
+    float         offset_value;
     bool          is_calculated_value;               // set by the c’tor
-    int           bit_length;
+    std::uint8_t  bit_length;
     std::string   parameter_name;
-
-    std::optional<double>        parameter_value;
+    std::optional<float>        parameter_value;
     std::optional<std::string>   parameter_display_value;
 
     /* ── ctor #1 : calculated signal ──────────────────────────── */
     constexpr UdsDefinition(std::uint16_t obd2_id,
-                            std::uint16_t param_id,
-                            std::uint16_t data_id,
-                            bool          signed_flag,
-                            int           unit,
-                            int           byte_pos,
-                            int           bit_offs,
-                            double        scale,
-                            double        offs,
-                            int           bits,
-                            std::string   name)
+        std::uint16_t param_id,
+        std::uint16_t data_id,
+        std::uint8_t  unit,
+        std::uint8_t  byte_pos,
+        std::uint8_t  bit_offs,
+        float         scale,
+        float         offs,
+        std::uint8_t  bits,
+        std::string   name)
         : obd2_request_id_hex   { obd2_id }
         , parameter_id_hex      { param_id }
         , uds_data_identifier_hex{ data_id }
-        , is_signed             { signed_flag }
         , unit_type             { unit }
         , byte_position         { byte_pos }
         , bit_offset_position   { bit_offs }
@@ -59,20 +55,18 @@ struct UdsDefinition
     constexpr UdsDefinition(std::uint16_t obd2_id,
         std::uint16_t param_id,
         std::uint16_t data_id,
-        bool          signed_flag,
-        int           unit,
-        int           byte_pos,
-        int           bit_offs,
-        int           bits,
+        std::uint8_t  unit,
+        std::uint8_t  byte_pos,
+        std::uint8_t  bit_offs,
+        std::uint8_t  bits,
         std::string   name,
-        double        enum_value,
+        float         enum_value,
         std::string   display,
-        double        scale = 1.0,
-        double        offs  = 0.0)
+        float         scale = 1.0,
+        float         offs  = 0.0)
         : obd2_request_id_hex   { obd2_id }
         , parameter_id_hex      { param_id }
         , uds_data_identifier_hex{ data_id }
-        , is_signed             { signed_flag }
         , unit_type             { unit }
         , byte_position         { byte_pos }
         , bit_offset_position   { bit_offs }
@@ -87,7 +81,7 @@ struct UdsDefinition
 };
 
 /* ── map setup (unchanged) ─────────────────────────────────────── */
-using uds_key = std::tuple<std::uint16_t, std::uint16_t, std::uint16_t>;
+using uds_key = std::tuple<std::uint16_t, std::uint16_t>;
 
 #if __cpp_lib_tuple >= 201907L
 struct uds_key_hash : std::hash<uds_key> {};
@@ -96,8 +90,7 @@ struct uds_key_hash {
     std::size_t operator()(const uds_key& k) const noexcept {
         auto h1 = std::hash<std::uint16_t>{}(std::get<0>(k));
         auto h2 = std::hash<std::uint16_t>{}(std::get<1>(k));
-        auto h3 = std::hash<std::uint16_t>{}(std::get<2>(k));
-        return h1 ^ (h2 << 1) ^ (h3 << 2);
+        return h1 ^ (h2 << 1);
     }
 };
 #endif

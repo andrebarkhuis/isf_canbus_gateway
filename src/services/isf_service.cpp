@@ -44,16 +44,6 @@ struct SignalValue {
     {}
 };
 
-// Custom hash function for std::tuple<std::uint16_t, int, int>
-struct SignalLocationKeyHash {
-    std::size_t operator()(const std::tuple<std::uint16_t, int, int>& k) const {
-        auto h1 = std::hash<std::uint16_t>{}(std::get<0>(k));
-        auto h2 = std::hash<int>{}(std::get<1>(k));
-        auto h3 = std::hash<int>{}(std::get<2>(k));
-        return h1 ^ (h2 << 1) ^ (h3 << 2);
-    }
-};
-
 IsfService::IsfService()
 {
     // Initialize the array with the correct size
@@ -249,17 +239,10 @@ bool IsfService::processUdsResponse(Message_t& msg, const UDSRequest &request)
     }
 }
 
-std::vector<UdsDefinition> get_uds_definitions(std::uint16_t request_id,
-                                               std::uint16_t pid,
-                                               std::uint16_t data_id)
+std::vector<UdsDefinition> get_uds_definitions(std::uint16_t request_id, std::uint16_t data_id)
 {
     std::vector<UdsDefinition> results;
 
-    auto range = udsMap.equal_range(std::make_tuple(request_id, pid, data_id));
-    for (auto it = range.first; it != range.second; ++it)
-    {
-        results.push_back(it->second);
-    }
 
     return results;
 }
@@ -319,7 +302,7 @@ uint32_t extract_raw_data(
     return raw & mask;
 }
 
-std::optional<const char *> get_unit_name(int unit_type)
+std::optional<const char *> get_unit_name(uint8_t unit_type)
 {
     switch (unit_type)
     {
@@ -392,81 +375,35 @@ std::optional<const char *> get_unit_name(int unit_type)
     }
 }
 
+/**
+ * @brief Extracts and decodes a signal value from raw UDS response data using the given UdsDefinition.
+ *
+ * This function interprets the raw byte buffer (`data`) based on the position, bit offset, length,
+ * scaling factor, and offset specified in the `definition`. If `candidates` are provided with
+ * matching decoded values and display strings (e.g., for enumerated values), the corresponding
+ * display label is included in the result.
+ *
+ * @param definition     The UdsDefinition that specifies how to interpret the raw data.
+ * @param data           Pointer to the raw byte array from the UDS response.
+ * @param data_len       Length of the byte array.
+ * @param candidates     A vector of possible matching UdsDefinitions (e.g., with enumerated values).
+ * 
+ * @return std::optional<SignalValue> 
+ *         - A populated SignalValue if decoding is successful.
+ *         - std::nullopt if decoding fails or input is invalid.
+ *
+ * @note The function includes range checks and logs an error if the `data` pointer is null.
+ *       A fallback `SignalValue` without a display label is returned if no enumerated match is found.
+ */
 std::optional<SignalValue> get_signal_value(
-    const UdsDefinition &definition,
-    const uint8_t *data,
-    int data_len,
-    const std::vector<UdsDefinition> &candidates)
-{
-    if (!data)
-    {
-        LOG_ERROR("Null data pointer for signal: %s", definition.parameter_name.c_str());
-        return std::nullopt;
-    }
-
-    uint32_t raw_value = extract_raw_data(
-        data,
-        definition.byte_position,
-        definition.bit_offset_position,
-        definition.bit_length,
-        data_len,
-        definition.parameter_name);
-
-    // If extraction failed, raw_value will be zero, but this might be valid — so add a flag
-    if (definition.byte_position < 0 ||
-        definition.byte_position >= data_len ||
-        (definition.byte_position + ((definition.bit_offset_position + definition.bit_length + 7) / 8)) > data_len)
-    {
-        return std::nullopt; // Extraction failed due to range check
-    }
-
-    double decoded_value = raw_value * definition.scaling_factor + definition.offset_value;
-
-    for (const auto &candidate : candidates)
-    {
-        if (candidate.parameter_value.has_value() &&
-            std::abs(candidate.parameter_value.value() - decoded_value) < 0.0001 &&
-            candidate.parameter_display_value.has_value())
-        {
-            return SignalValue(
-                definition.obd2_request_id_hex,
-                candidate.parameter_id_hex,
-                definition.uds_data_identifier_hex,
-                candidate.parameter_name,
-                decoded_value,
-                candidate.parameter_display_value,
-                get_unit_name(candidate.unit_type));
-        }
-    }
-
-    return SignalValue(
-        definition.obd2_request_id_hex,
-        definition.parameter_id_hex,
-        definition.uds_data_identifier_hex,
-        definition.parameter_name,
-        decoded_value,
-        std::nullopt,
-        get_unit_name(definition.unit_type));
+    Message_t &msg,
+    const UdsDefinition &definition)
+{       
+    
+    return std::nullopt;
 }
 
-int get_max_required_payload_size(const std::unordered_map<std::tuple<std::uint16_t,int,int>,
-                                                             std::vector<UdsDefinition>> &grouped_defs)
-{
-    int max_required = 0;
 
-    for (const auto &[key, defs] : grouped_defs)
-    {
-        const auto &def = defs.front(); // all in group share position
-        int bit_end = def.bit_offset_position + def.bit_length;
-        int byte_span = (bit_end + 7) / 8; // ceil
-        int end_pos = def.byte_position + byte_span;
-
-        if (end_pos > max_required)
-            max_required = end_pos;
-    }
-
-    return max_required;
-}
 
 /**
  * @brief Extracts all unique signal values from a UDS response message.
@@ -475,66 +412,23 @@ int get_max_required_payload_size(const std::unordered_map<std::tuple<std::uint1
  * and extracts one signal per group. Handles partial responses by checking each signal
  * individually rather than requiring the full expected response length.
  *
- * @param responseData      Raw CAN data buffer (already reassembled via ISO-TP)
- * @param responseLength    Length of the CAN data buffer in bytes
- * @param signalGroups      Map of signal location keys → lists of UdsDefinitions
  * @return                  Vector of successfully extracted SignalValue objects
  */
 
-std::vector<SignalValue> get_signal_values(
-    const uint8_t *responseData,
-    int responseLength,
-    const std::unordered_map<std::tuple<uint16_t, int, int>, std::vector<UdsDefinition>, SignalLocationKeyHash> &signalGroups)
+std::vector<SignalValue> get_signal_values(Message_t& msg)
 {
-    std::vector<SignalValue> extractedSignals;
-
-    for (const auto &[locationKey, definitionGroup] : signalGroups)
-    {
-        // Skip processing if the definition requires data beyond the response length
-        const auto &baseDefinition = definitionGroup.front();
-        int bitEnd = baseDefinition.bit_offset_position + baseDefinition.bit_length;
-        int byteSpan = (bitEnd + 7) / 8; // ceil
-        int endPos = baseDefinition.byte_position + byteSpan;
+    std::vector<SignalValue> results;
         
-        if (endPos > responseLength) {
-            LOG_DEBUG("Skipping out-of-range signal: %s (needs %d bytes, got %d)", 
-                baseDefinition.parameter_name.c_str(), endPos, responseLength);
-            continue; // Skip this signal group and try the next one
-        }
-        
-        // Try to extract the signal value
-        auto signalValue = get_signal_value(baseDefinition, responseData, responseLength, definitionGroup);
-
-        if (signalValue.has_value())
-        {
-            extractedSignals.push_back(*signalValue);
-        }
-    }
-
-    return extractedSignals;
+    return results;
 }
 
 /**
- * Pretty-logs a list of SignalValues along with the original raw CAN message data.
+ * Pretty-logs a list of SignalValues.
  *
  * @param signals   List of decoded signal values
- * @param data      Original CAN frame data (from UDS response)
- * @param len       Length of the data buffer
- * @param can_id    CAN ID of the sender (e.g. ECU response ID)
  */
-void log_signals(const std::vector<SignalValue> &signals, const uint8_t *data, size_t len, uint32_t can_id)
+void log_signals(const std::vector<SignalValue> &signals)
 {
-    // Format the CAN data as a hex string
-    char data_hex[64] = {0};
-    size_t pos = 0;
-    for (size_t i = 0; i < len && pos < sizeof(data_hex) - 3; ++i)
-        pos += snprintf(&data_hex[pos], sizeof(data_hex) - pos, "%02X ", data[i]);
-    if (pos > 0 && data_hex[pos - 1] == ' ')
-        data_hex[pos - 1] = '\0';
-
-    // Header line with CAN ID and raw data
-    LOG_DEBUG("[CAN: %03X] Data: %s", can_id, data_hex);
-
     // Individual decoded signals
     for (const auto &sig : signals)
     {
@@ -574,53 +468,28 @@ void log_signals(const std::vector<SignalValue> &signals, const uint8_t *data, s
  * of signals that fit within the available data, even if some expected signals
  * are missing from the response.
  *
- * @param data      Pointer to the UDS response data buffer
- * @param length    Length of the UDS response data in bytes
- * @param request   UDS request parameters that triggered this response
  * @return true     if at least one signal was successfully extracted and processed
  * @return false    if no signals could be extracted
  */
 bool IsfService::transformResponse(Message_t& msg, const UDSRequest &request)
 {
-    // Extract DID from the response if possible
-    uint16_t responseDID = request.did; // Default to requested DID
+    LOG_DEBUG("UdsRequest: SID=0x%02X, DID=0x%04X | UDSResponse: SID=0x%02X, DID=0x%04X", request.service_id, request.did, msg.service_id, msg.data_id);
     
-    // Now look up definitions using the extracted response DID if possible
-    auto definitionsRange = udsMap.equal_range(std::make_tuple(request.tx_id, request.pid, responseDID));
+    // 1. look up definitions using the extracted response DID if possible
+    auto matchingDefinitions = udsMap.equal_range(std::make_tuple(request.tx_id, msg.data_id));
 
-    // Group the definitions by their physical location in the data
-    using SignalLocationKey = std::tuple<std::uint16_t, int, int>; // data_id, byte_pos, bit_offset
-    std::unordered_map<SignalLocationKey, std::vector<UdsDefinition>, SignalLocationKeyHash> signalGroups;
+    // 2. Group the definitions by their physical location in the data
+    
 
-    for (auto it = definitionsRange.first; it != definitionsRange.second; ++it)
-    {
-        const auto &signalDefinition = it->second;
-        SignalLocationKey locationKey = std::make_tuple(
-            signalDefinition.uds_data_identifier_hex, 
-            signalDefinition.byte_position, 
-            signalDefinition.bit_offset_position);
-        signalGroups[locationKey].push_back(signalDefinition);
-    }
+    // 3. Group the definitions by their physical location in the data using byte_pos and bit_offset_position
+    
 
-    if (signalGroups.empty())
-    {
-        LOG_WARN("No UDS definitions for TX: %04X, DID: %04X (Response DID: %04X)", 
-            request.tx_id, request.did, responseDID);
-        return false;
-    }
-
-    // Skip global length validation and handle partial responses
-    // Instead of requiring the entire expected payload, we'll extract what we can
-    std::vector<SignalValue> extractedSignals = get_signal_values(msg.Buffer, msg.length, signalGroups);
-
-    if (extractedSignals.empty())
-    {
-        LOG_WARN("No signal values extracted for TX: %04X, DID: %04X", request.tx_id, request.did);
-        return false;
-    }
-
+    // 4. Check if any definitions were found
+    
+    // 5. Extract the signals
+    
     // Log the extracted signals with the raw data for traceability
-    log_signals(extractedSignals, msg.Buffer, msg.length, request.rx_id);
+    //log_signals(get_signal_values(msg));
 
     return true;
 }
