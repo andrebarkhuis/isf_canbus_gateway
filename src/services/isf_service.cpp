@@ -497,7 +497,7 @@ bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
         int payload_length = msg.length - 2;
 
         uint32_t raw_value = extract_raw_data(payload, def.byte_position, def.bit_offset_position, def.bit_length, payload_length, def.parameter_name);
-        
+
         if (def.is_calculated_value)
         {
             double calculated_value = raw_value * def.scaling_factor + def.offset_value;
@@ -508,6 +508,12 @@ bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
         }
         else
         {
+            //The raw value is an integer which will match a value in udsMap and udsDefinitions.
+            //If a candidate is found, use the display value.
+
+            // udsMap.emplace(uds_key{ 0x7E0, 0x6 }, UdsDefinition{ 0x7E0, 0x6, 0, 0, 7, 4, "MIL", 0, "OFF" });
+            // udsMap.emplace(uds_key{ 0x7E0, 0x6 }, UdsDefinition{ 0x7E0, 0x6, 0, 0, 7, 4, "MIL", 1, "ON" });
+            
             LOG_DEBUG("Parameter: %s data_id: %u (position=%d, offset=%d, length=%d) raw_value: %u",
                       def.parameter_name.c_str(), def.uds_data_identifier_hex,
                       def.byte_position, def.bit_offset_position, def.bit_length,
