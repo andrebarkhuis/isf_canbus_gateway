@@ -61,7 +61,6 @@ bool IsoTp::handle_first_frame(Message_t *msg, uint8_t rxBuffer[])
       msg->bytes_received, msg->remaining_bytes, ff_service_id, ff_data_id);
   #endif
 
-  //TEST: Confirm. sending to tx_id, could be a toyota implementation. Usually Flow control should be sent to the ECU that responded. msg.rx_id is the ECU that responded.
   if (!send_flow_control(msg->tx_id))
   {
     msg->tp_state = ISOTP_ERROR;
@@ -97,25 +96,25 @@ bool IsoTp::handle_single_frame(Message_t *msg, uint8_t rxBuffer[])
   return true;
 }
 
-bool IsoTp::send_flow_control(uint32_t tx_id)
+bool IsoTp::send_flow_control(uint32_t rx_id)
 {
   // FC example: 30,00,00,00,00,00,00,00
 
   #ifdef ISO_TP_DEBUG
-    LOG_DEBUG("Flow-Control Frame: tx_id=0x%lX", tx_id);
+    LOG_DEBUG("Flow-Control Frame: rx_id=0x%lX", rx_id);
   #endif
 
   uint8_t TxBuf[8] = {0};
 
   TxBuf[0] = (N_PCI_FC | ISOTP_FC_CTS); // Explicitly Clear To Send (0x30)
-  TxBuf[1] = 0x00;                      // No block size limit
-  TxBuf[2] = 0x00;                      // No separation time required
+  TxBuf[1] = 0x00;                      // No block size limit, send all data
+  TxBuf[2] = 0x01;                      // 1ms separation time
 
-  bool result = _twaiWrapper->sendMessage(tx_id, TxBuf, 8);
+  bool result = _twaiWrapper->sendMessage(rx_id, TxBuf, 8);
   if (!result) 
   {
     #ifdef ISO_TP_DEBUG
-    LOG_ERROR("Failed to send Flow-Control Frame: tx_id: 0x%lX", tx_id);
+    LOG_ERROR("Failed to send Flow-Control Frame: rx_id: 0x%lX", rx_id);
     #endif
 
     return false;
@@ -138,12 +137,8 @@ bool IsoTp::send(Message_t *msg)
       #endif
       return false; // Error, too much data for single frame
     }
-  
-    uint8_t TxBuf[8] = {0};
-    TxBuf[0] = N_PCI_SF | (msg->length & 0x0F);
-    memcpy(TxBuf + 1, msg->Buffer, msg->length);
-  
-    bool result = _twaiWrapper->sendMessage(msg->tx_id, TxBuf, 8); 
+
+    bool result = _twaiWrapper->sendMessage(msg->tx_id, msg->Buffer, 8); 
     if (!result) 
     {
       msg->tp_state = ISOTP_ERROR;
@@ -246,7 +241,10 @@ bool IsoTp::receive(Message_t *msg)
         return false;
       }
 
-      msg->rx_id = rxId;
+      //Skip messages that are not for this message
+      if(msg->rx_id != rxId) {
+        continue;
+      }
      
       uint8_t pciType = rxBuffer[0] & 0xF0;
 

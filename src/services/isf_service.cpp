@@ -4,7 +4,7 @@
 #include "../uds/uds_mapper.h"
 #include "../isotp/iso_tp.h"
 #include <algorithm>
-#include <cstdint>          // <-- NEW
+#include <cstdint> // <-- NEW
 #include <string>
 #include <unordered_map>
 #include <tuple>
@@ -12,18 +12,19 @@
 
 /**
  * @brief Represents a decoded signal value from a CAN message
- * 
+ *
  * Contains all the metadata about the signal as well as the decoded value
  * and formatted display value if available.
  */
-struct SignalValue {
+struct SignalValue
+{
     std::uint16_t obd2_request_id_hex;
     std::uint16_t parameter_id_hex;
     std::uint16_t uds_data_identifier_hex;
     std::string parameter_name;
     double value;
     std::optional<std::string> display_value;
-    std::optional<const char*> unit_name;
+    std::optional<const char *> unit_name;
 
     // Constructor for signal values
     SignalValue(
@@ -33,15 +34,15 @@ struct SignalValue {
         std::string name,
         double val,
         std::optional<std::string> display,
-        std::optional<const char*> unit
-    ) : obd2_request_id_hex(obd2_id),
-        parameter_id_hex(param_id),
-        uds_data_identifier_hex(data_id),
-        parameter_name(std::move(name)),
-        value(val),
-        display_value(display),
-        unit_name(unit)
-    {}
+        std::optional<const char *> unit) : obd2_request_id_hex(obd2_id),
+                                            parameter_id_hex(param_id),
+                                            uds_data_identifier_hex(data_id),
+                                            parameter_name(std::move(name)),
+                                            value(val),
+                                            display_value(display),
+                                            unit_name(unit)
+    {
+    }
 };
 
 IsfService::IsfService()
@@ -126,13 +127,13 @@ bool IsfService::initialize()
 bool IsfService::initialize_diagnostic_session()
 {
     const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(CANMessage);
-    
+
     for (int i = 0; i < SESSION_REQUESTS_SIZE; i++)
     {
         CANMessage msg = isf_pid_session_requests[i];
 
         LOG_INFO("Sending diagnostic session message to ID: 0x%X", msg.id);
-        
+
         bool failed = !twai->sendMessage(msg.id, msg.data, (uint8_t)msg.len);
         if (failed)
         {
@@ -156,9 +157,9 @@ bool IsfService::initialize_diagnostic_session()
  */
 void IsfService::listen()
 {
-    //unsigned long current_time = millis();
+    // unsigned long current_time = millis();
 
-    // if (current_time - last_diagnostic_session_time_ >= 3000) 
+    // if (current_time - last_diagnostic_session_time_ >= 3000)
     // {
     //     if (initialize_diagnostic_session())
     //     {
@@ -166,22 +167,23 @@ void IsfService::listen()
     //     }
     //     last_diagnostic_session_time_ = current_time;
     // }
-        
+
     beginSend();
 
-    vTaskDelay(pdMS_TO_TICKS(5)); 
+    vTaskDelay(pdMS_TO_TICKS(5));
 }
 
 bool IsfService::beginSend()
 {
-    if (is_session_active) {
+    if (is_session_active)
+    {
         LOG_DEBUG("UDS request already in progress, skipping new send");
         return false;
     }
 
     for (int i = 0; i < ISF_UDS_REQUESTS_SIZE; i++)
     {
-        const UDSRequest& request = isf_uds_requests[i];
+        const UDSRequest &request = isf_uds_requests[i];
 
         Message_t msg_to_send;
         msg_to_send.tx_id = request.tx_id;
@@ -200,7 +202,7 @@ bool IsfService::beginSend()
     return true;
 }
 
-bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
+bool IsfService::sendUdsRequest(Message_t &msg, const UDSRequest &request)
 {
     is_session_active = true;
 
@@ -214,35 +216,34 @@ bool IsfService::sendUdsRequest(Message_t& msg, const UDSRequest &request)
     if (!isotp->receive(&msg))
     {
         is_session_active = false;
-        msg.reset();    
+        msg.reset();
         return false;
     }
-    
+
     processUdsResponse(msg, request);
-    
+
     msg.reset();
     is_session_active = false;
     return true;
 }
 
-bool IsfService::processUdsResponse(Message_t& msg, const UDSRequest &request)
+bool IsfService::processUdsResponse(Message_t &msg, const UDSRequest &request)
 {
-    //For now we only support Read Data By Local ID and Read Data By ID
+    // For now we only support Read Data By Local ID and Read Data By ID
     switch (request.service_id)
     {
-        case UDS_SID_READ_DATA_BY_LOCAL_ID: // Local Identifier (Techstream)
-        case UDS_SID_READ_DATA_BY_ID:
-            return transformResponse(msg, request);
-        default:
-            LOG_ERROR("Unsupported response SID: %02X", request.service_id);
-            return false;
+    case UDS_SID_READ_DATA_BY_LOCAL_ID: // Local Identifier (Techstream)
+    case UDS_SID_READ_DATA_BY_ID:
+        return transformResponse(msg, request);
+    default:
+        LOG_ERROR("Unsupported response SID: %02X", request.service_id);
+        return false;
     }
 }
 
 std::vector<UdsDefinition> get_uds_definitions(std::uint16_t request_id, std::uint16_t data_id)
 {
     std::vector<UdsDefinition> results;
-
 
     return results;
 }
@@ -269,36 +270,48 @@ uint32_t extract_raw_data(
     int data_len,
     const std::string &parameter_name)
 {
-    if (!data)
+    // Validate bit length range
+    if (bit_length <= 0 || bit_length > 32)
     {
-        #ifdef DEBUG_ISF
-            LOG_ERROR("Null data pointer for parameter: %s", parameter_name.c_str());
-        #endif
+#ifdef DEBUG_ISF
+        LOG_ERROR("[extract_raw_data] Invalid bit_length=%d for parameter: %s",
+                  bit_length, parameter_name.c_str());
+#endif
         return 0;
     }
 
+    // Validate starting byte position
     if (byte_pos < 0 || byte_pos >= data_len)
     {
-        #ifdef DEBUG_ISF
-            LOG_ERROR("Out of range: %d (needs 1 byte, buffer len = %d) for parameter: %s", byte_pos, data_len, parameter_name.c_str());
-        #endif
+#ifdef DEBUG_ISF
+        LOG_ERROR("[extract_raw_data] byte_pos=%d is out of bounds (buffer length = %d) for parameter: %s",
+                  byte_pos, data_len, parameter_name.c_str());
+#endif
         return 0;
     }
 
-    int max_bytes = (bit_offset + bit_length + 7) / 8;
-    if (byte_pos + max_bytes > data_len)
+    // Calculate how many bytes are needed
+    int total_bit_offset = bit_offset + bit_length;
+    int required_bytes = (total_bit_offset + 7) / 8;
+    int end_byte = byte_pos + required_bytes;
+
+    if (end_byte > data_len)
     {
-        #ifdef DEBUG_ISF
-            LOG_ERROR("Out of range: %d (needs %d bytes, buffer len = %d) for parameter: %s", byte_pos, max_bytes, data_len, parameter_name.c_str());
-        #endif
+#ifdef DEBUG_ISF
+        LOG_ERROR("[extract_raw_data] extracting %d bits starting at bit offset %d from byte %d "
+                  "requires up to byte %d, but buffer length is only %d. Parameter: %s",
+                  bit_length, bit_offset, byte_pos, end_byte - 1, data_len, parameter_name.c_str());
+#endif
         return 0;
     }
 
-    int raw = 0;
-    memcpy(&raw, &data[byte_pos], 4); // Safe: already checked bounds
+    // Copy exactly the bytes needed for this bitfield
+    uint32_t raw = 0;
+    memcpy(&raw, &data[byte_pos], required_bytes); // No more than needed
+
     raw >>= bit_offset;
 
-    int mask = (1 << bit_length) - 1;
+    uint32_t mask = (bit_length == 32) ? 0xFFFFFFFF : ((1U << bit_length) - 1);
     return raw & mask;
 }
 
@@ -387,8 +400,8 @@ std::optional<const char *> get_unit_name(uint8_t unit_type)
  * @param data           Pointer to the raw byte array from the UDS response.
  * @param data_len       Length of the byte array.
  * @param candidates     A vector of possible matching UdsDefinitions (e.g., with enumerated values).
- * 
- * @return std::optional<SignalValue> 
+ *
+ * @return std::optional<SignalValue>
  *         - A populated SignalValue if decoding is successful.
  *         - std::nullopt if decoding fails or input is invalid.
  *
@@ -398,12 +411,10 @@ std::optional<const char *> get_unit_name(uint8_t unit_type)
 std::optional<SignalValue> get_signal_value(
     Message_t &msg,
     const UdsDefinition &definition)
-{       
-    
+{
+
     return std::nullopt;
 }
-
-
 
 /**
  * @brief Extracts all unique signal values from a UDS response message.
@@ -415,10 +426,10 @@ std::optional<SignalValue> get_signal_value(
  * @return                  Vector of successfully extracted SignalValue objects
  */
 
-std::vector<SignalValue> get_signal_values(Message_t& msg)
+std::vector<SignalValue> get_signal_values(Message_t &msg)
 {
     std::vector<SignalValue> results;
-        
+
     return results;
 }
 
@@ -471,27 +482,36 @@ void log_signals(const std::vector<SignalValue> &signals)
  * @return true     if at least one signal was successfully extracted and processed
  * @return false    if no signals could be extracted
  */
-bool IsfService::transformResponse(Message_t& msg, const UDSRequest &request)
+bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
 {
     // 1. look up definitions using the extracted response DID if possible
     auto matchingDefinitions = udsMap.equal_range(std::make_tuple(request.tx_id, msg.data_id));
-    
+
     // 2. For each definition, extract the signal
     std::vector<SignalValue> extractedSignals;
-    for (auto it = matchingDefinitions.first; it != matchingDefinitions.second; ++it) 
+    for (auto it = matchingDefinitions.first; it != matchingDefinitions.second; ++it)
     {
-        const UdsDefinition& def = it->second;
+        const UdsDefinition &def = it->second;
 
-        double raw_value = extract_raw_data(msg.Buffer, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, def.parameter_name);
+        const uint8_t* payload = &msg.Buffer[2]; //Skip UDS Header, SID and DID
+        int payload_length = msg.length - 2;
 
-        if(def.is_calculated_value)
+        uint32_t raw_value = extract_raw_data(payload, def.byte_position, def.bit_offset_position, def.bit_length, payload_length, def.parameter_name);
+        
+        if (def.is_calculated_value)
         {
-            double decoded_value = raw_value * def.scaling_factor + def.offset_value;
-            //LOG_DEBUG("Parameter: %s data_id: %u (position=%d, offset=%d, length=%d) raw_value: %u calculated_value: %u", def.parameter_name.c_str(), def.uds_data_identifier_hex, def.byte_position, def.bit_offset_position, def.bit_length, raw_value, decoded_value);
+            double calculated_value = raw_value * def.scaling_factor + def.offset_value;
+            LOG_DEBUG("Parameter: %s data_id: %u (position=%d, offset=%d, length=%d) raw_value: %u calculated_value: %.6f",
+                      def.parameter_name.c_str(), def.uds_data_identifier_hex,
+                      def.byte_position, def.bit_offset_position, def.bit_length,
+                      raw_value, calculated_value);
         }
         else
         {
-            //LOG_DEBUG("Parameter: %s data_id: %u (position=%d, offset=%d, length=%d) raw_value: %u", def.parameter_name.c_str(), def.uds_data_identifier_hex, def.byte_position, def.bit_offset_position, def.bit_length, raw_value);
+            LOG_DEBUG("Parameter: %s data_id: %u (position=%d, offset=%d, length=%d) raw_value: %u",
+                      def.parameter_name.c_str(), def.uds_data_identifier_hex,
+                      def.byte_position, def.bit_offset_position, def.bit_length,
+                      raw_value);
         }
     }
 

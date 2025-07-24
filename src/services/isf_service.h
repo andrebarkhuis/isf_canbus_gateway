@@ -49,28 +49,44 @@ class IsoTp;
 
 //NB: Interval is set to 0 to disable the interval timer.
 const CANMessage isf_pid_session_requests[] = {
-    { .id = 0x700, .data = {0x02, UDS_SID_TESTER_PRESENT, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 0, .param_name = "Tester present - Keep Alive" },
-    { .id = 0x7E0, .data = {0x02, UDS_SID_TESTER_PRESENT, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 0, .param_name = "Tester present - Keep Alive" }
+    // { .id = 0x7DF, .data = {0x02, 0x01, 0x0D, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 0, .param_name = "Not sure" },
+    // { .id = 0x7DF, .data = {0x02, 0x01, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 0, .param_name = "Not sure" },
+    // { .id = 0x7DF, .data = {0x02, 0x01, 0x44, 0x00, 0x00, 0x00, 0x00, 0x00}, .len = 8, .extended = false, .interval = 0, .param_name = "Not sure" },
 };
 
 const UDSRequest isf_uds_requests[] = {
-    { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-1",  .length = 4, .payload = {0x21, 0x02, 0x21, 0x01 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-2",  .length = 3, .payload = { 0x02, 0x21, 0x03 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-3",  .length = 3, .payload = { 0x02, 0x21, 0x04 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-3",  .length = 3, .payload = { 0x02, 0x21, 0x05 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-4",  .length = 3, .payload = { 0x02, 0x21, 0x06 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x07, .interval = 100, .param_name = "request-5",  .length = 3, .payload = { 0x02, 0x21, 0x07 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x08, .interval = 100, .param_name = "request-6",  .length = 3, .payload = { 0x02, 0x21, 0x08 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x22, .interval = 100, .param_name = "request-7",  .length = 3, .payload = { 0x02, 0x21, 0x22 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x20, .interval = 100, .param_name = "request-7",  .length = 3, .payload = { 0x02, 0x21, 0x20 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-8",  .length = 3, .payload = { 0x02, 0x21, 0x25 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x37, .interval = 100, .param_name = "request-9",  .length = 3, .payload = { 0x02, 0x21, 0x37 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x51, .interval = 100, .param_name = "request-13", .length = 3, .payload = { 0x02, 0x21, 0x51 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-14", .length = 3, .payload = { 0x02, 0x21, 0x82 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-15", .length = 3, .payload = { 0x02, 0x21, 0x83 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-15", .length = 3, .payload = { 0x02, 0x21, 0xE1 } },
-    // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xC2, .interval = 150, .param_name = "engine-code", .length = 3, .payload = { 0x02, 0x21, 0xC2 } }
-};
+        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-0x03",  .length = 3, .payload = {0x02, 0x21, 0x03} },
+        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-0x04",  .length = 3, .payload = {0x02, 0x21, 0x04} },
+        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-0x05",  .length = 3, .payload = {0x02, 0x21, 0x05} },
+        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06",  .length = 3, .payload = {0x02, 0x21, 0x06} },
+        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x21, .interval = 100, .param_name = "request-0x21",  .length = 3, .payload = {0x02, 0x21, 0x21} },
+        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x3C, .interval = 100, .param_name = "request-0x3C",  .length = 3, .payload = {0x02, 0x21, 0x3C} },
+        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x41, .interval = 100, .param_name = "request-0x41",  .length = 3, .payload = {0x02, 0x21, 0x41} },
+        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x85, .interval = 100, .param_name = "request-0x85",  .length = 3, .payload = {0x02, 0x21, 0x85} },
+        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1",  .length = 3, .payload = {0x02, 0x21, 0xE1} },
+    
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-0x01", .length = 3, .payload = {0x02, 0x21, 0x01} },
+        { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-0x04", .length = 3, .payload = {0x02, 0x21, 0x04} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06", .length = 3, .payload = {0x02, 0x21, 0x06} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-0x25", .length = 3, .payload = {0x02, 0x21, 0x25} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x37, .interval = 100, .param_name = "request-0x37", .length = 3, .payload = {0x02, 0x21, 0x37} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x39, .interval = 100, .param_name = "request-0x39", .length = 3, .payload = {0x02, 0x21, 0x39} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x41, .interval = 100, .param_name = "request-0x41", .length = 3, .payload = {0x02, 0x21, 0x41} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x51, .interval = 100, .param_name = "request-0x51", .length = 3, .payload = {0x02, 0x21, 0x51} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x52, .interval = 100, .param_name = "request-0x52", .length = 3, .payload = {0x02, 0x21, 0x52} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-0x82", .length = 3, .payload = {0x02, 0x21, 0x82} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-0x83", .length = 3, .payload = {0x02, 0x21, 0x83} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x85, .interval = 100, .param_name = "request-0x85", .length = 3, .payload = {0x02, 0x21, 0x85} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1", .length = 3, .payload = {0x02, 0x21, 0xE1} },
+        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE3, .interval = 100, .param_name = "request-0xE3", .length = 3, .payload = {0x02, 0x21, 0xE3} },
+    
+        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-0x01", .length = 3, .payload = {0x02, 0x21, 0x01} },
+        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06", .length = 3, .payload = {0x02, 0x21, 0x06} },
+        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-0x25", .length = 3, .payload = {0x02, 0x21, 0x25} },
+        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-0x82", .length = 3, .payload = {0x02, 0x21, 0x82} },
+        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-0x83", .length = 3, .payload = {0x02, 0x21, 0x83} },
+        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1", .length = 3, .payload = {0x02, 0x21, 0xE1} }
+   };
 
 
 const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(isf_pid_session_requests[0]);
