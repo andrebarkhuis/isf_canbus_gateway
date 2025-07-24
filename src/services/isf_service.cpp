@@ -484,40 +484,39 @@ void log_signals(const std::vector<SignalValue> &signals)
  */
 bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
 {
-    // 1. look up definitions using the extracted response DID if possible
-    auto matchingDefinitions = udsMap.equal_range(std::make_tuple(request.tx_id, msg.data_id));
-
-    // 2. For each definition, extract the signal
-    std::vector<SignalValue> extractedSignals;
+    auto matchingDefinitions = udsMap.equal_range(std::make_tuple(msg.tx_id, msg.data_id));
+    
     for (auto it = matchingDefinitions.first; it != matchingDefinitions.second; ++it)
     {
         const UdsDefinition &def = it->second;
-
         const uint8_t* payload = &msg.Buffer[2]; //Skip UDS Header, SID and DID
         int payload_length = msg.length - 2;
+        
+        uint32_t raw_value = extract_raw_data(payload, def.byte_position, def.bit_offset_position, def.bit_length, payload_length, def.name.c_str());
 
-        uint32_t raw_value = extract_raw_data(payload, def.byte_position, def.bit_offset_position, def.bit_length, payload_length, def.parameter_name);
-
-        if (def.is_calculated_value)
+        if (def.is_calculated)
         {
             double calculated_value = raw_value * def.scaling_factor + def.offset_value;
-            LOG_DEBUG("Parameter: %s data_id: %u (position=%d, offset=%d, length=%d) raw_value: %u calculated_value: %.6f",
-                      def.parameter_name.c_str(), def.uds_data_identifier_hex,
-                      def.byte_position, def.bit_offset_position, def.bit_length,
-                      raw_value, calculated_value);
+            LOG_DEBUG("%s raw: %u value: %.2f", def.name.c_str(), raw_value, calculated_value);
         }
         else
         {
-            //The raw value is an integer which will match a value in udsMap and udsDefinitions.
-            //If a candidate is found, use the display value.
-
-            // udsMap.emplace(uds_key{ 0x7E0, 0x6 }, UdsDefinition{ 0x7E0, 0x6, 0, 0, 7, 4, "MIL", 0, "OFF" });
-            // udsMap.emplace(uds_key{ 0x7E0, 0x6 }, UdsDefinition{ 0x7E0, 0x6, 0, 0, 7, 4, "MIL", 1, "ON" });
-            
-            LOG_DEBUG("Parameter: %s data_id: %u (position=%d, offset=%d, length=%d) raw_value: %u",
-                      def.parameter_name.c_str(), def.uds_data_identifier_hex,
-                      def.byte_position, def.bit_offset_position, def.bit_length,
-                      raw_value);
+            auto enumRange = udsMap.equal_range(uds_key{msg.tx_id, msg.data_id});
+                     
+            for (auto enumIt = enumRange.first; enumIt != enumRange.second; ++enumIt)
+            {
+                const UdsDefinition &enumDef = enumIt->second;
+                
+                if (enumDef.name == def.name &&
+                    enumDef.byte_position == def.byte_position &&
+                    enumDef.bit_offset_position == def.bit_offset_position &&
+                    enumDef.value.has_value() &&
+                    enumDef.value.value() == raw_value &&
+                    enumDef.display_value.has_value())
+                {
+                    LOG_DEBUG("%s raw: %u value: %s", def.name.c_str(), raw_value, enumDef.display_value.value().c_str());
+                }
+            }
         }
     }
 
