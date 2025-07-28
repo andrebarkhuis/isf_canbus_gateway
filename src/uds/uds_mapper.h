@@ -10,13 +10,13 @@ struct UdsDefinition
     // raw metadata
     uint16_t                   request_id     = 0;
     uint16_t                   did            = 0;
-    uint8_t                    unit           = 0;
-    uint8_t                    byte_position  = 0;
-    uint8_t                    bit_offset_position = 0;
+    int8_t                     unit           = 0;
+    int8_t                     byte_position  = 0;
+    int8_t                     bit_offset_position = 0;
     double                     scaling_factor  = 1.0;
     double                     offset_value    = 0.0;
     bool                       is_calculated   = false;
-    uint8_t                    bit_length      = 0;
+    int8_t                     bit_length      = 0;
     std::string                name;
     std::optional<uint8_t>     value           = std::nullopt;
     std::optional<std::string> display_value   = std::nullopt;

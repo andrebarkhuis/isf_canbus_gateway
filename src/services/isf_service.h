@@ -5,47 +5,70 @@
 #include "../common.h"
 #include "../can/twai_wrapper.h"
 #include "../isotp/iso_tp.h"
-
-
-enum UnitType {
-    UNIT_GENERAL = 0, // Generic / ECU Identifiers
-    UNIT_ACCELERATION = 1, // Acceleration, Gradient
-    UNIT_G_FORCE = 2, // G-force sensors
-    UNIT_ACCEL_REQUEST = 3, // Acceleration request signals
-    UNIT_DECELERATION = 4, // Deceleration sensor
-    UNIT_IGNITION_FEEDBACK = 5, // Ignition timing and feedback
-    UNIT_ANGLE_SENSOR = 6, // Absolute angles (Steering, Pinion)
-    UNIT_YAW_RATE = 7, // Yaw rate sensors
-    UNIT_CURRENT_SENSOR = 9, // Current draw sensors (Throttle, Clutch)
-    UNIT_PM_SENSOR = 11, // Particulate Matter Sensors
-    UNIT_DISTANCE = 13, // Distance / Mileage / Odometer-related
-    UNIT_FORWARD_DISTANCE = 14, // Forward vehicle distance measurement
-    UNIT_ODOMETER = 17, // Odometer history and mileage
-    UNIT_BATTERY_STATUS = 18, // Battery charge, hybrid systems
-    UNIT_POWER_MANAGEMENT = 19, // Request Power, Wout Control
-    UNIT_HYBRID_BATTERY = 22, // Hybrid / EV Battery power levels
-    UNIT_FUEL_SYSTEM = 23, // Fuel system-related parameters
-    UNIT_FUEL_INJECTION = 24, // Injection volume, fuel pump parameters
-    UNIT_CRUISE_CONTROL = 25, // Cruise control request forces
-    UNIT_FREQUENCY_SENSOR = 29, // Frequency-based sensors (Motor, Generator)
-    UNIT_ILLUMINATION_SENSOR = 30, // Light control, brightness
-    UNIT_EXHAUST_SENSOR = 32, // NOx and exhaust emissions
-    UNIT_LOAD_FUEL_TRIM = 33, // Load calculations, Fuel trims
-    UNIT_MAP_TIRE_PRESSURE = 34, // Manifold Pressure and Tire Inflation sensors
-    UNIT_ENGINE_RPM = 39, // Engine Speed, RPM
-    UNIT_SPEED_SENSOR = 42, // Vehicle Speed Sensors
-    UNIT_VOLTAGE_SENSOR = 48, // Oxygen Sensor, Solar Voltage, Battery Voltage
-    UNIT_TEMPERATURE_SENSOR = 57, // Coolant Temperature, Intake Air Temp
-    UNIT_TORQUE_SENSOR = 58, // Steering, Motor, Brake Torque
-    UNIT_POSITION_SENSOR = 59, // Throttle, Clutch, ASL Gear Position
-    UNIT_AMBIENT_TEMP = 66, // Outside temperature sensors
-    UNIT_MASS_AIR_FLOW = 75 // MAF Sensors (filtered & raw values)
-};
+#include <cstdint>
+#include <string_view>
+#include <optional>
+#include <array>
 
 class TwaiWrapper;
 class IsoTp;
 
 #define DEBUG_ISF
+
+
+
+// Helper enum to tag the C++ type
+enum class ValueType : uint8_t {
+    Float,
+    UInt16,
+    UInt32,
+    Boolean
+};
+
+struct UnitTypeInfo {
+    uint8_t                 id;
+    std::string             name;
+    std::string             description;
+    std::optional<float>    minValue;
+    std::optional<float>    maxValue;
+    ValueType               valueType;
+};
+
+// Array of all infos, in increasing Id order
+inline const std::array<UnitTypeInfo, 32> unitTypeInfos{{
+    { 0,   "GENERAL",            "Generic / ECU Identifiers",         std::nullopt,    std::nullopt,    ValueType::Boolean },
+    { 1,   "ACCELERATION",       "Acceleration, Gradient",            -10.0f,          10.0f,           ValueType::Float },
+    { 2,   "G_FORCE",            "G-force sensors",                   -5.0f,           5.0f,            ValueType::Float },
+    { 3,   "ACCEL_REQUEST",      "Acceleration request signals",      0.0f,            100.0f,          ValueType::Float },
+    { 4,   "DECELERATION",       "Deceleration sensor",               -10.0f,          10.0f,           ValueType::Float },
+    { 5,   "IGNITION_FEEDBACK",  "Ignition timing and feedback",      -20.0f,          60.0f,           ValueType::Float },
+    { 6,   "ANGLE_SENSOR",       "Absolute angles (Steering, Pinion)", -900.0f,         900.0f,          ValueType::Float },
+    { 7,   "YAW_RATE",           "Yaw rate sensors",                  -200.0f,         200.0f,          ValueType::Float },
+    { 9,   "CURRENT_SENSOR",     "Current draw sensors (Throttle, Clutch)", -50.0f, 50.0f,     ValueType::Float },
+    { 11,  "PM_SENSOR",          "Particulate Matter Sensors",        0.0f,            1000.0f,         ValueType::Float },
+    { 13,  "DISTANCE",           "Distance / Mileage / Odometer-related", 0.0f, 999999.0f,   ValueType::Float },
+    { 14,  "FORWARD_DISTANCE",   "Forward vehicle distance measurement", 0.0f,    300.0f,       ValueType::Float },
+    { 17,  "ODOMETER",           "Odometer history and mileage",      0.0f,            999999.0f,       ValueType::UInt32 },
+    { 18,  "BATTERY_STATUS",     "Battery charge, hybrid systems",    0.0f,            100.0f,          ValueType::Float },
+    { 19,  "POWER_MANAGEMENT",   "Request Power, Wout Control",       0.0f,            100.0f,          ValueType::Float },
+    { 22,  "HYBRID_BATTERY",     "Hybrid / EV Battery power levels",  0.0f,            500.0f,          ValueType::Float },
+    { 23,  "FUEL_SYSTEM",        "Fuel system-related parameters",    0.0f,            100.0f,          ValueType::Float },
+    { 24,  "FUEL_INJECTION",     "Injection volume, fuel pump parameters", 0.0f, 200.0f,    ValueType::Float },
+    { 25,  "CRUISE_CONTROL",     "Cruise control request forces",     0.0f,            100.0f,          ValueType::Float },
+    { 29,  "FREQUENCY_SENSOR",   "Frequency-based sensors (Motor, Generator)", 0.0f, 5000.0f, ValueType::UInt16 },
+    { 30,  "ILLUMINATION_SENSOR","Light control, brightness",         0.0f,            100000.0f,       ValueType::UInt32 },
+    { 32,  "EXHAUST_SENSOR",     "NOx and exhaust emissions",         0.0f,            1000.0f,         ValueType::Float },
+    { 33,  "LOAD_FUEL_TRIM",     "Load calculations, Fuel trims",     0.0f,            100.0f,          ValueType::Float },
+    { 34,  "MAP_TIRE_PRESSURE",  "Manifold Pressure and Tire Inflation sensors", 10.0f, 400.0f, ValueType::Float },
+    { 39,  "ENGINE_RPM",         "Engine Speed, RPM",                 0.0f,            10000.0f,        ValueType::UInt16 },
+    { 42,  "SPEED_SENSOR",       "Vehicle Speed Sensors",             0.0f,            300.0f,          ValueType::UInt16 },
+    { 48,  "VOLTAGE_SENSOR",     "Oxygen Sensor, Solar Voltage, Battery Voltage", 0.0f, 18.0f, ValueType::Float },
+    { 57,  "TEMPERATURE_SENSOR", "Coolant Temperature, Intake Air Temp", -40.0f, 150.0f,   ValueType::Float },
+    { 58,  "TORQUE_SENSOR",      "Steering, Motor, Brake Torque",     -500.0f,         1000.0f,         ValueType::Float },
+    { 59,  "POSITION_SENSOR",    "Throttle, Clutch, ASL Gear Position", 0.0f,   100.0f,        ValueType::Float },
+    { 66,  "AMBIENT_TEMP",       "Outside temperature sensors",       -50.0f,          60.0f,           ValueType::Float },
+    { 75,  "MASS_AIR_FLOW",      "MAF Sensors (filtered & raw values)", 0.0f,    655.0f,        ValueType::Float }
+}};
 
 //NB: Interval is set to 0 to disable the interval timer.
 const CANMessage isf_pid_session_requests[] = {

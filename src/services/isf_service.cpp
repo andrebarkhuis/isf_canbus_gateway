@@ -241,13 +241,6 @@ bool IsfService::processUdsResponse(Message_t &msg, const UDSRequest &request)
     }
 }
 
-std::vector<UdsDefinition> get_uds_definitions(std::uint16_t request_id, std::uint16_t data_id)
-{
-    std::vector<UdsDefinition> results;
-
-    return results;
-}
-
 /**
  * @brief Safely extracts raw data bits from a CAN data buffer.
  *
@@ -264,18 +257,19 @@ std::vector<UdsDefinition> get_uds_definitions(std::uint16_t request_id, std::ui
  */
 uint32_t extract_raw_data(
     const uint8_t *data,
-    int byte_pos,
-    int bit_offset,
-    int bit_length,
-    int data_len,
+    int8_t byte_pos,
+    int8_t bit_pos,
+    int8_t bit_length,
+    int8_t data_len,
     const std::string &parameter_name)
 {
+    const int MAX_BIT_LENGTH = 32; 
+    
     // Validate bit length range
-    if (bit_length <= 0 || bit_length > 32)
+    if (bit_length <= 0 || bit_length > MAX_BIT_LENGTH)
     {
 #ifdef DEBUG_ISF
-        LOG_ERROR("[extract_raw_data] Invalid bit_length=%d for parameter: %s",
-                  bit_length, parameter_name.c_str());
+        LOG_ERROR("[extract_raw_data] Invalid bit_length=%d for parameter: %s", bit_length, parameter_name.c_str());
 #endif
         return 0;
     }
@@ -284,23 +278,20 @@ uint32_t extract_raw_data(
     if (byte_pos < 0 || byte_pos >= data_len)
     {
 #ifdef DEBUG_ISF
-        LOG_ERROR("[extract_raw_data] byte_pos=%d is out of bounds (buffer length = %d) for parameter: %s",
-                  byte_pos, data_len, parameter_name.c_str());
+        LOG_ERROR("[extract_raw_data] byte_pos=%d is out of bounds (buffer length = %d) for parameter: %s", byte_pos, data_len, parameter_name.c_str());
 #endif
         return 0;
     }
 
     // Calculate how many bytes are needed
-    int total_bit_offset = bit_offset + bit_length;
-    int required_bytes = (total_bit_offset + 7) / 8;
-    int end_byte = byte_pos + required_bytes;
+    int8_t total_bit_offset = bit_pos + bit_length;
+    int8_t required_bytes = (total_bit_offset + 7) / 8;
+    int8_t end_byte = byte_pos + required_bytes;
 
     if (end_byte > data_len)
     {
 #ifdef DEBUG_ISF
-        LOG_ERROR("[extract_raw_data] extracting %d bits starting at bit offset %d from byte %d "
-                  "requires up to byte %d, but buffer length is only %d. Parameter: %s",
-                  bit_length, bit_offset, byte_pos, end_byte - 1, data_len, parameter_name.c_str());
+        LOG_ERROR("[extract_raw_data] extracting %d bits starting at bit offset %d from byte %d requires up to byte %d, but buffer length is only %d. Parameter: %s", bit_length, bit_pos, byte_pos, end_byte - 1, data_len, parameter_name.c_str());
 #endif
         return 0;
     }
@@ -309,148 +300,31 @@ uint32_t extract_raw_data(
     uint32_t raw = 0;
     memcpy(&raw, &data[byte_pos], required_bytes); // No more than needed
 
-    raw >>= bit_offset;
+    raw >>= bit_pos;
 
-    uint32_t mask = (bit_length == 32) ? 0xFFFFFFFF : ((1U << bit_length) - 1);
+    uint32_t mask = (bit_length == MAX_BIT_LENGTH) ? 0xFFFFFFFF : ((1U << bit_length) - 1);
     return raw & mask;
 }
 
-std::optional<const char *> get_unit_name(uint8_t unit_type)
-{
-    switch (unit_type)
-    {
-    case UNIT_GENERAL:
-        return std::nullopt;
-    case UNIT_ACCELERATION:
-        return "m/s²";
-    case UNIT_G_FORCE:
-        return "G";
-    case UNIT_ACCEL_REQUEST:
-        return "%";
-    case UNIT_DECELERATION:
-        return "m/s²";
-    case UNIT_IGNITION_FEEDBACK:
-        return "°";
-    case UNIT_ANGLE_SENSOR:
-        return "°";
-    case UNIT_YAW_RATE:
-        return "°/s";
-    case UNIT_CURRENT_SENSOR:
-        return "A";
-    case UNIT_PM_SENSOR:
-        return "mg/m³";
-    case UNIT_DISTANCE:
-        return "m";
-    case UNIT_FORWARD_DISTANCE:
-        return "m";
-    case UNIT_ODOMETER:
-        return "km";
-    case UNIT_BATTERY_STATUS:
-        return "%";
-    case UNIT_POWER_MANAGEMENT:
-        return "W";
-    case UNIT_HYBRID_BATTERY:
-        return "V";
-    case UNIT_FUEL_SYSTEM:
-        return "%";
-    case UNIT_FUEL_INJECTION:
-        return "ms";
-    case UNIT_CRUISE_CONTROL:
-        return "%";
-    case UNIT_FREQUENCY_SENSOR:
-        return "Hz";
-    case UNIT_ILLUMINATION_SENSOR:
-        return "lx";
-    case UNIT_EXHAUST_SENSOR:
-        return "ppm";
-    case UNIT_LOAD_FUEL_TRIM:
-        return "%";
-    case UNIT_MAP_TIRE_PRESSURE:
-        return "kPa";
-    case UNIT_ENGINE_RPM:
-        return "RPM";
-    case UNIT_SPEED_SENSOR:
-        return "km/h";
-    case UNIT_VOLTAGE_SENSOR:
-        return "V";
-    case UNIT_TEMPERATURE_SENSOR:
-        return "°C";
-    case UNIT_TORQUE_SENSOR:
-        return "Nm";
-    case UNIT_POSITION_SENSOR:
-        return "%";
-    case UNIT_AMBIENT_TEMP:
-        return "°C";
-    case UNIT_MASS_AIR_FLOW:
-        return "g/s";
-    default:
-        return std::nullopt;
+void logBufferHex(int byte_pos, int bit_pos, const uint8_t* buffer, size_t buffer_length) {
+    
+    const size_t maxOutputLen = 64 + buffer_length * 5; // generous headroom
+    char output[maxOutputLen];
+    size_t pos = snprintf(output, sizeof(output), "byte_pos: %d, bit_pos: %d, buffer_length: %zu |", byte_pos, bit_pos, buffer_length);
+  
+    for (size_t i = 0; i < buffer_length && pos < sizeof(output) - 5; ++i) {
+      pos += snprintf(output + pos, sizeof(output) - pos, " 0x%02X", buffer[i]);
     }
-}
-
-/**
- * @brief Extracts and decodes a signal value from raw UDS response data using the given UdsDefinition.
- *
- * This function interprets the raw byte buffer (`data`) based on the position, bit offset, length,
- * scaling factor, and offset specified in the `definition`. If `candidates` are provided with
- * matching decoded values and display strings (e.g., for enumerated values), the corresponding
- * display label is included in the result.
- *
- * @param definition     The UdsDefinition that specifies how to interpret the raw data.
- * @param data           Pointer to the raw byte array from the UDS response.
- * @param data_len       Length of the byte array.
- * @param candidates     A vector of possible matching UdsDefinitions (e.g., with enumerated values).
- *
- * @return std::optional<SignalValue>
- *         - A populated SignalValue if decoding is successful.
- *         - std::nullopt if decoding fails or input is invalid.
- *
- * @note The function includes range checks and logs an error if the `data` pointer is null.
- *       A fallback `SignalValue` without a display label is returned if no enumerated match is found.
- */
-std::optional<SignalValue> get_signal_value(
-    Message_t &msg,
-    const UdsDefinition &definition)
-{
-
-    return std::nullopt;
-}
-
-/**
- * @brief Extracts all unique signal values from a UDS response message.
- *
- * Groups definitions by a composite key (data_id, byte_position, bit_offset_position)
- * and extracts one signal per group. Handles partial responses by checking each signal
- * individually rather than requiring the full expected response length.
- *
- * @return                  Vector of successfully extracted SignalValue objects
- */
-
-std::vector<SignalValue> get_signal_values(Message_t &msg)
-{
-    std::vector<SignalValue> results;
-
-    return results;
-}
-
-/**
- * Pretty-logs a list of SignalValues.
- *
- * @param signals   List of decoded signal values
- */
-void log_signals(const std::vector<SignalValue> &signals)
-{
-    // Individual decoded signals
-    for (const auto &sig : signals)
-    {
-        if (sig.display_value.has_value())
-            LOG_DEBUG("  %s = %s", sig.parameter_name.c_str(), sig.display_value->c_str());
-        else if (sig.unit_name.has_value())
-            LOG_DEBUG("  %s = %.2f %s", sig.parameter_name.c_str(), sig.value, sig.unit_name.value());
-        else
-            LOG_DEBUG("  %s = %.2f", sig.parameter_name.c_str(), sig.value);
+  
+    // Optional newline
+    if (pos < sizeof(output) - 2) {
+      output[pos++] = '\n';
+      output[pos] = '\0';
     }
+  
+    LOG_DEBUG("%s", output);
 }
+  
 
 /**
  * @brief Transforms a UDS response into signal values
@@ -490,14 +364,43 @@ bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
     {
         const UdsDefinition &def = it->second;
         const uint8_t* payload = &msg.Buffer[2]; //Skip UDS Header, SID and DID
-        int payload_length = msg.length - 2;
-        
-        uint32_t raw_value = extract_raw_data(payload, def.byte_position, def.bit_offset_position, def.bit_length, payload_length, def.name.c_str());
+                
+        //logBufferHex(def.byte_position, def.bit_offset_position, payload, msg.length);
+
+        const UnitTypeInfo &unit_info = unitTypeInfos.at(def.unit);
+
+        switch (unit_info.valueType)
+        {
+            case ValueType::Float:
+            {
+                //TODO: Implement float calculation
+                break;
+            }
+            case ValueType::UInt16:
+            {
+                // int multivalue like gear position
+
+                uint16_t calculated_value = extract_uint16_data(payload, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, def.name.c_str());
+                break;
+            }
+            case ValueType::UInt32:
+            {
+                //Calculated value, speed, temp, etc
+                uint32_t calculated_value = extract_uint32_data(payload, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, def.name.c_str());
+                break;
+            }
+            case ValueType::Boolean:
+            {
+                //Single bit value, MIL, etc
+                bool calculated_value = extract_single_bit(payload, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, def.name.c_str());
+                break;
+            }
+        }
 
         if (def.is_calculated)
         {
-            double calculated_value = raw_value * def.scaling_factor + def.offset_value;
-            LOG_DEBUG("%s raw: %u value: %.2f", def.name.c_str(), raw_value, calculated_value);
+          
+            //LOG_DEBUG("%s raw: %u value: %.2f", def.name.c_str(), raw_value, calculated_value);
         }
         else
         {
@@ -514,7 +417,7 @@ bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
                     enumDef.value.value() == raw_value &&
                     enumDef.display_value.has_value())
                 {
-                    LOG_DEBUG("%s raw: %u value: %s", def.name.c_str(), raw_value, enumDef.display_value.value().c_str());
+                    //LOG_DEBUG("%s raw: %u value: %s", def.name.c_str(), raw_value, enumDef.display_value.value().c_str());
                 }
             }
         }
