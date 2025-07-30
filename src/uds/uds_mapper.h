@@ -7,7 +7,6 @@
 
 struct UdsDefinition
 {
-    // raw metadata
     uint16_t                   request_id     = 0;
     uint16_t                   did            = 0;
     int8_t                     unit           = 0;

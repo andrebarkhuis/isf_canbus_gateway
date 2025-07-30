@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <tuple>
 #include <optional>
+#include <set>
 
 /**
  * @brief Represents a decoded signal value from a CAN message
@@ -177,9 +178,10 @@ bool IsfService::beginSend()
 {
     if (is_session_active)
     {
-        LOG_DEBUG("UDS request already in progress, skipping new send");
         return false;
     }
+
+    is_session_active = true; // Set session active for the entire batch
 
     for (int i = 0; i < ISF_UDS_REQUESTS_SIZE; i++)
     {
@@ -199,23 +201,20 @@ bool IsfService::beginSend()
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 
+    is_session_active = false; // Clear session active after all requests
     return true;
 }
 
 bool IsfService::sendUdsRequest(Message_t &msg, const UDSRequest &request)
 {
-    is_session_active = true;
-
     if (!isotp->send(&msg))
     {
-        is_session_active = false;
         msg.reset();
         return false;
     }
 
     if (!isotp->receive(&msg))
     {
-        is_session_active = false;
         msg.reset();
         return false;
     }
@@ -223,7 +222,6 @@ bool IsfService::sendUdsRequest(Message_t &msg, const UDSRequest &request)
     processUdsResponse(msg, request);
 
     msg.reset();
-    is_session_active = false;
     return true;
 }
 
@@ -244,43 +242,36 @@ bool IsfService::processUdsResponse(Message_t &msg, const UDSRequest &request)
 /**
  * @brief Safely extracts raw data bits from a CAN data buffer.
  *
- * Ensures bit boundaries are valid before extracting, and logs the specific
- * parameter name if an issue is found.
+ * Ensures bit boundaries are valid before extracting.
  *
  * @param data            Raw data buffer (must be non-null)
  * @param byte_pos        Starting byte position to extract from
  * @param bit_offset      Bit offset within starting byte
  * @param bit_length      Total number of bits to extract
  * @param data_len        Length of the data buffer
- * @param parameter_name  Signal name (for debug/error context)
- * @return Extracted raw value (uint32_t), or 0 on error
+ * @param raw_value       Output parameter - extracted raw value
+ * @return true if extraction was successful, false on error
  */
-uint32_t extract_raw_data(
+bool get_raw_value(
     const uint8_t *data,
     int8_t byte_pos,
     int8_t bit_pos,
     int8_t bit_length,
     int8_t data_len,
-    const std::string &parameter_name)
+    uint32_t &raw_value)
 {
     const int MAX_BIT_LENGTH = 32; 
     
     // Validate bit length range
     if (bit_length <= 0 || bit_length > MAX_BIT_LENGTH)
     {
-#ifdef DEBUG_ISF
-        LOG_ERROR("[extract_raw_data] Invalid bit_length=%d for parameter: %s", bit_length, parameter_name.c_str());
-#endif
-        return 0;
+        return false;
     }
 
     // Validate starting byte position
     if (byte_pos < 0 || byte_pos >= data_len)
     {
-#ifdef DEBUG_ISF
-        LOG_ERROR("[extract_raw_data] byte_pos=%d is out of bounds (buffer length = %d) for parameter: %s", byte_pos, data_len, parameter_name.c_str());
-#endif
-        return 0;
+        return false;
     }
 
     // Calculate how many bytes are needed
@@ -290,10 +281,7 @@ uint32_t extract_raw_data(
 
     if (end_byte > data_len)
     {
-#ifdef DEBUG_ISF
-        LOG_ERROR("[extract_raw_data] extracting %d bits starting at bit offset %d from byte %d requires up to byte %d, but buffer length is only %d. Parameter: %s", bit_length, bit_pos, byte_pos, end_byte - 1, data_len, parameter_name.c_str());
-#endif
-        return 0;
+        return false;
     }
 
     // Copy exactly the bytes needed for this bitfield
@@ -303,7 +291,105 @@ uint32_t extract_raw_data(
     raw >>= bit_pos;
 
     uint32_t mask = (bit_length == MAX_BIT_LENGTH) ? 0xFFFFFFFF : ((1U << bit_length) - 1);
-    return raw & mask;
+    raw_value = raw & mask;
+    
+    return true;
+}
+
+/**
+ * @brief Safely extracts a single bit from a CAN data buffer.
+ *
+ * This function is optimized for single-bit extraction (like MIL status, warning flags, etc.)
+ * and always extracts exactly 1 bit.
+ *
+ * @param data            Raw data buffer (must be non-null)
+ * @param byte_pos        Starting byte position to extract from
+ * @param bit_offset      Bit offset within starting byte (0-7)
+ * @param data_len        Length of the data buffer
+ * @param bit_value       Output parameter - extracted bit value (0 or 1)
+ * @return true if extraction was successful, false on error
+ */
+bool get_single_bit(
+    const uint8_t *data,
+    int8_t byte_pos,
+    int8_t bit_pos,
+    int8_t data_len,
+    uint8_t &bit_value)
+{
+    // Validate starting byte position
+    if (byte_pos < 0 || byte_pos >= data_len)
+    {
+        return false;
+    }
+
+    // Validate bit position within byte
+    if (bit_pos < 0 || bit_pos > 7)
+    {
+        return false;
+    }
+
+    // Extract the single bit
+    uint8_t byte_value = data[byte_pos];
+    bit_value = (byte_value >> bit_pos) & 0x01;
+    
+    return true;
+}
+
+/**
+ * @brief Finds UnitTypeInfo by unit ID
+ *
+ * Searches through the unitTypeInfos array to find the entry with matching unit ID.
+ * This is necessary because unit IDs are not consecutive and cannot be used as direct array indices.
+ *
+ * @param unit_id The unit ID to search for
+ * @return Pointer to UnitTypeInfo if found, nullptr if not found
+ */
+const UnitTypeInfo* findUnitTypeInfo(uint8_t unit_id)
+{
+    for (const auto &info : unitTypeInfos) {
+        if (info.id == unit_id) {
+            return &info;
+        }
+    }
+    return nullptr;
+}
+
+/**
+ * @brief Retrieves the matching enum definition for a given raw value from UDS definitions.
+ *
+ * Searches through the UDS map for matching enum definitions that correspond to
+ * the given raw value and returns the complete matching UdsDefinition.
+ *
+ * @param tx_id           CAN transmit ID
+ * @param data_id         UDS data identifier
+ * @param def             UDS definition containing position and name info
+ * @param raw_value       Raw extracted value to match against enum definitions
+ * @return Optional UdsDefinition containing the matching enum definition, or nullopt if not found
+ */
+std::optional<UdsDefinition> get_enum_value(
+    uint32_t tx_id,
+    uint16_t data_id,
+    const UdsDefinition &def,
+    uint32_t raw_value)
+{
+    auto enumRange = udsMap.equal_range(uds_key{tx_id, data_id});
+                     
+    for (auto enumIt = enumRange.first; enumIt != enumRange.second; ++enumIt)
+    {
+        const UdsDefinition &enumDef = enumIt->second;
+        
+        if (enumDef.name == def.name &&
+            enumDef.byte_position == def.byte_position &&
+            enumDef.bit_offset_position == def.bit_offset_position &&
+            enumDef.value.has_value() &&
+            enumDef.value.value() == raw_value &&
+            enumDef.display_value.has_value())
+        {
+            return enumDef;
+        }
+    }
+    
+    return std::nullopt;
 }
 
 void logBufferHex(int byte_pos, int bit_pos, const uint8_t* buffer, size_t buffer_length) {
@@ -359,6 +445,10 @@ void logBufferHex(int byte_pos, int bit_pos, const uint8_t* buffer, size_t buffe
 bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
 {
     auto matchingDefinitions = udsMap.equal_range(std::make_tuple(msg.tx_id, msg.data_id));
+    bool at_least_one_success = false;
+    
+    // Track processed (byte_position, bit_offset_position) pairs to avoid duplicates
+    std::set<std::pair<int8_t, int8_t>> processedPositions;
     
     for (auto it = matchingDefinitions.first; it != matchingDefinitions.second; ++it)
     {
@@ -367,61 +457,73 @@ bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
                 
         //logBufferHex(def.byte_position, def.bit_offset_position, payload, msg.length);
 
-        const UnitTypeInfo &unit_info = unitTypeInfos.at(def.unit);
-
-        switch (unit_info.valueType)
+        // Check if this byte/bit position has already been processed
+        std::pair<int8_t, int8_t> position = {def.byte_position, def.bit_offset_position};
+        if (processedPositions.find(position) != processedPositions.end())
         {
+            continue; // Skip this definition as we've already processed this position
+        }
+        
+        // Mark this position as processed
+        processedPositions.insert(position);
+
+        const UnitTypeInfo* unit_info = findUnitTypeInfo(def.unit);
+        if(unit_info == nullptr)
+        {
+            LOG_ERROR("Unit type not found for unit %d", def.unit);
+            continue;
+        }
+
+        switch (unit_info->valueType)
+        {
+            case ValueType::UInt16:
+            case ValueType::UInt32:
             case ValueType::Float:
             {
-                //TODO: Implement float calculation
-                break;
-            }
-            case ValueType::UInt16:
-            {
-                // int multivalue like gear position
+                uint32_t raw_value;
+                if (!get_raw_value(payload, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, raw_value))
+                {
+                    continue; // Skip this definition if extraction failed
+                }
+                // Has decimals
 
-                uint16_t calculated_value = extract_uint16_data(payload, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, def.name.c_str());
-                break;
-            }
-            case ValueType::UInt32:
-            {
-                //Calculated value, speed, temp, etc
-                uint32_t calculated_value = extract_uint32_data(payload, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, def.name.c_str());
+                float calculated_value = (float)raw_value * def.scaling_factor + def.offset_value;
+
+                if (unit_info->minValue.has_value() && calculated_value < unit_info->minValue.value())
+                {
+                    calculated_value = unit_info->minValue.value();
+                }
+                if (unit_info->maxValue.has_value() && calculated_value > unit_info->maxValue.value())
+                {
+                    calculated_value = unit_info->maxValue.value();
+                }
+
+                LOG_DEBUG("%s raw: %u value: %f", def.name.c_str(), raw_value, calculated_value);
+
+                at_least_one_success = true;
                 break;
             }
             case ValueType::Boolean:
             {
-                //Single bit value, MIL, etc
-                bool calculated_value = extract_single_bit(payload, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, def.name.c_str());
+                uint8_t bit_value;
+                if (!get_single_bit(payload, def.byte_position, def.bit_offset_position, msg.length, bit_value))
+                {
+                    continue; // Skip this definition if bit extraction failed
+                }
+
+                auto udsDefinitionValue = get_enum_value(msg.tx_id, msg.data_id, def, bit_value);
+
+                if (udsDefinitionValue.has_value())
+                {
+                    // LOG_DEBUG("%s raw: %u value: %s", def.name.c_str(), bit_value, udsDefinitionValue.value().display_value.value().c_str());
+                }
+                
+                at_least_one_success = true;
                 break;
             }
         }
 
-        if (def.is_calculated)
-        {
-          
-            //LOG_DEBUG("%s raw: %u value: %.2f", def.name.c_str(), raw_value, calculated_value);
-        }
-        else
-        {
-            auto enumRange = udsMap.equal_range(uds_key{msg.tx_id, msg.data_id});
-                     
-            for (auto enumIt = enumRange.first; enumIt != enumRange.second; ++enumIt)
-            {
-                const UdsDefinition &enumDef = enumIt->second;
-                
-                if (enumDef.name == def.name &&
-                    enumDef.byte_position == def.byte_position &&
-                    enumDef.bit_offset_position == def.bit_offset_position &&
-                    enumDef.value.has_value() &&
-                    enumDef.value.value() == raw_value &&
-                    enumDef.display_value.has_value())
-                {
-                    //LOG_DEBUG("%s raw: %u value: %s", def.name.c_str(), raw_value, enumDef.display_value.value().c_str());
-                }
-            }
-        }
     }
 
-    return true;
+    return at_least_one_success;
 }

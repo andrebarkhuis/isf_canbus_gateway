@@ -78,15 +78,15 @@ const CANMessage isf_pid_session_requests[] = {
 };
 
 const UDSRequest isf_uds_requests[] = {
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-0x03",  .length = 3, .payload = {0x02, 0x21, 0x03} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-0x04",  .length = 3, .payload = {0x02, 0x21, 0x04} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-0x05",  .length = 3, .payload = {0x02, 0x21, 0x05} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06",  .length = 3, .payload = {0x02, 0x21, 0x06} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x21, .interval = 100, .param_name = "request-0x21",  .length = 3, .payload = {0x02, 0x21, 0x21} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x3C, .interval = 100, .param_name = "request-0x3C",  .length = 3, .payload = {0x02, 0x21, 0x3C} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x41, .interval = 100, .param_name = "request-0x41",  .length = 3, .payload = {0x02, 0x21, 0x41} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x85, .interval = 100, .param_name = "request-0x85",  .length = 3, .payload = {0x02, 0x21, 0x85} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1",  .length = 3, .payload = {0x02, 0x21, 0xE1} },
+        { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-0x03",  .length = 3, .payload = {0x02, 0x21, 0x03} },
+        { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-0x04",  .length = 3, .payload = {0x02, 0x21, 0x04} },
+        { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-0x05",  .length = 3, .payload = {0x02, 0x21, 0x05} },
+        { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06",  .length = 3, .payload = {0x02, 0x21, 0x06} },
+        { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x21, .interval = 100, .param_name = "request-0x21",  .length = 3, .payload = {0x02, 0x21, 0x21} },
+        { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x3C, .interval = 100, .param_name = "request-0x3C",  .length = 3, .payload = {0x02, 0x21, 0x3C} },
+        { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x41, .interval = 100, .param_name = "request-0x41",  .length = 3, .payload = {0x02, 0x21, 0x41} },
+        { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x85, .interval = 100, .param_name = "request-0x85",  .length = 3, .payload = {0x02, 0x21, 0x85} },
+        { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1",  .length = 3, .payload = {0x02, 0x21, 0xE1} },
     
         { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-0x01", .length = 3, .payload = {0x02, 0x21, 0x01} },
         { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-0x04", .length = 3, .payload = {0x02, 0x21, 0x04} },
@@ -103,12 +103,12 @@ const UDSRequest isf_uds_requests[] = {
         { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1", .length = 3, .payload = {0x02, 0x21, 0xE1} },
         { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE3, .interval = 100, .param_name = "request-0xE3", .length = 3, .payload = {0x02, 0x21, 0xE3} },
     
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-0x01", .length = 3, .payload = {0x02, 0x21, 0x01} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06", .length = 3, .payload = {0x02, 0x21, 0x06} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-0x25", .length = 3, .payload = {0x02, 0x21, 0x25} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-0x82", .length = 3, .payload = {0x02, 0x21, 0x82} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-0x83", .length = 3, .payload = {0x02, 0x21, 0x83} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1", .length = 3, .payload = {0x02, 0x21, 0xE1} }
+        { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-0x01", .length = 3, .payload = {0x02, 0x21, 0x01} },
+        { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06", .length = 3, .payload = {0x02, 0x21, 0x06} },
+        { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-0x25", .length = 3, .payload = {0x02, 0x21, 0x25} },
+        { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-0x82", .length = 3, .payload = {0x02, 0x21, 0x82} },
+        { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-0x83", .length = 3, .payload = {0x02, 0x21, 0x83} },
+        { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1", .length = 3, .payload = {0x02, 0x21, 0xE1} }
    };
 
 
