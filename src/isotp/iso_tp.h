@@ -112,9 +112,7 @@ public:
   
 private:  
     TwaiWrapper *_twaiWrapper;
-  
-    static constexpr std::array<uint32_t, 5> SUPPORTED_DIAGNOSTIC_IDS = { 0x7E8, 0x7E0,0x700, 0x7DF, 0x7E9 };
-
+      
     bool isSupportedDiagnosticId(uint32_t rxId);
     bool is_next_consecutive_frame(Message_t *msg, uint8_t actual_seq_num);
     void handle_udsError(uint8_t serviceId, uint8_t nrc_code); 

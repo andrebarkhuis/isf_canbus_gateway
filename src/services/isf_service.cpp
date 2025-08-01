@@ -158,16 +158,16 @@ bool IsfService::initialize_diagnostic_session()
  */
 void IsfService::listen()
 {
-    // unsigned long current_time = millis();
+    unsigned long current_time = millis();
 
-    // if (current_time - last_diagnostic_session_time_ >= 3000)
-    // {
-    //     if (initialize_diagnostic_session())
-    //     {
-    //         // Optionally, add logic here if the session initialization is successful
-    //     }
-    //     last_diagnostic_session_time_ = current_time;
-    // }
+    if (current_time - last_diagnostic_session_time_ >= 4000)
+    {
+        if (initialize_diagnostic_session())
+        {
+            // Optionally, add logic here if the session initialization is successful
+        }
+        last_diagnostic_session_time_ = current_time;
+    }
 
     beginSend();
 
@@ -198,7 +198,7 @@ bool IsfService::beginSend()
 
         sendUdsRequest(msg_to_send, request);
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 
     is_session_active = false; // Clear session active after all requests
@@ -261,16 +261,18 @@ bool get_raw_value(
     uint32_t &raw_value)
 {
     const int MAX_BIT_LENGTH = 32; 
-    
+        
     // Validate bit length range
     if (bit_length <= 0 || bit_length > MAX_BIT_LENGTH)
     {
+        LOG_ERROR("Invalid bit length: %d", bit_length);
         return false;
     }
 
     // Validate starting byte position
     if (byte_pos < 0 || byte_pos >= data_len)
     {
+        LOG_ERROR("Invalid byte position: %d", byte_pos);
         return false;
     }
 
@@ -281,6 +283,7 @@ bool get_raw_value(
 
     if (end_byte > data_len)
     {
+        LOG_ERROR("Invalid end byte: %d", end_byte);
         return false;
     }
 
@@ -319,6 +322,7 @@ bool get_single_bit(
     // Validate starting byte position
     if (byte_pos < 0 || byte_pos >= data_len)
     {
+        LOG_ERROR("Invalid byte position: %d", byte_pos);
         return false;
     }
 
@@ -481,7 +485,7 @@ bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
             case ValueType::Float:
             {
                 uint32_t raw_value;
-                if (!get_raw_value(payload, def.byte_position, def.bit_offset_position, def.bit_length, msg.length, raw_value))
+                if (!get_raw_value(payload, def.byte_position, def.bit_offset_position,4, msg.length, raw_value))
                 {
                     continue; // Skip this definition if extraction failed
                 }
@@ -515,10 +519,15 @@ bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
 
                 if (udsDefinitionValue.has_value())
                 {
-                    // LOG_DEBUG("%s raw: %u value: %s", def.name.c_str(), bit_value, udsDefinitionValue.value().display_value.value().c_str());
+                     LOG_DEBUG("%s raw: %u value: %s", def.name.c_str(), bit_value, udsDefinitionValue.value().display_value.value().c_str());
                 }
                 
                 at_least_one_success = true;
+                break;
+            }
+            default:
+            {
+                LOG_ERROR("%s Unknown value type: %d", def.name.c_str(), unit_info->valueType);
                 break;
             }
         }

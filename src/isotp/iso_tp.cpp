@@ -163,7 +163,7 @@ void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
 }
 
 bool IsoTp::isSupportedDiagnosticId(uint32_t rxId) {
-  return std::find(SUPPORTED_DIAGNOSTIC_IDS.begin(), SUPPORTED_DIAGNOSTIC_IDS.end(), rxId) != SUPPORTED_DIAGNOSTIC_IDS.end();
+  return rxId >= 0x700 && rxId < 0x800;
 }
 
 bool IsoTp::handle_consecutive_frame(Message_t *msg, const uint8_t *rxBuffer, uint8_t rxLen)
