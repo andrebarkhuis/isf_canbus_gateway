@@ -67,7 +67,6 @@ void init_udsDefinitions_ecu_07E0() {
     udsMap.emplace(uds_key{ 0x7E0, 0x01 }, UdsDefinition{.request_id = 0x7E0,.did = 0x01,.unit = 33,.byte_position = 1,.bit_offset_position = 0,.scaling_factor = 0.392156862745098,.offset_value = 0.0,.is_calculated = true,.name = "Vehicle Load"});
     udsMap.emplace(uds_key{ 0x7E0, 0x01 }, UdsDefinition{.request_id = 0x7E0,.did = 0x01,.unit = 57,.byte_position = 9,.bit_offset_position = 0,.scaling_factor = 1.0,.offset_value = -40.0,.is_calculated = true,.name = "Coolant Temp"});
     udsMap.emplace(uds_key{ 0x7E0, 0x01 }, UdsDefinition{.request_id = 0x7E0,.did = 0x01,.unit = 39,.byte_position = 10,.bit_offset_position = 0,.scaling_factor = 0.25,.offset_value = 0.0,.is_calculated = true,.name = "Engine Speed"});
-    udsMap.emplace(uds_key{ 0x7E0, 0x01 }, UdsDefinition{.request_id = 0x7E0,.did = 0x01,.unit = 39,.byte_position = 10,.bit_offset_position = 0,.scaling_factor = 0.25,.offset_value = 0.0,.is_calculated = true,.name = "Engine Speed"});
     udsMap.emplace(uds_key{ 0x7E0, 0x01 }, UdsDefinition{.request_id = 0x7E0,.did = 0x01,.unit = 42,.byte_position = 12,.bit_offset_position = 0,.scaling_factor = 1.0,.offset_value = 0.0,.is_calculated = true,.name = "Vehicle Speed"});
     udsMap.emplace(uds_key{ 0x7E0, 0x01 }, UdsDefinition{.request_id = 0x7E0,.did = 0x01,.unit = 33,.byte_position = 15,.bit_offset_position = 0,.scaling_factor = 0.392156862745098,.offset_value = 0.0,.is_calculated = true,.name = "Throttle Sensor Position"});
     udsMap.emplace(uds_key{ 0x7E0, 0x01 }, UdsDefinition{.request_id = 0x7E0,.did = 0x01,.unit = 33,.byte_position = 16,.bit_offset_position = 0,.scaling_factor = 0.392156862745098,.offset_value = 0.0,.is_calculated = true,.name = "Throttle Sensor Volt %"});
@@ -199,7 +198,7 @@ void init_udsDefinitions_ecu_07E1() {
 }
 
 void init_udsDefinitions() {
-    init_udsDefinitions_ecu_07B0();
+    //init_udsDefinitions_ecu_07B0();
     init_udsDefinitions_ecu_07E0();
-    init_udsDefinitions_ecu_07E1();
+    //init_udsDefinitions_ecu_07E1();
 }
