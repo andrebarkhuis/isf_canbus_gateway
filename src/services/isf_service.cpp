@@ -127,23 +127,22 @@ bool IsfService::initialize()
  */
 bool IsfService::initialize_diagnostic_session()
 {
-    const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(CANMessage);
+    // Use the generic sender for session init array
+    return send_obd2_requests(isf_pid_session_requests, SESSION_REQUESTS_SIZE);
+}
 
-    for (int i = 0; i < SESSION_REQUESTS_SIZE; i++)
+bool IsfService::send_obd2_requests(const CANMessage* requests, int count)
+{
+    for (int i = 0; i < count; ++i)
     {
-        CANMessage msg = isf_pid_session_requests[i];
+        CANMessage msg = requests[i];
 
-        LOG_INFO("Sending diagnostic session message to ID: 0x%X", msg.id);
-
-        bool failed = !twai->sendMessage(msg.id, msg.data, (uint8_t)msg.len);
-        if (failed)
+        if (!twai->sendMessage(msg.id, msg.data, msg.len))
         {
-            LOG_ERROR("Failed to send session request for ID: 0x%X", msg.id);
-
             return false;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(5));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 
     return true;
@@ -160,14 +159,15 @@ void IsfService::listen()
 {
     unsigned long current_time = millis();
 
-    if (current_time - last_diagnostic_session_time_ >= 4000)
+    if (current_time - last_diagnostic_session_time_ >= 2000)
     {
         if (initialize_diagnostic_session())
         {
-            // Optionally, add logic here if the session initialization is successful
+            last_diagnostic_session_time_ = current_time;
         }
-        last_diagnostic_session_time_ = current_time;
     }
+
+    //send_obd2_requests(isf_pid_requests, PID_REQUESTS_SIZE);
 
     beginSend();
 
@@ -198,7 +198,7 @@ bool IsfService::beginSend()
 
         sendUdsRequest(msg_to_send, request);
 
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 
     is_session_active = false; // Clear session active after all requests
@@ -213,7 +213,7 @@ bool IsfService::sendUdsRequest(Message_t &msg, const UDSRequest &request)
         return false;
     }
 
-    if (!isotp->receive(&msg))
+    if (!isotp->receive(&msg, request.param_name))
     {
         msg.reset();
         return false;
@@ -310,6 +310,7 @@ bool get_raw_value(
  * @param bit_offset      Bit offset within starting byte (0-7)
  * @param data_len        Length of the data buffer
  * @param bit_value       Output parameter - extracted bit value (0 or 1)
+ * @param param_name      Optional parameter name for logging context
  * @return true if extraction was successful, false on error
  */
 bool get_single_bit(
@@ -317,18 +318,20 @@ bool get_single_bit(
     int8_t byte_pos,
     int8_t bit_pos,
     int8_t data_len,
-    uint8_t &bit_value)
+    uint8_t &bit_value,
+    const char *param_name)
 {
     // Validate starting byte position
     if (byte_pos < 0 || byte_pos >= data_len)
     {
-        LOG_ERROR("Invalid byte position: %d", byte_pos);
+        LOG_ERROR("Invalid byte position: %d (param: %s)", byte_pos, (param_name ? param_name : ""));
         return false;
     }
 
     // Validate bit position within byte
     if (bit_pos < 0 || bit_pos > 7)
     {
+        LOG_ERROR("Invalid bit position: %d (param: %s)", bit_pos, (param_name ? param_name : ""));
         return false;
     }
 
@@ -510,7 +513,7 @@ bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
             case ValueType::Boolean:
             {
                 uint8_t bit_value;
-                if (!get_single_bit(payload, def.byte_position, def.bit_offset_position, msg.length, bit_value))
+                if (!get_single_bit(payload, def.byte_position, def.bit_offset_position, msg.length, bit_value, request.param_name))
                 {
                     continue; // Skip this definition if bit extraction failed
                 }

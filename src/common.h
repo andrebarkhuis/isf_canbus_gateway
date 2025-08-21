@@ -122,8 +122,8 @@ namespace ISFCAN
   constexpr uint32_t TRANSMISSION_DATA = 0x340;
 
   // OBD-II Diagnostic IDs
-  constexpr uint32_t OBD_ECU_REQUEST_ID = 0x7E0;
-  constexpr uint32_t OBD_ECU_RESPONSE_ID = 0x7E8;
+  constexpr uint32_t OBD_ECU_REQUEST_ID = 0x7DF;
+  
 }
 
 namespace GT86CAN

@@ -157,9 +157,9 @@ bool IsoTp::send(Message_t *msg)
     return true;
 }
 
-void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code)
+void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code, const char* param_name)
 {
-  LOG_ERROR("UDS Negative Response for Service ID 0x%X: %s (0x%X)", serviceId, getUdsErrorString(nrc_code), nrc_code);
+  LOG_ERROR("UDS Negative Response for Service ID 0x%X: %s (0x%X) | param: %s", serviceId, getUdsErrorString(nrc_code), nrc_code, (param_name ? param_name : ""));
 }
 
 bool IsoTp::isSupportedDiagnosticId(uint32_t rxId) {
@@ -216,7 +216,7 @@ bool IsoTp::handle_consecutive_frame(Message_t *msg, const uint8_t *rxBuffer, ui
     }
 }
 
-bool IsoTp::receive(Message_t *msg)
+bool IsoTp::receive(Message_t *msg, const char* param_name)
 {
   uint32_t rxId;
   uint8_t rxLen = 0;
@@ -237,7 +237,7 @@ bool IsoTp::receive(Message_t *msg)
       {
         msg->tp_state = ISOTP_ERROR;
         uint8_t nrc_code = rxBuffer[3];
-        handle_udsError(msg->service_id, nrc_code);
+        handle_udsError(msg->service_id, nrc_code, param_name);
         return false;
       }
 

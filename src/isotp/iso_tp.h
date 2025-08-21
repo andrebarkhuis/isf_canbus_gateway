@@ -108,14 +108,14 @@ class IsoTp
 public:
     IsoTp(TwaiWrapper *bus);
     bool send(Message_t *msg);
-    bool receive(Message_t *msg);
+    bool receive(Message_t *msg, const char* param_name);
   
 private:  
     TwaiWrapper *_twaiWrapper;
       
     bool isSupportedDiagnosticId(uint32_t rxId);
     bool is_next_consecutive_frame(Message_t *msg, uint8_t actual_seq_num);
-    void handle_udsError(uint8_t serviceId, uint8_t nrc_code); 
+    void handle_udsError(uint8_t serviceId, uint8_t nrc_code, const char* param_name); 
     bool handle_first_frame(Message_t *msg, uint8_t rxBuffer[]);
     bool handle_single_frame(Message_t *msg, uint8_t rxBuffer[]);
     bool handle_consecutive_frame(Message_t *msg, const uint8_t *rxBuffer, uint8_t rxLen);
