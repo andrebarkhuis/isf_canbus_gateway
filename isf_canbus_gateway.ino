@@ -30,6 +30,9 @@ static constexpr unsigned long CPU_COOLDOWN_TIME = 5;
 TaskHandle_t isfTaskHandle = NULL;
 TaskHandle_t gt86TaskHandle = NULL;
 
+// Message queue for communication between tasks, the isfTask will put messages in the queue and the gt86Task will read them and send them to the GT86
+static QueueHandle_t messageQueue = nullptr;
+
 // ISF Service Task (Core 0)
 void isfTask(void *parameter)
 {
