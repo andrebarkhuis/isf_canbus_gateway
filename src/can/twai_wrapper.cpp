@@ -7,6 +7,7 @@
 #include "freertos/task.h"
 
 #include "isotp/iso_tp.h"
+#include "common.h"
 #include "logger/logger.h"
 
 TwaiWrapper::TwaiWrapper()
