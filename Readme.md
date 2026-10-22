@@ -7,6 +7,7 @@ need, and dense frames for the ECUmaster ADU.
 
 ```
 IS F bus (TWAI) --ISO-TP / Mode 21--> decode --> pack --> GT86 bus (MCP2515): GT86 packets + ADU frames
+                                                       \--> IS F bus (TWAI): ADU frames (29-bit ids)
 ```
 
 The ISF side is a file-for-file port of **ToyotaLens** (`C:\projects\ToyotaLens`), the reference implementation

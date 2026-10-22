@@ -72,404 +72,522 @@ BO_ 1953 GT86_ClusterDiagRequest: 8 GATEWAY
 
 BO_ 1961 GT86_ClusterDiagResponse: 8 GATEWAY
 
-BO_ 1504 GW_EngineBasics: 8 GATEWAY
+BO_ 2667578848 ENG_Speed_Load: 8 GATEWAY
  SG_ EngineSpeed : 0|16@1+ (0.25,0) [0|16383.8] "rpm" ADU
- SG_ CoolantTemp : 16|8@1+ (1,-40) [-40|215] "degC" ADU
- SG_ IntakeAir : 24|8@1+ (1,-40) [-40|215] "degC" ADU
- SG_ VehicleSpeed : 32|8@1+ (1,0) [0|255] "km/h" ADU
- SG_ ThrottleSensorPosition : 40|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
- SG_ CalculateLoad : 48|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
- SG_ AtmospherePressure : 56|8@1+ (1,0) [0|255] "kPa" ADU
+ SG_ VehicleSpeed : 16|8@1+ (1,0) [0|255] "km/h" ADU
+ SG_ CalculateLoad : 24|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
+ SG_ MAF : 32|16@1+ (0.01,0) [0|655.35] "g/s" ADU
+ SG_ EngineRunTime : 48|16@1+ (1,0) [0|65535] "s" ADU
 
-BO_ 1505 GW_FuelIgnition: 8 GATEWAY
+BO_ 2667578849 ENG_Temperatures: 8 GATEWAY
+ SG_ Coolant : 0|8@1+ (1,-40) [-40|215] "degC" ADU
+ SG_ IntakeAir : 8|8@1+ (1,-40) [-40|215] "degC" ADU
+ SG_ EngineOil : 16|8@1+ (1,-40) [-40|215] "degC" ADU
+ SG_ Ambient : 24|8@1+ (1,-40) [-40|215] "degC" ADU
+ SG_ CatalystB1S1 : 32|16@1+ (0.1,-40) [-40|6513.5] "degC" ADU
+ SG_ CatalystB2S1 : 48|16@1+ (0.1,-40) [-40|6513.5] "degC" ADU
+
+BO_ 2667578850 ENG_Throttle_Pedal: 8 GATEWAY
+ SG_ ThrottlePosition : 0|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
+ SG_ AcceleratorPosition : 8|16@1+ (0.006103515625,0) [0|399.994] "%" ADU
+ SG_ ThrottleMotorDuty : 24|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
+ SG_ AccelSensor1 : 32|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
+ SG_ AccelSensor2 : 40|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
+ SG_ ThrottleSensor1 : 48|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
+ SG_ ThrottleSensor2 : 56|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
+
+BO_ 2667578851 ENG_Fuel_Trims: 8 GATEWAY
  SG_ FuelSystemStatus1 : 0|8@1+ (1,0) [0|255] "" ADU
  SG_ FuelSystemStatus2 : 8|8@1+ (1,0) [0|255] "" ADU
- SG_ ShortFT_B1S1 : 16|8@1+ (0.78125,-100) [-100|99.2188] "%" ADU
- SG_ LongFT_B1S1 : 24|8@1+ (0.78125,-100) [-100|99.2188] "%" ADU
- SG_ ShortFT_B2S1 : 32|8@1+ (0.78125,-100) [-100|99.2188] "%" ADU
- SG_ LongFT_B2S1 : 40|8@1+ (0.78125,-100) [-100|99.2188] "%" ADU
- SG_ IgnitionAdvance : 48|8@1+ (0.5,-64) [-64|63.5] "deg" ADU
- SG_ EvapPurgeVSV : 56|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
+ SG_ ShortFT_B1 : 16|8@1+ (0.78125,-100) [-100|99.2188] "%" ADU
+ SG_ LongFT_B1 : 24|8@1+ (0.78125,-100) [-100|99.2188] "%" ADU
+ SG_ ShortFT_B2 : 32|8@1+ (0.78125,-100) [-100|99.2188] "%" ADU
+ SG_ LongFT_B2 : 40|8@1+ (0.78125,-100) [-100|99.2188] "%" ADU
+ SG_ TotalFT_B1 : 48|8@1+ (0.00390625,-0.5) [-0.5|0.496094] "" ADU
+ SG_ TotalFT_B2 : 56|8@1+ (0.00390625,-0.5) [-0.5|0.496094] "" ADU
 
-BO_ 1506 GW_EngineExtras: 8 GATEWAY
- SG_ EngineOilTemperature : 0|8@1+ (1,-40) [-40|215] "degC" ADU
- SG_ AmbientTemp : 8|8@1+ (1,-40) [-40|215] "degC" ADU
- SG_ MAF : 16|16@1+ (0.01,0) [0|655.35] "g/s" ADU
- SG_ BatteryVoltage : 32|16@1+ (0.001,0) [0|65.535] "V" ADU
- SG_ CatalystTemp_B1S1 : 48|16@1+ (0.1,-40) [-40|6513.5] "degC" ADU
+BO_ 2667578852 ENG_AirFuel: 8 GATEWAY
+ SG_ TargetAFR : 0|16@1+ (3.05e-05,0) [0|1.99882] "" ADU
+ SG_ Lambda_B1S1 : 16|16@1+ (3.05e-05,0) [0|1.99882] "" ADU
+ SG_ Lambda_B2S1 : 32|16@1+ (3.05e-05,0) [0|1.99882] "" ADU
+ SG_ AFS_Voltage_B1S1 : 48|16@1+ (0.000122,0) [0|7.99527] "V" ADU
 
-BO_ 1507 GW_EngineSwitches: 8 GATEWAY
- SG_ Idle_Up_SW : 7|1@1+ (1,0) [0|1] "" ADU
- SG_ Engine_Oil_Pressure_SW : 6|1@1+ (1,0) [0|1] "" ADU
- SG_ Beacon_Light_Signal : 5|1@1+ (1,0) [0|1] "" ADU
- SG_ Cooler_Box_Switch : 4|1@1+ (1,0) [0|1] "" ADU
- SG_ Power_Steering_Signal : 3|1@1+ (1,0) [0|1] "" ADU
- SG_ Stop_Light_Switch : 2|1@1+ (1,0) [0|1] "" ADU
- SG_ Clutch_Start_SW : 13|1@1+ (1,0) [0|1] "" ADU
- SG_ Starter_Signal : 12|1@1+ (1,0) [0|1] "" ADU
- SG_ Starter_Control : 11|1@1+ (1,0) [0|1] "" ADU
- SG_ Fuel_Lid : 10|1@1+ (1,0) [0|1] "" ADU
- SG_ Fuel_Lid_Switch : 9|1@1+ (1,0) [0|1] "" ADU
- SG_ Fuel_Select_Switch : 8|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_SW_Status_P_Range : 23|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_SW_Status_R_Range : 22|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_SW_Status_N_Range : 21|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_SW_Status_D_Range : 20|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_SW_Status_4_Range : 19|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_SW_Status_3_Range : 18|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_SW_Status_2_Range : 17|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_SW_Status_L_Range : 16|1@1+ (1,0) [0|1] "" ADU
- SG_ Sports_Mode_Selection_SW : 31|1@1+ (1,0) [0|1] "" ADU
- SG_ Sports_Shift_Up_SW : 30|1@1+ (1,0) [0|1] "" ADU
- SG_ Sports_Shift_Down_SW : 29|1@1+ (1,0) [0|1] "" ADU
- SG_ SD_Switch : 28|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_SW_Status_B_Range : 27|1@1+ (1,0) [0|1] "" ADU
- SG_ Reverse_Switch : 26|1@1+ (1,0) [0|1] "" ADU
- SG_ Overdrive_Cut_Switch_1 : 39|1@1+ (1,0) [0|1] "" ADU
- SG_ Overdrive_Cut_Switch_2 : 38|1@1+ (1,0) [0|1] "" ADU
- SG_ Pattern_Switch_PWR_M : 37|1@1+ (1,0) [0|1] "" ADU
- SG_ Snow_or_2nd_Start_Mode : 36|1@1+ (1,0) [0|1] "" ADU
- SG_ Sports_Drive_Switch : 35|1@1+ (1,0) [0|1] "" ADU
- SG_ Snow_Switch_Status : 34|1@1+ (1,0) [0|1] "" ADU
- SG_ ECO_Switch : 33|1@1+ (1,0) [0|1] "" ADU
- SG_ Normal_Mode_Switch : 32|1@1+ (1,0) [0|1] "" ADU
- SG_ Low_Gear_Switch : 47|1@1+ (1,0) [0|1] "" ADU
- SG_ Transfer_Neutral : 46|1@1+ (1,0) [0|1] "" ADU
- SG_ S_4WD_SW : 45|1@1+ (1,0) [0|1] "" ADU
- SG_ Kick_Down_Switch_Status : 44|1@1+ (1,0) [0|1] "" ADU
- SG_ Transfer_L4 : 43|1@1+ (1,0) [0|1] "" ADU
- SG_ Neutral_Position_SW_Signal : 42|1@1+ (1,0) [0|1] "" ADU
- SG_ Brake_Switch : 41|1@1+ (1,0) [0|1] "" ADU
- SG_ Brake_Switch_Status : 40|1@1+ (1,0) [0|1] "" ADU
- SG_ Shift_Indication_Enable : 55|1@1+ (1,0) [0|1] "" ADU
- SG_ Clutch_Switch : 54|1@1+ (1,0) [0|1] "" ADU
- SG_ Cruise_Cancel_Signal : 52|1@1+ (1,0) [0|1] "" ADU
- SG_ A_C_Pressure_Normal_SW : 51|1@1+ (1,0) [0|1] "" ADU
- SG_ A_C_Pressure_Abnormal_SW : 50|1@1+ (1,0) [0|1] "" ADU
- SG_ ASL_Switch : 48|1@1+ (1,0) [0|1] "" ADU
- SG_ A_C_Signal : 63|1@1+ (1,0) [0|1] "" ADU
- SG_ Idle_Up_Signal : 62|1@1+ (1,0) [0|1] "" ADU
- SG_ Key_Unlock_Signal : 59|1@1+ (1,0) [0|1] "" ADU
- SG_ TC_Terminal : 58|1@1+ (1,0) [0|1] "" ADU
- SG_ Throttle_Open_Switch : 57|1@1+ (1,0) [0|1] "" ADU
- SG_ Cruise_Main_SW : 56|1@1+ (1,0) [0|1] "" ADU
+BO_ 2667578853 ENG_AirFuel_Sensors: 8 GATEWAY
+ SG_ AFS_Voltage_B2S1 : 0|16@1+ (0.000122,0) [0|7.99527] "V" ADU
+ SG_ AFS_Current_B1S1 : 16|16@1+ (0.00390625,-128) [-128|127.996] "mA" ADU
+ SG_ AFS_Current_B2S1 : 32|16@1+ (0.00390625,-128) [-128|127.996] "mA" ADU
+ SG_ O2S_B1S2 : 48|8@1+ (0.005,0) [0|1.275] "V" ADU
+ SG_ O2S_B2S2 : 56|8@1+ (0.005,0) [0|1.275] "V" ADU
 
-BO_ 1508 GW_Transmission: 8 GATEWAY
- SG_ ATOilTemperature1 : 0|16@1+ (0.00390625,-40) [-40|215.996] "degC" ADU
- SG_ ShiftStatus : 16|8@1+ (1,0) [0|255] "" ADU
- SG_ Lock_Up : 31|1@1+ (1,0) [0|1] "" ADU
- SG_ ST_Solenoid_Status : 30|1@1+ (1,0) [0|1] "" ADU
- SG_ SL_Solenoid_Status : 29|1@1+ (1,0) [0|1] "" ADU
- SG_ Solenoid_SC : 28|1@1+ (1,0) [0|1] "" ADU
- SG_ Solenoid_SLS : 39|1@1+ (1,0) [0|1] "" ADU
- SG_ Solenoid_SLC : 38|1@1+ (1,0) [0|1] "" ADU
- SG_ SLT_Solenoid_Status : 36|1@1+ (1,0) [0|1] "" ADU
- SG_ SLU_Solenoid_Status : 35|1@1+ (1,0) [0|1] "" ADU
- SG_ SLN_Solenoid_Status : 34|1@1+ (1,0) [0|1] "" ADU
- SG_ Solenoid_SLP : 33|1@1+ (1,0) [0|1] "" ADU
+BO_ 2667578854 ENG_Fuel_Delivery: 8 GATEWAY
+ SG_ FuelPressure : 0|16@1+ (10,0) [0|655350] "kPa" ADU
+ SG_ InjectorPulse : 16|16@1+ (1,0) [0|65535] "us" ADU
+ SG_ InjectionVolume : 32|16@1+ (3.125e-05,0) [0|2.04797] "ml" ADU
+ SG_ EvapPurge : 48|8@1+ (0.39215686274509803,0) [0|100] "%" ADU
+ SG_ FuelPumpSpeedControl : 56|1@1+ (1,0) [0|1] "" ADU
+ SG_ IntankFuelPump : 57|1@1+ (1,0) [0|1] "" ADU
 
-BO_ 1509 GW_WheelsGear: 8 GATEWAY
- SG_ FRWheelSpeed : 0|8@1+ (1.28,0) [0|326.4] "km/h" ADU
- SG_ FLWheelSpeed : 8|8@1+ (1.28,0) [0|326.4] "km/h" ADU
- SG_ RRWheelSpeed : 16|8@1+ (1.28,0) [0|326.4] "km/h" ADU
- SG_ RLWheelSpeed : 24|8@1+ (1.28,0) [0|326.4] "km/h" ADU
- SG_ FR_Wheel_Direction : 39|1@1+ (1,0) [0|1] "" ADU
- SG_ FL_Wheel_Direction : 38|1@1+ (1,0) [0|1] "" ADU
- SG_ RR_Wheel_Direction : 37|1@1+ (1,0) [0|1] "" ADU
- SG_ RL_Wheel_Direction : 36|1@1+ (1,0) [0|1] "" ADU
- SG_ AbsVehicleSpeed : 40|8@1+ (1.28,0) [0|326.4] "km/h" ADU
- SG_ Gear_Position : 52|4@1+ (1,0) [0|15] "" ADU
- SG_ Shift_Lever_Position : 48|4@1+ (1,0) [0|15] "" ADU
- SG_ TRC_TRAC_VSC_OFF_SW : 63|1@1+ (1,0) [0|1] "" ADU
- SG_ Reservoir_Warning_SW : 62|1@1+ (1,0) [0|1] "" ADU
- SG_ Main_Idle_SW : 61|1@1+ (1,0) [0|1] "" ADU
- SG_ Downhill_Assist_Control_SW : 60|1@1+ (1,0) [0|1] "" ADU
- SG_ Auto_LSD_Switch : 59|1@1+ (1,0) [0|1] "" ADU
- SG_ Pre_Crash_Brake_OFF_Switch : 58|1@1+ (1,0) [0|1] "" ADU
- SG_ A_TRC_TRAC_Switch : 57|1@1+ (1,0) [0|1] "" ADU
+BO_ 2667578855 ENG_Ignition_Knock: 8 GATEWAY
+ SG_ IgnitionAdvance : 0|8@1+ (0.5,-64) [-64|63.5] "deg" ADU
+ SG_ KnockCorrectLearn : 8|16@1+ (0.03125,-1024) [-1024|1023.97] "deg" ADU
+ SG_ KnockFeedback : 24|16@1+ (0.03125,-1024) [-1024|1023.97] "deg" ADU
+ SG_ MisfireRPM : 40|8@1+ (25,0) [0|6375] "rpm" ADU
+ SG_ MisfireLoad : 48|8@1+ (0.015625,0) [0|3.98438] "g/rev" ADU
+ SG_ AllCylindersMisfireCount : 56|8@1+ (1,0) [0|255] "" ADU
 
-BO_ 1510 GW_Dynamics: 8 GATEWAY
- SG_ DecelerationSensor : 0|8@1+ (0.14318,-18.327) [-18.327|18.1839] "m/s2" ADU
- SG_ DecelerationSensor2 : 8|8@1+ (0.14318,-18.327) [-18.327|18.1839] "m/s2" ADU
- SG_ YawRateSensor : 16|8@1+ (1,-128) [-128|127] "deg/s" ADU
- SG_ YawRateSensor2 : 24|8@1+ (1,-128) [-128|127] "deg/s" ADU
- SG_ SteeringAngleSensor : 32|16@1+ (0.1,-3276.8) [-3276.8|3276.7] "deg" ADU
- SG_ RealEngineTorque : 48|16@1- (0.03125,0) [-1024|1023.97] "Nm" ADU
+BO_ 2667578856 ENG_Misfire_Cylinders: 8 GATEWAY
+ SG_ Misfire_Cyl1 : 0|8@1+ (1,0) [0|255] "" ADU
+ SG_ Misfire_Cyl2 : 8|8@1+ (1,0) [0|255] "" ADU
+ SG_ Misfire_Cyl3 : 16|8@1+ (1,0) [0|255] "" ADU
+ SG_ Misfire_Cyl4 : 24|8@1+ (1,0) [0|255] "" ADU
+ SG_ Misfire_Cyl5 : 32|8@1+ (1,0) [0|255] "" ADU
+ SG_ Misfire_Cyl6 : 40|8@1+ (1,0) [0|255] "" ADU
+ SG_ Misfire_Cyl7 : 48|8@1+ (1,0) [0|255] "" ADU
+ SG_ Misfire_Cyl8 : 56|8@1+ (1,0) [0|255] "" ADU
 
-BO_ 1511 GW_StabilityStatus: 8 GATEWAY
- SG_ TRC_TRAC_Ctrl_Status : 7|1@1+ (1,0) [0|1] "" ADU
- SG_ TRC_TRAC_Engine_Ctrl_Status : 6|1@1+ (1,0) [0|1] "" ADU
- SG_ TRC_TRAC_Brake_Ctrl_Status : 5|1@1+ (1,0) [0|1] "" ADU
- SG_ TRAC_VSC_Off_Mode : 1|2@1+ (1,0) [0|3] "" ADU
- SG_ FR_Wheel_VSC_Ctrl_Status : 15|1@1+ (1,0) [0|1] "" ADU
- SG_ FL_Wheel_VSC_Ctrl_Status : 14|1@1+ (1,0) [0|1] "" ADU
- SG_ RR_Wheel_VSC_Ctrl_Status : 13|1@1+ (1,0) [0|1] "" ADU
- SG_ RL_Wheel_VSC_Ctrl_Status : 12|1@1+ (1,0) [0|1] "" ADU
- SG_ Stop_Light_SW : 23|1@1+ (1,0) [0|1] "" ADU
- SG_ Parking_Brake_SW : 22|1@1+ (1,0) [0|1] "" ADU
- SG_ Brake_Pedal_Load_Sensing_SW : 21|1@1+ (1,0) [0|1] "" ADU
- SG_ Deceleration_SW : 18|3@1+ (1,0) [0|7] "" ADU
- SG_ S_4WD_SW : 17|1@1+ (1,0) [0|1] "" ADU
- SG_ MIL : 31|1@1+ (1,0) [0|1] "" ADU
- SG_ Number_of_Emission_DTC : 24|7@1+ (1,0) [0|127] "" ADU
- SG_ Fuel_System_Monitor_Result : 37|1@1+ (1,0) [0|1] "" ADU
- SG_ Complete_Parts_Monitor : 34|1@1+ (1,0) [0|1] "" ADU
- SG_ Fuel_System_Monitor : 33|1@1+ (1,0) [0|1] "" ADU
- SG_ Misfire_Monitor : 32|1@1+ (1,0) [0|1] "" ADU
- SG_ AcceleratorOpeningAngle : 40|8@1+ (0.5,0) [0|127.5] "%" ADU
- SG_ AbsEngineRevolutions : 48|16@1+ (1,0) [0|65535] "rpm" ADU
+BO_ 2667578857 ENG_VVT: 8 GATEWAY
+ SG_ VVT_Intake1 : 0|16@1+ (0.009765625,0) [0|639.99] "deg" ADU
+ SG_ VVT_Intake2 : 16|16@1+ (0.009765625,0) [0|639.99] "deg" ADU
+ SG_ VVT_Exhaust1 : 32|16@1+ (0.009765625,0) [0|639.99] "deg" ADU
+ SG_ VVT_Exhaust2 : 48|16@1+ (0.009765625,0) [0|639.99] "deg" ADU
+
+BO_ 2667578858 ENG_Idle_Control: 8 GATEWAY
+ SG_ ISC_Flow : 0|16@1+ (0.001220703125,0) [0|79.9988] "m3/s" ADU
+ SG_ ISC_Position : 16|16@1+ (0.00762939453125,0) [0|499.992] "deg" ADU
+ SG_ ISC_Learning : 32|16@1+ (0.001220703125,-40) [-40|39.9988] "m3/s" ADU
+ SG_ MinimumEngineSpeed : 48|16@1+ (0.78125,0) [0|51199.2] "rpm" ADU
+
+BO_ 2667578859 ENG_Electrical: 8 GATEWAY
+ SG_ BatteryVoltage : 0|16@1+ (0.001,0) [0|65.535] "V" ADU
+ SG_ BM_Voltage : 16|16@1+ (0.001220703125,0) [0|79.9988] "V" ADU
+ SG_ ThrottleMotorCurrent : 32|8@1+ (0.078125,0) [0|19.9219] "A" ADU
+ SG_ ElectricFan : 40|1@1+ (1,0) [0|1] "" ADU
+ SG_ ACClutchRelay : 41|1@1+ (1,0) [0|1] "" ADU
+ SG_ StarterRelay : 42|1@1+ (1,0) [0|1] "" ADU
+ SG_ ACCRelay : 43|1@1+ (1,0) [0|1] "" ADU
+ SG_ ElectricalLoad1 : 44|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578860 ENG_Shifter_Range: 8 GATEWAY
+ SG_ Shift_P : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ Shift_R : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ Shift_N : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ Shift_D : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ Shift_4 : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ Shift_3 : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ Shift_2 : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ Shift_L : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578861 ENG_Shifter_Mode: 8 GATEWAY
+ SG_ SportsMode : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ PaddleUp : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ PaddleDown : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ Shift_B : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ ReverseSwitch : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ PatternPWR : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ SnowSwitch : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ ECOSwitch : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578862 ENG_Brake_Cruise_Switches: 8 GATEWAY
+ SG_ StopLightSwitch : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ BrakeSwitch : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ BrakeSwitchStatus : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ CruiseMain : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ CruiseCancel : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ CruiseResAcc : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ CruiseSetCoast : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ KickDown : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578863 ENG_Starter_AC_Switches: 8 GATEWAY
+ SG_ StarterSignal : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ StarterControl : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ ClutchStart : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ IdleUp : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ ACSignal : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ ACPressureNormal : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ ACPressureAbnormal : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ PowerSteeringSignal : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578864 ENG_Status: 8 GATEWAY
+ SG_ MIL : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ EmissionDTCCount : 1|7@1+ (1,0) [0|127] "" ADU
+ SG_ OilPressureSwitch : 8|1@1+ (1,0) [0|1] "" ADU
+ SG_ FuelCutCondition : 9|1@1+ (1,0) [0|1] "" ADU
+ SG_ IdleFuelCut : 10|1@1+ (1,0) [0|1] "" ADU
+ SG_ BrakeOverride : 11|1@1+ (1,0) [0|1] "" ADU
+ SG_ NeutralControl : 12|1@1+ (1,0) [0|1] "" ADU
+ SG_ ImmobiliserFuelCut : 13|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578865 TRANS_Temp_Speeds: 8 GATEWAY
+ SG_ ATOilTemperature : 0|16@1+ (0.00390625,-40) [-40|215.996] "degC" ADU
+ SG_ NT_Speed : 16|8@1+ (50,0) [0|12750] "rpm" ADU
+ SG_ NC3_Speed : 24|8@1+ (50,0) [0|12750] "rpm" ADU
+ SG_ SP2_Speed : 32|8@1+ (1,0) [0|255] "km/h" ADU
+ SG_ EngineSpeedFromEFI : 40|16@1+ (0.78125,0) [0|51199.2] "rpm" ADU
+
+BO_ 2667578866 TRANS_Shift_Solenoids: 8 GATEWAY
+ SG_ ShiftStatus : 0|8@1+ (1,0) [0|255] "" ADU
+ SG_ LockUp : 8|1@1+ (1,0) [0|1] "" ADU
+ SG_ SLT : 9|1@1+ (1,0) [0|1] "" ADU
+ SG_ SLU : 10|1@1+ (1,0) [0|1] "" ADU
+ SG_ SLN : 11|1@1+ (1,0) [0|1] "" ADU
+ SG_ SL : 12|1@1+ (1,0) [0|1] "" ADU
+ SG_ ST : 13|1@1+ (1,0) [0|1] "" ADU
+ SG_ SC : 14|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578867 TRANS_Shift_Status: 8 GATEWAY
+ SG_ SLS : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ SLC : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ SLP : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ ShiftControlMode : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ UpShiftIndication : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ DownShiftIndication : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ TorqueConverterTempRaiseHistory : 6|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578868 TRANS_Sensor_Voltages: 8 GATEWAY
+ SG_ NT_Voltage : 0|16@1+ (7.62939453125e-05,0) [0|4.99992] "V" ADU
+ SG_ NC3_Voltage : 16|16@1+ (7.62939453125e-05,0) [0|4.99992] "V" ADU
+ SG_ SP2_Voltage : 32|16@1+ (7.62939453125e-05,0) [0|4.99992] "V" ADU
+
+BO_ 2667578869 ABS_Wheel_Speeds: 8 GATEWAY
+ SG_ FR : 0|8@1+ (1.28,0) [0|326.4] "km/h" ADU
+ SG_ FL : 8|8@1+ (1.28,0) [0|326.4] "km/h" ADU
+ SG_ RR : 16|8@1+ (1.28,0) [0|326.4] "km/h" ADU
+ SG_ RL : 24|8@1+ (1.28,0) [0|326.4] "km/h" ADU
+ SG_ VehicleSpeed : 32|8@1+ (1.28,0) [0|326.4] "km/h" ADU
+
+BO_ 2667578870 ABS_Wheel_Acceleration: 8 GATEWAY
+ SG_ FR_Accel : 0|8@1- (1.569064,0) [-200.84|199.271] "m/s2" ADU
+ SG_ FL_Accel : 8|8@1- (1.569064,0) [-200.84|199.271] "m/s2" ADU
+ SG_ RR_Accel : 16|8@1- (1.569064,0) [-200.84|199.271] "m/s2" ADU
+ SG_ RL_Accel : 24|8@1- (1.569064,0) [-200.84|199.271] "m/s2" ADU
+ SG_ FR_Direction : 32|1@1+ (1,0) [0|1] "" ADU
+ SG_ FL_Direction : 33|1@1+ (1,0) [0|1] "" ADU
+ SG_ RR_Direction : 34|1@1+ (1,0) [0|1] "" ADU
+ SG_ RL_Direction : 35|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578871 ABS_Dynamics: 8 GATEWAY
+ SG_ LateralG : 0|8@1- (0.196133,0) [-25.105|24.9089] "m/s2" ADU
+ SG_ LongitudinalG : 8|8@1- (0.196133,0) [-25.105|24.9089] "m/s2" ADU
+ SG_ YawRate : 16|8@1+ (1,-128) [-128|127] "deg/s" ADU
+ SG_ SteeringAngle : 24|16@1+ (0.1,-3276.8) [-3276.8|3276.7] "deg" ADU
+ SG_ DecelerationSensorRaw : 40|8@1+ (0.14318,-18.327) [-18.327|18.1839] "m/s2" ADU
+ SG_ YawRateSensorRaw : 48|8@1+ (1,-128) [-128|127] "deg/s" ADU
+
+BO_ 2667578872 ABS_Engine_Gear: 8 GATEWAY
+ SG_ EngineRevolutions : 0|16@1+ (1,0) [0|65535] "rpm" ADU
+ SG_ RealEngineTorque : 16|16@1- (0.03125,0) [-1024|1023.97] "Nm" ADU
+ SG_ AcceleratorOpening : 32|8@1+ (0.5,0) [0|127.5] "%" ADU
+ SG_ GearPosition : 40|4@1+ (1,0) [0|15] "" ADU
+ SG_ ShiftLeverPosition : 44|4@1+ (1,0) [0|15] "" ADU
+ SG_ IG1Voltage : 48|8@1+ (0.0784313725490196,0) [0|20] "V" ADU
+ SG_ MotorVoltage : 56|8@1+ (0.0784313725490196,0) [0|20] "V" ADU
+
+BO_ 2667578873 ABS_Brake_Pedal: 8 GATEWAY
+ SG_ MasterCylinderSensor : 0|8@1+ (0.0196078431372549,0) [0|5] "V" ADU
+ SG_ StopLightSW : 8|1@1+ (1,0) [0|1] "" ADU
+ SG_ ParkingBrakeSW : 9|1@1+ (1,0) [0|1] "" ADU
+ SG_ BrakePedalLoadSW : 10|1@1+ (1,0) [0|1] "" ADU
+ SG_ DecelerationSW : 11|3@1+ (1,0) [0|7] "" ADU
+ SG_ BrakeAssistCtrl : 14|1@1+ (1,0) [0|1] "" ADU
+ SG_ PanicBrakeAssistCtrl : 15|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578874 ABS_Traction_Control: 8 GATEWAY
+ SG_ TRC_Ctrl : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ TRC_EngineCtrl : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ TRC_BrakeCtrl : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ TRAC_VSC_OffMode : 3|2@1+ (1,0) [0|3] "" ADU
+ SG_ VSC_FR : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ VSC_FL : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ VSC_RR : 7|1@1+ (1,0) [0|1] "" ADU
+ SG_ VSC_RL : 8|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578875 ABS_Brake_Control: 8 GATEWAY
+ SG_ ABS_FR : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ ABS_FL : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ ABS_RR : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ ABS_RL : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ EBD_FR : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ EBD_FL : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ EBD_RR : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ EBD_RL : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578876 ABS_Driver_Switches: 8 GATEWAY
+ SG_ TRC_VSC_OffSwitch : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ ReservoirWarning : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ MainIdle : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ AutoLSD : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ A_TRC : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ DownhillAssist : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ PreCrashBrakeOff : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ FourWD : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578877 ABS_Warning_Lights: 8 GATEWAY
+ SG_ ABS_Light : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ Brake_Light : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ Slip_Light : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ Buzzer : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ TirePressure_Light : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ VSC_Light : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ AutoLSD_Light : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ A_TRAC_Light : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578878 ABS_Solenoids: 8 GATEWAY
+ SG_ Solenoid_SFRH : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SFRR : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SFLH : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SFLR : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SRRH : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SRRR : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SRLH : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SRLR : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578879 ABS_TRC_Solenoids: 8 GATEWAY
+ SG_ Solenoid_SPFL : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SPFR : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SM2 : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SM1 : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SRM2 : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SRM1 : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SRC2 : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ Solenoid_SRC1 : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578880 ABS_Faults_Sensors: 8 GATEWAY
+ SG_ FR_SpeedOpen : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ FL_SpeedOpen : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ RR_SpeedOpen : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ RL_SpeedOpen : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ EFI_CommOpen : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ YawRateOpen : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ DecelerationOpen : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ SteeringOpen : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578881 ABS_Faults_Hydraulic: 8 GATEWAY
+ SG_ MasterCylinderOpen : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ MasterCylinder2Open : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ StrokeOpen : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ Stroke2Open : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ FR_WheelCylinderOpen : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ FL_WheelCylinderOpen : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ RR_WheelCylinderOpen : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ RL_WheelCylinderOpen : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578882 ABS_Faults_Power: 8 GATEWAY
+ SG_ AccumulatorOpen : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ HV_CommOpen : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ IG_VoltageDecreased : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ IG_VoltageIncreased : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ FR_SpeedVoltageOpen : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ FL_SpeedVoltageOpen : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ RR_SpeedVoltageOpen : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ RL_SpeedVoltageOpen : 7|1@1+ (1,0) [0|1] "" ADU
+
+BO_ 2667578883 ABS_Faults_Misc: 8 GATEWAY
+ SG_ MC_SensorNoise : 0|1@1+ (1,0) [0|1] "" ADU
+ SG_ BrakePedalSwitchOpen : 1|1@1+ (1,0) [0|1] "" ADU
+ SG_ YawRateVoltageOpen : 2|1@1+ (1,0) [0|1] "" ADU
+ SG_ EFI_CommInvalid : 3|1@1+ (1,0) [0|1] "" ADU
+ SG_ VerticalGOpen : 4|1@1+ (1,0) [0|1] "" ADU
+ SG_ BodyECU_CommOpen : 5|1@1+ (1,0) [0|1] "" ADU
+ SG_ MC_SensorSupplyOpen : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ SolenoidSupplyOpen : 7|1@1+ (1,0) [0|1] "" ADU
 
 CM_ BO_ 208 "Steering angle and lateral/longitudinal G; default bytes only";
-CM_ SG_ 209 VehicleSpeed "ToyotaLens engine cLlSvC_7u: Vehicle Speed, 21 01 pos 12; re-encoded with the GT86 frame's own scaling";
 CM_ BO_ 209 "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data";
 CM_ BO_ 211 "VSC / TCS / SCS lights; default bytes only";
-CM_ SG_ 212 WheelSpeedFL "ToyotaLens abs -HYSOLbJn: FL Wheel Speed, 21 03 pos 1; re-encoded with the GT86 frame's own scaling";
-CM_ SG_ 212 WheelSpeedFR "ToyotaLens abs v4xnACb-1: FR Wheel Speed, 21 03 pos 0; re-encoded with the GT86 frame's own scaling";
-CM_ SG_ 212 WheelSpeedRL "ToyotaLens abs AcK0rmPvM: RL Wheel Speed, 21 03 pos 3; re-encoded with the GT86 frame's own scaling";
-CM_ SG_ 212 WheelSpeedRR "ToyotaLens abs t1FnfghgK: RR Wheel Speed, 21 03 pos 2; re-encoded with the GT86 frame's own scaling";
 CM_ BO_ 212 "Four wheel speeds, 16 bits each, 0.0565 km/h per bit";
 CM_ BO_ 320 "Default bytes only: bytes 2-3 did not move with engine speed in the drive capture";
-CM_ SG_ 321 EngineRPM "ToyotaLens engine vxpyKZ0Zo: Engine Speed, 21 01 pos 10; re-encoded with the GT86 frame's own scaling";
 CM_ BO_ 321 "Engine rpm in bits 32-45 (bytes 4-5, 14 bits, 1 rpm per bit); bits 46-47 kept from the default";
 CM_ BO_ 324 "In the cluster capture but missing from the old Readme table";
-CM_ SG_ 864 EngineOilTemperature "ToyotaLens engine ycETY1A_7: Engine Oil Temperature, 21 51 pos 9; re-encoded with the GT86 frame's own scaling";
-CM_ SG_ 864 CoolantTemperature "ToyotaLens engine pl8Tao3_P: Coolant Temp, 21 01 pos 9; re-encoded with the GT86 frame's own scaling";
 CM_ BO_ 864 "Byte 2 engine oil temperature, byte 3 coolant temperature, both +40";
-CM_ SG_ 1504 EngineSpeed "ToyotaLens engine vxpyKZ0Zo: Engine Speed, 21 01 pos 10";
-CM_ SG_ 1504 CoolantTemp "ToyotaLens engine pl8Tao3_P: Coolant Temp, 21 01 pos 9";
-CM_ SG_ 1504 IntakeAir "ToyotaLens engine PINbBSGZE: Intake Air, 21 01 pos 6";
-CM_ SG_ 1504 VehicleSpeed "ToyotaLens engine cLlSvC_7u: Vehicle Speed, 21 01 pos 12";
-CM_ SG_ 1504 ThrottleSensorPosition "ToyotaLens engine BHZoJoMeQ: Throttle Sensor Position, 21 01 pos 15";
-CM_ SG_ 1504 CalculateLoad "ToyotaLens engine GlSGt-9T7: Calculate Load, 21 01 pos 0";
-CM_ SG_ 1504 AtmospherePressure "ToyotaLens engine TorX8r1i2: Atmosphere Pressure, 21 01 pos 8";
-CM_ BO_ 1504 "Engine block 21 01";
-CM_ SG_ 1505 FuelSystemStatus1 "ToyotaLens engine ijUXiEDm2: Fuel System Status #1, 21 03 pos 0";
-CM_ SG_ 1505 FuelSystemStatus2 "ToyotaLens engine p8BWeiQ3c: Fuel System Status #2, 21 03 pos 1";
-CM_ SG_ 1505 ShortFT_B1S1 "ToyotaLens engine bs6JnDePY: Short FT B1S1, 21 03 pos 2";
-CM_ SG_ 1505 LongFT_B1S1 "ToyotaLens engine mLBlTPAk2: Long FT B1S1, 21 03 pos 3";
-CM_ SG_ 1505 ShortFT_B2S1 "ToyotaLens engine 09gGwIG0l: Short FT B2S1, 21 03 pos 4";
-CM_ SG_ 1505 LongFT_B2S1 "ToyotaLens engine CCWC9-jW7: Long FT B2S1, 21 03 pos 5";
-CM_ SG_ 1505 IgnitionAdvance "ToyotaLens engine 6fCXjj-K0: IGN Advance, 21 03 pos 6";
-CM_ SG_ 1505 EvapPurgeVSV "ToyotaLens engine W13lW2Nk9: EVAP (Purge) VSV, 21 03 pos 8";
-CM_ BO_ 1505 "Engine block 21 03";
-CM_ SG_ 1506 EngineOilTemperature "ToyotaLens engine ycETY1A_7: Engine Oil Temperature, 21 51 pos 9";
-CM_ SG_ 1506 AmbientTemp "ToyotaLens engine G5xcpu12b: Ambient Temp for A/C, 21 51 pos 11";
-CM_ SG_ 1506 MAF "ToyotaLens engine 9BvEGq0dD: MAF, 21 01 pos 3";
-CM_ SG_ 1506 BatteryVoltage "ToyotaLens engine ku4nFD9dK: Battery Voltage, 21 01 pos 26";
-CM_ SG_ 1506 CatalystTemp_B1S1 "ToyotaLens engine f9zM6QYVt: Catalyst Temp B1S1, 21 05 pos 6";
-CM_ BO_ 1506 "Engine blocks 21 51, 21 01, 21 05";
-CM_ SG_ 1507 Idle_Up_SW "ToyotaLens engine XtvJTr4CS: Idle Up SW, 21 25 pos 0";
-CM_ SG_ 1507 Engine_Oil_Pressure_SW "ToyotaLens engine QrVBqDKae: Engine Oil Pressure SW, 21 25 pos 0";
-CM_ SG_ 1507 Beacon_Light_Signal "ToyotaLens engine 1cH-RMnCY: Beacon Light Signal, 21 25 pos 0";
-CM_ SG_ 1507 Cooler_Box_Switch "ToyotaLens engine uwb6zdX3_: Cooler Box Switch, 21 25 pos 0";
-CM_ SG_ 1507 Power_Steering_Signal "ToyotaLens engine 22JXwqg7a: Power Steering Signal, 21 25 pos 0";
-CM_ SG_ 1507 Stop_Light_Switch "ToyotaLens engine LaaAftzU0: Stop Light Switch, 21 25 pos 0";
-CM_ SG_ 1507 Clutch_Start_SW "ToyotaLens engine 4UftGpjce: Clutch Start SW, 21 25 pos 1";
-CM_ SG_ 1507 Starter_Signal "ToyotaLens engine nciXdmoed: Starter Signal, 21 25 pos 1";
-CM_ SG_ 1507 Starter_Control "ToyotaLens engine CY1ijYdOw: Starter Control, 21 25 pos 1";
-CM_ SG_ 1507 Fuel_Lid "ToyotaLens engine W_kF9CjVu: Fuel Lid, 21 25 pos 1";
-CM_ SG_ 1507 Fuel_Lid_Switch "ToyotaLens engine ZCLZadIcE: Fuel Lid Switch, 21 25 pos 1";
-CM_ SG_ 1507 Fuel_Select_Switch "ToyotaLens engine TG2V0CLlK: Fuel Select Switch, 21 25 pos 1";
-CM_ SG_ 1507 Shift_SW_Status_P_Range "ToyotaLens engine YDFlWhPK7: Shift SW Status (P Range), 21 25 pos 4";
-CM_ SG_ 1507 Shift_SW_Status_R_Range "ToyotaLens engine FI1pnHXdO: Shift SW Status (R Range), 21 25 pos 4";
-CM_ SG_ 1507 Shift_SW_Status_N_Range "ToyotaLens engine YVfm-fF-0: Shift SW Status (N Range), 21 25 pos 4";
-CM_ SG_ 1507 Shift_SW_Status_D_Range "ToyotaLens engine mIfRvCOgv: Shift SW Status (D Range), 21 25 pos 4";
-CM_ SG_ 1507 Shift_SW_Status_4_Range "ToyotaLens engine 2dlmHarbD: Shift SW Status (4 Range), 21 25 pos 4";
-CM_ SG_ 1507 Shift_SW_Status_3_Range "ToyotaLens engine JgbVaaykW: Shift SW Status (3 Range), 21 25 pos 4";
-CM_ SG_ 1507 Shift_SW_Status_2_Range "ToyotaLens engine h9rHlztai: Shift SW Status (2 Range), 21 25 pos 4";
-CM_ SG_ 1507 Shift_SW_Status_L_Range "ToyotaLens engine GYPNxIWSl: Shift SW Status (L Range), 21 25 pos 4";
-CM_ SG_ 1507 Sports_Mode_Selection_SW "ToyotaLens engine Td2tPkgfT: Sports Mode Selection SW, 21 25 pos 5";
-CM_ SG_ 1507 Sports_Shift_Up_SW "ToyotaLens engine U5-yUsYEs: Sports Shift Up SW, 21 25 pos 5";
-CM_ SG_ 1507 Sports_Shift_Down_SW "ToyotaLens engine uGJohyqzk: Sports Shift Down SW, 21 25 pos 5";
-CM_ SG_ 1507 SD_Switch "ToyotaLens engine yhrBeiXeh: SD Switch, 21 25 pos 5";
-CM_ SG_ 1507 Shift_SW_Status_B_Range "ToyotaLens engine AEotfqn0i: Shift SW Status (B Range), 21 25 pos 5";
-CM_ SG_ 1507 Reverse_Switch "ToyotaLens engine diGDiCcoq: Reverse Switch, 21 25 pos 5";
-CM_ SG_ 1507 Overdrive_Cut_Switch_1 "ToyotaLens engine Ou6F_L3M9: Overdrive Cut Switch #1, 21 25 pos 6";
-CM_ SG_ 1507 Overdrive_Cut_Switch_2 "ToyotaLens engine 3eUIbWLHB: Overdrive Cut Switch #2, 21 25 pos 6";
-CM_ SG_ 1507 Pattern_Switch_PWR_M "ToyotaLens engine 7zTFk0ahg: Pattern Switch (PWR/M), 21 25 pos 6";
-CM_ SG_ 1507 Snow_or_2nd_Start_Mode "ToyotaLens engine 4HS_TaCSM: Snow or 2nd Start Mode, 21 25 pos 6";
-CM_ SG_ 1507 Sports_Drive_Switch "ToyotaLens engine gSem1ewlO: Sports Drive Switch, 21 25 pos 6";
-CM_ SG_ 1507 Snow_Switch_Status "ToyotaLens engine q6VfXFaPA: Snow Switch Status, 21 25 pos 6";
-CM_ SG_ 1507 ECO_Switch "ToyotaLens engine Z5ljYxjBl: ECO Switch, 21 25 pos 6";
-CM_ SG_ 1507 Normal_Mode_Switch "ToyotaLens engine v5kE6rbXW: Normal Mode Switch, 21 25 pos 6";
-CM_ SG_ 1507 Low_Gear_Switch "ToyotaLens engine MIauPixBr: Low Gear Switch, 21 25 pos 8";
-CM_ SG_ 1507 Transfer_Neutral "ToyotaLens engine XBUkx-5Y0: Transfer Neutral, 21 25 pos 8";
-CM_ SG_ 1507 S_4WD_SW "ToyotaLens engine kUuakR-Hj: 4WD SW, 21 25 pos 8";
-CM_ SG_ 1507 Kick_Down_Switch_Status "ToyotaLens engine 3l0But04C: Kick Down Switch Status, 21 25 pos 8";
-CM_ SG_ 1507 Transfer_L4 "ToyotaLens engine f1AT6TmFg: Transfer L4, 21 25 pos 8";
-CM_ SG_ 1507 Neutral_Position_SW_Signal "ToyotaLens engine D6LiQnZIN: Neutral Position SW Signal, 21 25 pos 8";
-CM_ SG_ 1507 Brake_Switch "ToyotaLens engine hjYESNCj7: Brake Switch, 21 25 pos 8";
-CM_ SG_ 1507 Brake_Switch_Status "ToyotaLens engine pfEH5h1QD: Brake Switch Status, 21 25 pos 8";
-CM_ SG_ 1507 Shift_Indication_Enable "ToyotaLens engine sN_nnsUVT: Shift Indication Enable, 21 25 pos 10";
-CM_ SG_ 1507 Clutch_Switch "ToyotaLens engine qXqkZoyLL: Clutch Switch, 21 25 pos 10";
-CM_ SG_ 1507 Cruise_Cancel_Signal "ToyotaLens engine G1GK3DGX4: Cruise Cancel Signal, 21 25 pos 10";
-CM_ SG_ 1507 A_C_Pressure_Normal_SW "ToyotaLens engine qRAINqEqE: A/C Pressure Normal SW, 21 25 pos 10";
-CM_ SG_ 1507 A_C_Pressure_Abnormal_SW "ToyotaLens engine _8uEoAJUJ: A/C Pressure Abnormal SW, 21 25 pos 10";
-CM_ SG_ 1507 ASL_Switch "ToyotaLens engine muZUTPpmZ: ASL Switch, 21 25 pos 10";
-CM_ SG_ 1507 A_C_Signal "ToyotaLens engine -zoeJoXh5: A/C Signal, 21 25 pos 11";
-CM_ SG_ 1507 Idle_Up_Signal "ToyotaLens engine vsdwYm3OF: Idle Up Signal, 21 25 pos 11";
-CM_ SG_ 1507 Key_Unlock_Signal "ToyotaLens engine mJ1POet0I: Key Unlock Signal, 21 25 pos 11";
-CM_ SG_ 1507 TC_Terminal "ToyotaLens engine rbp_qDGVs: TC Terminal, 21 25 pos 11";
-CM_ SG_ 1507 Throttle_Open_Switch "ToyotaLens engine Neswj6msY: Throttle Open Switch, 21 25 pos 11";
-CM_ SG_ 1507 Cruise_Main_SW "ToyotaLens engine __FHX_t6O: Cruise Main SW, 21 25 pos 11";
-CM_ BO_ 1507 "Engine block 21 25 bytes 0, 1, 4, 5, 6, 8, 10, 11; every flag keeps its bit";
-CM_ SG_ 1508 ATOilTemperature1 "ToyotaLens ect EJAh4TNHA: A/T Oil Temperature 1, 21 82 pos 0";
-CM_ SG_ 1508 ShiftStatus "ToyotaLens ect uVqogLzei: Shift Status, 21 85 pos 0";
-CM_ SG_ 1508 Lock_Up "ToyotaLens ect xNDFWfWrx: Lock Up, 21 85 pos 1";
-CM_ SG_ 1508 ST_Solenoid_Status "ToyotaLens ect 8uWsA8nEj: ST Solenoid Status, 21 85 pos 1";
-CM_ SG_ 1508 SL_Solenoid_Status "ToyotaLens ect pfH5jGZAK: SL Solenoid Status, 21 85 pos 1";
-CM_ SG_ 1508 Solenoid_SC "ToyotaLens ect dbNB5GR5P: Solenoid(SC), 21 85 pos 1";
-CM_ SG_ 1508 Solenoid_SLS "ToyotaLens ect YxfYDQ7uJ: Solenoid (SLS), 21 85 pos 2";
-CM_ SG_ 1508 Solenoid_SLC "ToyotaLens ect WLIDn7NaU: Solenoid (SLC), 21 85 pos 2";
-CM_ SG_ 1508 SLT_Solenoid_Status "ToyotaLens ect NCfYZpryP: SLT Solenoid Status, 21 85 pos 2";
-CM_ SG_ 1508 SLU_Solenoid_Status "ToyotaLens ect ktUrcNJB2: SLU Solenoid Status, 21 85 pos 2";
-CM_ SG_ 1508 SLN_Solenoid_Status "ToyotaLens ect 0sho5CYXM: SLN Solenoid Status, 21 85 pos 2";
-CM_ SG_ 1508 Solenoid_SLP "ToyotaLens ect 5thzpoH_h: Solenoid(SLP), 21 85 pos 2";
-CM_ BO_ 1508 "ECT blocks 21 82 and 21 85";
-CM_ SG_ 1509 FRWheelSpeed "ToyotaLens abs v4xnACb-1: FR Wheel Speed, 21 03 pos 0";
-CM_ SG_ 1509 FLWheelSpeed "ToyotaLens abs -HYSOLbJn: FL Wheel Speed, 21 03 pos 1";
-CM_ SG_ 1509 RRWheelSpeed "ToyotaLens abs t1FnfghgK: RR Wheel Speed, 21 03 pos 2";
-CM_ SG_ 1509 RLWheelSpeed "ToyotaLens abs AcK0rmPvM: RL Wheel Speed, 21 03 pos 3";
-CM_ SG_ 1509 FR_Wheel_Direction "ToyotaLens abs ENqaWxCqb: FR Wheel Direction, 21 03 pos 4";
-CM_ SG_ 1509 FL_Wheel_Direction "ToyotaLens abs Hhcs40e-J: FL Wheel Direction, 21 03 pos 4";
-CM_ SG_ 1509 RR_Wheel_Direction "ToyotaLens abs Ul0mHtzgx: RR Wheel Direction, 21 03 pos 4";
-CM_ SG_ 1509 RL_Wheel_Direction "ToyotaLens abs QGQ65POtp: RL Wheel Direction, 21 03 pos 4";
-CM_ SG_ 1509 AbsVehicleSpeed "ToyotaLens abs yRGYTZgNS: Vehicle Speed, 21 21 pos 0";
-CM_ SG_ 1509 Gear_Position "ToyotaLens abs jW8oylIb1: Gear Position, 21 1C pos 0";
-CM_ SG_ 1509 Shift_Lever_Position "ToyotaLens abs RSHg0tiBi: Shift Lever Position, 21 1C pos 0";
-CM_ SG_ 1509 TRC_TRAC_VSC_OFF_SW "ToyotaLens abs y4JcQxMDm: TRC(TRAC)/VSC OFF SW, 21 1D pos 0";
-CM_ SG_ 1509 Reservoir_Warning_SW "ToyotaLens abs HJqSSz3Au: Reservoir Warning SW, 21 1D pos 0";
-CM_ SG_ 1509 Main_Idle_SW "ToyotaLens abs CwG0r8w3m: Main Idle SW, 21 1D pos 0";
-CM_ SG_ 1509 Downhill_Assist_Control_SW "ToyotaLens abs gBxkD6qg3: Downhill Assist Control SW, 21 1D pos 0";
-CM_ SG_ 1509 Auto_LSD_Switch "ToyotaLens abs 1_XUmWvtc: Auto LSD Switch, 21 1D pos 0";
-CM_ SG_ 1509 Pre_Crash_Brake_OFF_Switch "ToyotaLens abs sLTLIXnGo: Pre Crash Brake OFF Switch, 21 1D pos 0";
-CM_ SG_ 1509 A_TRC_TRAC_Switch "ToyotaLens abs g7LElUIT2: A-TRC(TRAC) Switch, 21 1D pos 0";
-CM_ BO_ 1509 "ABS blocks 21 03, 21 21, 21 1C, 21 1D";
-CM_ SG_ 1510 DecelerationSensor "ToyotaLens abs mGjX_peX9: Deceleration Sensor, 21 05 pos 0";
-CM_ SG_ 1510 DecelerationSensor2 "ToyotaLens abs jxOKxiov0: Deceleration Sensor2, 21 05 pos 1";
-CM_ SG_ 1510 YawRateSensor "ToyotaLens abs 8sE4a6uUA: Yaw Rate Sensor, 21 06 pos 0";
-CM_ SG_ 1510 YawRateSensor2 "ToyotaLens abs L9zlH4nSS: Yaw Rate Sensor2, 21 06 pos 1";
-CM_ SG_ 1510 SteeringAngleSensor "ToyotaLens abs D_hbw_J-H: Steering Angle Sensor, 21 06 pos 2";
-CM_ SG_ 1510 RealEngineTorque "ToyotaLens abs BHWjdtIL-: Real Engine Torque, 21 05 pos 10";
-CM_ BO_ 1510 "ABS blocks 21 05 and 21 06";
-CM_ SG_ 1511 TRC_TRAC_Ctrl_Status "ToyotaLens abs BioD10Xaj: TRC(TRAC) Ctrl Status, 21 5A pos 0";
-CM_ SG_ 1511 TRC_TRAC_Engine_Ctrl_Status "ToyotaLens abs 8cEHdXtyy: TRC(TRAC) Engine Ctrl Status, 21 5A pos 0";
-CM_ SG_ 1511 TRC_TRAC_Brake_Ctrl_Status "ToyotaLens abs -smIkMz-d: TRC(TRAC) Brake Ctrl Status, 21 5A pos 0";
-CM_ SG_ 1511 TRAC_VSC_Off_Mode "ToyotaLens abs u4dVd8nTf: TRAC/VSC Off Mode, 21 5A pos 0";
-CM_ SG_ 1511 FR_Wheel_VSC_Ctrl_Status "ToyotaLens abs KCEsfxful: FR Wheel VSC Ctrl Status, 21 5A pos 1";
-CM_ SG_ 1511 FL_Wheel_VSC_Ctrl_Status "ToyotaLens abs doHPlEw7e: FL Wheel VSC Ctrl Status, 21 5A pos 1";
-CM_ SG_ 1511 RR_Wheel_VSC_Ctrl_Status "ToyotaLens abs lrg-aSr92: RR Wheel VSC Ctrl Status, 21 5A pos 1";
-CM_ SG_ 1511 RL_Wheel_VSC_Ctrl_Status "ToyotaLens abs 1xb8Sace_: RL Wheel VSC Ctrl Status, 21 5A pos 1";
-CM_ SG_ 1511 Stop_Light_SW "ToyotaLens abs UGeitSXq9: Stop Light SW, 21 1F pos 0";
-CM_ SG_ 1511 Parking_Brake_SW "ToyotaLens abs fJtEaqyyV: Parking Brake SW, 21 1F pos 0";
-CM_ SG_ 1511 Brake_Pedal_Load_Sensing_SW "ToyotaLens abs tWI548Zwy: Brake Pedal Load Sensing SW, 21 1F pos 0";
-CM_ SG_ 1511 Deceleration_SW "ToyotaLens abs ESB906d-K: Deceleration SW, 21 1F pos 0";
-CM_ SG_ 1511 S_4WD_SW "ToyotaLens abs C4Jxyks-4: 4WD SW, 21 1F pos 0";
-CM_ SG_ 1511 MIL "ToyotaLens engine Bbj0Pmhyr: MIL, 21 06 pos 0";
-CM_ SG_ 1511 Number_of_Emission_DTC "ToyotaLens engine WCJGSumpU: Number of Emission DTC, 21 06 pos 0";
-CM_ SG_ 1511 Fuel_System_Monitor_Result "ToyotaLens engine Sdr1ydRkN: Fuel System Monitor Result, 21 06 pos 1";
-CM_ SG_ 1511 Complete_Parts_Monitor "ToyotaLens engine wtnvORD4v: Complete Parts Monitor, 21 06 pos 1";
-CM_ SG_ 1511 Fuel_System_Monitor "ToyotaLens engine x5wav3oGJ: Fuel System Monitor, 21 06 pos 1";
-CM_ SG_ 1511 Misfire_Monitor "ToyotaLens engine 8_17H4I9E: Misfire Monitor, 21 06 pos 1";
-CM_ SG_ 1511 AcceleratorOpeningAngle "ToyotaLens abs Jglou0v_s: Accelerator Opening Angle %, 21 05 pos 9";
-CM_ SG_ 1511 AbsEngineRevolutions "ToyotaLens abs DbQb0AMct: Engine Revolutions, 21 05 pos 2";
-CM_ BO_ 1511 "ABS blocks 21 5A, 21 1F, 21 05; engine block 21 06 (MIL)";
+CM_ BO_ 2667578848 "From engine 21 01";
+CM_ BO_ 2667578849 "From engine 21 01, engine 21 51, engine 21 05";
+CM_ BO_ 2667578850 "From engine 21 01, engine 21 41";
+CM_ BO_ 2667578851 "From engine 21 03, engine 21 3C";
+CM_ BO_ 2667578852 "From engine 21 04";
+CM_ BO_ 2667578853 "From engine 21 04";
+CM_ BO_ 2667578854 "From engine 21 05, engine 21 3C, engine 21 03, engine 21 39";
+CM_ BO_ 2667578855 "From engine 21 03, engine 21 37, engine 21 45";
+CM_ BO_ 2667578856 "From engine 21 45";
+CM_ BO_ 2667578857 "From engine 21 44";
+CM_ BO_ 2667578858 "From engine 21 51, engine 21 52";
+CM_ BO_ 2667578859 "From engine 21 01, engine 21 41, engine 21 39, engine 21 25";
+CM_ BO_ 2667578860 "From engine 21 25";
+CM_ BO_ 2667578861 "From engine 21 25";
+CM_ BO_ 2667578862 "From engine 21 25, engine 21 21";
+CM_ BO_ 2667578863 "From engine 21 25";
+CM_ BO_ 2667578864 "From engine 21 06, engine 21 25, engine 21 37, engine 21 51";
+CM_ BO_ 2667578865 "From ect 21 82, ect 21 81, ect 21 22";
+CM_ BO_ 2667578866 "From ect 21 85";
+CM_ BO_ 2667578867 "From ect 21 85, ect 21 83";
+CM_ BO_ 2667578868 "From ect 21 81";
+CM_ BO_ 2667578869 "From abs 21 03, abs 21 21";
+CM_ BO_ 2667578870 "From abs 21 42, abs 21 03";
+CM_ BO_ 2667578871 "From abs 21 47, abs 21 05, abs 21 06";
+CM_ BO_ 2667578872 "From abs 21 05, abs 21 1C, abs 21 0C";
+CM_ BO_ 2667578873 "From abs 21 04, abs 21 1F, abs 21 5F";
+CM_ BO_ 2667578874 "From abs 21 5A";
+CM_ BO_ 2667578875 "From abs 21 5F";
+CM_ BO_ 2667578876 "From abs 21 1D, abs 21 1F";
+CM_ BO_ 2667578877 "From abs 21 3D";
+CM_ BO_ 2667578878 "From abs 21 3F";
+CM_ BO_ 2667578879 "From abs 21 3A";
+CM_ BO_ 2667578880 "From abs 21 BE";
+CM_ BO_ 2667578881 "From abs 21 BE";
+CM_ BO_ 2667578882 "From abs 21 BE";
+CM_ BO_ 2667578883 "From abs 21 BE";
 
-VAL_ 1505 FuelSystemStatus1 0 "Unused" 1 "OL" 2 "CL" 4 "OLDrive" 8 "OLFault" 16 "CLFault" ;
-VAL_ 1505 FuelSystemStatus2 0 "Unused" 1 "OL" 2 "CL" 4 "OLDrive" 8 "OLFault" 16 "CLFault" ;
-VAL_ 1507 Idle_Up_SW 0 "OFF" 1 "ON" ;
-VAL_ 1507 Engine_Oil_Pressure_SW 0 "OFF" 1 "ON" ;
-VAL_ 1507 Beacon_Light_Signal 0 "OFF" 1 "ON" ;
-VAL_ 1507 Cooler_Box_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Power_Steering_Signal 0 "OFF" 1 "ON" ;
-VAL_ 1507 Stop_Light_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Clutch_Start_SW 0 "OFF" 1 "ON" ;
-VAL_ 1507 Starter_Signal 0 "OFF" 1 "ON" ;
-VAL_ 1507 Starter_Control 0 "OFF" 1 "ON" ;
-VAL_ 1507 Fuel_Lid 0 "Close" 1 "Open" ;
-VAL_ 1507 Fuel_Lid_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Fuel_Select_Switch 0 "Gasoline" 1 "CNG" ;
-VAL_ 1507 Shift_SW_Status_P_Range 0 "OFF" 1 "ON" ;
-VAL_ 1507 Shift_SW_Status_R_Range 0 "OFF" 1 "ON" ;
-VAL_ 1507 Shift_SW_Status_N_Range 0 "OFF" 1 "ON" ;
-VAL_ 1507 Shift_SW_Status_D_Range 0 "OFF" 1 "ON" ;
-VAL_ 1507 Shift_SW_Status_4_Range 0 "OFF" 1 "ON" ;
-VAL_ 1507 Shift_SW_Status_3_Range 0 "OFF" 1 "ON" ;
-VAL_ 1507 Shift_SW_Status_2_Range 0 "OFF" 1 "ON" ;
-VAL_ 1507 Shift_SW_Status_L_Range 0 "OFF" 1 "ON" ;
-VAL_ 1507 Sports_Mode_Selection_SW 0 "OFF" 1 "ON" ;
-VAL_ 1507 Sports_Shift_Up_SW 0 "OFF" 1 "ON" ;
-VAL_ 1507 Sports_Shift_Down_SW 0 "OFF" 1 "ON" ;
-VAL_ 1507 SD_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Shift_SW_Status_B_Range 0 "OFF" 1 "ON" ;
-VAL_ 1507 Reverse_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Overdrive_Cut_Switch_1 0 "OFF" 1 "ON" ;
-VAL_ 1507 Overdrive_Cut_Switch_2 0 "OFF" 1 "ON" ;
-VAL_ 1507 Pattern_Switch_PWR_M 0 "OFF" 1 "ON" ;
-VAL_ 1507 Snow_or_2nd_Start_Mode 0 "OFF" 1 "ON" ;
-VAL_ 1507 Sports_Drive_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Snow_Switch_Status 0 "OFF" 1 "ON" ;
-VAL_ 1507 ECO_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Normal_Mode_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Low_Gear_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Transfer_Neutral 0 "OFF" 1 "ON" ;
-VAL_ 1507 S_4WD_SW 0 "OFF" 1 "ON" ;
-VAL_ 1507 Kick_Down_Switch_Status 0 "OFF" 1 "ON" ;
-VAL_ 1507 Transfer_L4 0 "OFF" 1 "ON" ;
-VAL_ 1507 Neutral_Position_SW_Signal 0 "OFF" 1 "ON" ;
-VAL_ 1507 Brake_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Brake_Switch_Status 0 "Unable" 1 "Able" ;
-VAL_ 1507 Shift_Indication_Enable 0 "OFF" 1 "ON" ;
-VAL_ 1507 Clutch_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Cruise_Cancel_Signal 0 "OFF" 1 "ON" ;
-VAL_ 1507 A_C_Pressure_Normal_SW 0 "OFF" 1 "ON" ;
-VAL_ 1507 A_C_Pressure_Abnormal_SW 0 "OFF" 1 "ON" ;
-VAL_ 1507 ASL_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 A_C_Signal 0 "OFF" 1 "ON" ;
-VAL_ 1507 Idle_Up_Signal 0 "OFF" 1 "ON" ;
-VAL_ 1507 Key_Unlock_Signal 0 "OFF" 1 "ON" ;
-VAL_ 1507 TC_Terminal 0 "OFF" 1 "ON" ;
-VAL_ 1507 Throttle_Open_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1507 Cruise_Main_SW 0 "OFF" 1 "ON" ;
-VAL_ 1508 ShiftStatus 1 "1st" 2 "2nd" 3 "3rd" 4 "4th" 5 "5th" 6 "6th" 7 "7th" 8 "8th" ;
-VAL_ 1508 Lock_Up 0 "OFF" 1 "ON" ;
-VAL_ 1508 ST_Solenoid_Status 0 "OFF" 1 "ON" ;
-VAL_ 1508 SL_Solenoid_Status 0 "OFF" 1 "ON" ;
-VAL_ 1508 Solenoid_SC 0 "OFF" 1 "ON" ;
-VAL_ 1508 Solenoid_SLS 0 "OFF" 1 "ON" ;
-VAL_ 1508 Solenoid_SLC 0 "OFF" 1 "ON" ;
-VAL_ 1508 SLT_Solenoid_Status 0 "OFF" 1 "ON" ;
-VAL_ 1508 SLU_Solenoid_Status 0 "OFF" 1 "ON" ;
-VAL_ 1508 SLN_Solenoid_Status 0 "OFF" 1 "ON" ;
-VAL_ 1508 Solenoid_SLP 0 "OFF" 1 "ON" ;
-VAL_ 1509 FR_Wheel_Direction 0 "Forward" 1 "Back" ;
-VAL_ 1509 FL_Wheel_Direction 0 "Forward" 1 "Back" ;
-VAL_ 1509 RR_Wheel_Direction 0 "Forward" 1 "Back" ;
-VAL_ 1509 RL_Wheel_Direction 0 "Forward" 1 "Back" ;
-VAL_ 1509 Gear_Position 0 "Fail" 1 "1st" 2 "2nd" 3 "3rd" 4 "4th" 5 "5th" 6 "6th" 7 "7th" 8 "'P" 9 "8th" 10 "9th" 11 "10th" 14 "R" 15 "Not R" ;
-VAL_ 1509 Shift_Lever_Position 0 "Fail" 1 "1st" 2 "2nd" 3 "3rd" 4 "4th" 5 "5th" 6 "6th/B" 7 "D/M" 8 "'P" 14 "R" ;
-VAL_ 1509 TRC_TRAC_VSC_OFF_SW 0 "OFF" 1 "ON" ;
-VAL_ 1509 Reservoir_Warning_SW 0 "OFF" 1 "ON" ;
-VAL_ 1509 Main_Idle_SW 0 "OFF" 1 "ON" ;
-VAL_ 1509 Downhill_Assist_Control_SW 0 "OFF" 1 "ON" ;
-VAL_ 1509 Auto_LSD_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1509 Pre_Crash_Brake_OFF_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1509 A_TRC_TRAC_Switch 0 "OFF" 1 "ON" ;
-VAL_ 1511 TRC_TRAC_Ctrl_Status 0 "OFF" 1 "ON" ;
-VAL_ 1511 TRC_TRAC_Engine_Ctrl_Status 0 "OFF" 1 "ON" ;
-VAL_ 1511 TRC_TRAC_Brake_Ctrl_Status 0 "OFF" 1 "ON" ;
-VAL_ 1511 TRAC_VSC_Off_Mode 0 "Normal" 1 "TRC OFF" 2 "VSC Expert Mode" 3 "VSC OFF" ;
-VAL_ 1511 FR_Wheel_VSC_Ctrl_Status 0 "OFF" 1 "ON" ;
-VAL_ 1511 FL_Wheel_VSC_Ctrl_Status 0 "OFF" 1 "ON" ;
-VAL_ 1511 RR_Wheel_VSC_Ctrl_Status 0 "OFF" 1 "ON" ;
-VAL_ 1511 RL_Wheel_VSC_Ctrl_Status 0 "OFF" 1 "ON" ;
-VAL_ 1511 Stop_Light_SW 0 "OFF" 1 "ON" ;
-VAL_ 1511 Parking_Brake_SW 0 "OFF" 1 "ON" ;
-VAL_ 1511 Brake_Pedal_Load_Sensing_SW 0 "OFF" 1 "ON" ;
-VAL_ 1511 Deceleration_SW 0 "Fail" 1 "Low" 2 "Mid" 4 "High" ;
-VAL_ 1511 S_4WD_SW 0 "OFF" 1 "ON" ;
-VAL_ 1511 MIL 0 "OFF" 1 "ON" ;
-VAL_ 1511 Fuel_System_Monitor_Result 0 "Compl" 1 "Incmpl" ;
-VAL_ 1511 Complete_Parts_Monitor 0 "Not Avl" 1 "Avail" ;
-VAL_ 1511 Fuel_System_Monitor 0 "Not Avl" 1 "Avail" ;
-VAL_ 1511 Misfire_Monitor 0 "Not Avl" 1 "Avail" ;
+VAL_ 2667578851 FuelSystemStatus1 0 "Unused" 1 "OL" 2 "CL" 4 "OLDrive" 8 "OLFault" 16 "CLFault" ;
+VAL_ 2667578851 FuelSystemStatus2 0 "Unused" 1 "OL" 2 "CL" 4 "OLDrive" 8 "OLFault" 16 "CLFault" ;
+VAL_ 2667578854 FuelPumpSpeedControl 0 "OFF" 1 "ON" ;
+VAL_ 2667578854 IntankFuelPump 0 "OFF" 1 "ON" ;
+VAL_ 2667578859 ElectricFan 0 "OFF" 1 "ON" ;
+VAL_ 2667578859 ACClutchRelay 0 "OFF" 1 "ON" ;
+VAL_ 2667578859 StarterRelay 0 "OFF" 1 "ON" ;
+VAL_ 2667578859 ACCRelay 0 "OFF" 1 "ON" ;
+VAL_ 2667578859 ElectricalLoad1 0 "OFF" 1 "ON" ;
+VAL_ 2667578860 Shift_P 0 "OFF" 1 "ON" ;
+VAL_ 2667578860 Shift_R 0 "OFF" 1 "ON" ;
+VAL_ 2667578860 Shift_N 0 "OFF" 1 "ON" ;
+VAL_ 2667578860 Shift_D 0 "OFF" 1 "ON" ;
+VAL_ 2667578860 Shift_4 0 "OFF" 1 "ON" ;
+VAL_ 2667578860 Shift_3 0 "OFF" 1 "ON" ;
+VAL_ 2667578860 Shift_2 0 "OFF" 1 "ON" ;
+VAL_ 2667578860 Shift_L 0 "OFF" 1 "ON" ;
+VAL_ 2667578861 SportsMode 0 "OFF" 1 "ON" ;
+VAL_ 2667578861 PaddleUp 0 "OFF" 1 "ON" ;
+VAL_ 2667578861 PaddleDown 0 "OFF" 1 "ON" ;
+VAL_ 2667578861 Shift_B 0 "OFF" 1 "ON" ;
+VAL_ 2667578861 ReverseSwitch 0 "OFF" 1 "ON" ;
+VAL_ 2667578861 PatternPWR 0 "OFF" 1 "ON" ;
+VAL_ 2667578861 SnowSwitch 0 "OFF" 1 "ON" ;
+VAL_ 2667578861 ECOSwitch 0 "OFF" 1 "ON" ;
+VAL_ 2667578862 StopLightSwitch 0 "OFF" 1 "ON" ;
+VAL_ 2667578862 BrakeSwitch 0 "OFF" 1 "ON" ;
+VAL_ 2667578862 BrakeSwitchStatus 0 "Unable" 1 "Able" ;
+VAL_ 2667578862 CruiseMain 0 "OFF" 1 "ON" ;
+VAL_ 2667578862 CruiseCancel 0 "OFF" 1 "ON" ;
+VAL_ 2667578862 CruiseResAcc 0 "OFF" 1 "ON" ;
+VAL_ 2667578862 CruiseSetCoast 0 "OFF" 1 "ON" ;
+VAL_ 2667578862 KickDown 0 "OFF" 1 "ON" ;
+VAL_ 2667578863 StarterSignal 0 "OFF" 1 "ON" ;
+VAL_ 2667578863 StarterControl 0 "OFF" 1 "ON" ;
+VAL_ 2667578863 ClutchStart 0 "OFF" 1 "ON" ;
+VAL_ 2667578863 IdleUp 0 "OFF" 1 "ON" ;
+VAL_ 2667578863 ACSignal 0 "OFF" 1 "ON" ;
+VAL_ 2667578863 ACPressureNormal 0 "OFF" 1 "ON" ;
+VAL_ 2667578863 ACPressureAbnormal 0 "OFF" 1 "ON" ;
+VAL_ 2667578863 PowerSteeringSignal 0 "OFF" 1 "ON" ;
+VAL_ 2667578864 MIL 0 "OFF" 1 "ON" ;
+VAL_ 2667578864 OilPressureSwitch 0 "OFF" 1 "ON" ;
+VAL_ 2667578864 FuelCutCondition 0 "OFF" 1 "ON" ;
+VAL_ 2667578864 IdleFuelCut 0 "OFF" 1 "ON" ;
+VAL_ 2667578864 BrakeOverride 0 "OFF" 1 "ON" ;
+VAL_ 2667578864 NeutralControl 0 "OFF" 1 "ON" ;
+VAL_ 2667578864 ImmobiliserFuelCut 0 "OFF" 1 "ON" ;
+VAL_ 2667578866 ShiftStatus 1 "1st" 2 "2nd" 3 "3rd" 4 "4th" 5 "5th" 6 "6th" 7 "7th" 8 "8th" ;
+VAL_ 2667578866 LockUp 0 "OFF" 1 "ON" ;
+VAL_ 2667578866 SLT 0 "OFF" 1 "ON" ;
+VAL_ 2667578866 SLU 0 "OFF" 1 "ON" ;
+VAL_ 2667578866 SLN 0 "OFF" 1 "ON" ;
+VAL_ 2667578866 SL 0 "OFF" 1 "ON" ;
+VAL_ 2667578866 ST 0 "OFF" 1 "ON" ;
+VAL_ 2667578866 SC 0 "OFF" 1 "ON" ;
+VAL_ 2667578867 SLS 0 "OFF" 1 "ON" ;
+VAL_ 2667578867 SLC 0 "OFF" 1 "ON" ;
+VAL_ 2667578867 SLP 0 "OFF" 1 "ON" ;
+VAL_ 2667578867 ShiftControlMode 0 "S-mode" 1 "M-mode" ;
+VAL_ 2667578867 UpShiftIndication 0 "OFF" 1 "ON" ;
+VAL_ 2667578867 DownShiftIndication 0 "OFF" 1 "ON" ;
+VAL_ 2667578867 TorqueConverterTempRaiseHistory 0 "OFF" 1 "ON" ;
+VAL_ 2667578870 FR_Direction 0 "Forward" 1 "Back" ;
+VAL_ 2667578870 FL_Direction 0 "Forward" 1 "Back" ;
+VAL_ 2667578870 RR_Direction 0 "Forward" 1 "Back" ;
+VAL_ 2667578870 RL_Direction 0 "Forward" 1 "Back" ;
+VAL_ 2667578872 GearPosition 0 "Fail" 1 "1st" 2 "2nd" 3 "3rd" 4 "4th" 5 "5th" 6 "6th" 7 "7th" 8 "'P" 9 "8th" 10 "9th" 11 "10th" 14 "R" 15 "Not R" ;
+VAL_ 2667578872 ShiftLeverPosition 0 "Fail" 1 "1st" 2 "2nd" 3 "3rd" 4 "4th" 5 "5th" 6 "6th/B" 7 "D/M" 8 "'P" 14 "R" ;
+VAL_ 2667578873 StopLightSW 0 "OFF" 1 "ON" ;
+VAL_ 2667578873 ParkingBrakeSW 0 "OFF" 1 "ON" ;
+VAL_ 2667578873 BrakePedalLoadSW 0 "OFF" 1 "ON" ;
+VAL_ 2667578873 DecelerationSW 0 "Fail" 1 "Low" 2 "Mid" 4 "High" ;
+VAL_ 2667578873 BrakeAssistCtrl 0 "OFF" 1 "ON" ;
+VAL_ 2667578873 PanicBrakeAssistCtrl 0 "OFF" 1 "ON" ;
+VAL_ 2667578874 TRC_Ctrl 0 "OFF" 1 "ON" ;
+VAL_ 2667578874 TRC_EngineCtrl 0 "OFF" 1 "ON" ;
+VAL_ 2667578874 TRC_BrakeCtrl 0 "OFF" 1 "ON" ;
+VAL_ 2667578874 TRAC_VSC_OffMode 0 "Normal" 1 "TRC OFF" 2 "VSC Expert Mode" 3 "VSC OFF" ;
+VAL_ 2667578874 VSC_FR 0 "OFF" 1 "ON" ;
+VAL_ 2667578874 VSC_FL 0 "OFF" 1 "ON" ;
+VAL_ 2667578874 VSC_RR 0 "OFF" 1 "ON" ;
+VAL_ 2667578874 VSC_RL 0 "OFF" 1 "ON" ;
+VAL_ 2667578875 ABS_FR 0 "OFF" 1 "ON" ;
+VAL_ 2667578875 ABS_FL 0 "OFF" 1 "ON" ;
+VAL_ 2667578875 ABS_RR 0 "OFF" 1 "ON" ;
+VAL_ 2667578875 ABS_RL 0 "OFF" 1 "ON" ;
+VAL_ 2667578875 EBD_FR 0 "OFF" 1 "ON" ;
+VAL_ 2667578875 EBD_FL 0 "OFF" 1 "ON" ;
+VAL_ 2667578875 EBD_RR 0 "OFF" 1 "ON" ;
+VAL_ 2667578875 EBD_RL 0 "OFF" 1 "ON" ;
+VAL_ 2667578876 TRC_VSC_OffSwitch 0 "OFF" 1 "ON" ;
+VAL_ 2667578876 ReservoirWarning 0 "OFF" 1 "ON" ;
+VAL_ 2667578876 MainIdle 0 "OFF" 1 "ON" ;
+VAL_ 2667578876 AutoLSD 0 "OFF" 1 "ON" ;
+VAL_ 2667578876 A_TRC 0 "OFF" 1 "ON" ;
+VAL_ 2667578876 DownhillAssist 0 "OFF" 1 "ON" ;
+VAL_ 2667578876 PreCrashBrakeOff 0 "OFF" 1 "ON" ;
+VAL_ 2667578876 FourWD 0 "OFF" 1 "ON" ;
+VAL_ 2667578877 ABS_Light 0 "OFF" 1 "ON" ;
+VAL_ 2667578877 Brake_Light 0 "OFF" 1 "ON" ;
+VAL_ 2667578877 Slip_Light 0 "OFF" 1 "ON" ;
+VAL_ 2667578877 Buzzer 0 "OFF" 1 "ON" ;
+VAL_ 2667578877 TirePressure_Light 0 "OFF" 1 "ON" ;
+VAL_ 2667578877 VSC_Light 0 "OFF" 1 "ON" ;
+VAL_ 2667578877 AutoLSD_Light 0 "OFF" 1 "ON" ;
+VAL_ 2667578877 A_TRAC_Light 0 "OFF" 1 "ON" ;
+VAL_ 2667578878 Solenoid_SFRH 0 "OFF" 1 "ON" ;
+VAL_ 2667578878 Solenoid_SFRR 0 "OFF" 1 "ON" ;
+VAL_ 2667578878 Solenoid_SFLH 0 "OFF" 1 "ON" ;
+VAL_ 2667578878 Solenoid_SFLR 0 "OFF" 1 "ON" ;
+VAL_ 2667578878 Solenoid_SRRH 0 "OFF" 1 "ON" ;
+VAL_ 2667578878 Solenoid_SRRR 0 "OFF" 1 "ON" ;
+VAL_ 2667578878 Solenoid_SRLH 0 "OFF" 1 "ON" ;
+VAL_ 2667578878 Solenoid_SRLR 0 "OFF" 1 "ON" ;
+VAL_ 2667578879 Solenoid_SPFL 0 "OFF" 1 "ON" ;
+VAL_ 2667578879 Solenoid_SPFR 0 "OFF" 1 "ON" ;
+VAL_ 2667578879 Solenoid_SM2 0 "OFF" 1 "ON" ;
+VAL_ 2667578879 Solenoid_SM1 0 "OFF" 1 "ON" ;
+VAL_ 2667578879 Solenoid_SRM2 0 "OFF" 1 "ON" ;
+VAL_ 2667578879 Solenoid_SRM1 0 "OFF" 1 "ON" ;
+VAL_ 2667578879 Solenoid_SRC2 0 "OFF" 1 "ON" ;
+VAL_ 2667578879 Solenoid_SRC1 0 "OFF" 1 "ON" ;
+VAL_ 2667578880 FR_SpeedOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578880 FL_SpeedOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578880 RR_SpeedOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578880 RL_SpeedOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578880 EFI_CommOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578880 YawRateOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578880 DecelerationOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578880 SteeringOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578881 MasterCylinderOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578881 MasterCylinder2Open 0 "Normal" 1 "Error" ;
+VAL_ 2667578881 StrokeOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578881 Stroke2Open 0 "Normal" 1 "Error" ;
+VAL_ 2667578881 FR_WheelCylinderOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578881 FL_WheelCylinderOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578881 RR_WheelCylinderOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578881 RL_WheelCylinderOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578882 AccumulatorOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578882 HV_CommOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578882 IG_VoltageDecreased 0 "Normal" 1 "Error" ;
+VAL_ 2667578882 IG_VoltageIncreased 0 "Normal" 1 "Error" ;
+VAL_ 2667578882 FR_SpeedVoltageOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578882 FL_SpeedVoltageOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578882 RR_SpeedVoltageOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578882 RL_SpeedVoltageOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578883 MC_SensorNoise 0 "Normal" 1 "Error" ;
+VAL_ 2667578883 BrakePedalSwitchOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578883 YawRateVoltageOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578883 EFI_CommInvalid 0 "Normal" 1 "Error" ;
+VAL_ 2667578883 VerticalGOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578883 BodyECU_CommOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578883 MC_SensorSupplyOpen 0 "Normal" 1 "Error" ;
+VAL_ 2667578883 SolenoidSupplyOpen 0 "Normal" 1 "Error" ;

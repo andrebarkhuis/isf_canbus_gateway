@@ -14,7 +14,7 @@ MessageTranslator::MessageTranslator()
         m.id = OUTPUT_FRAMES[i].id;
         memcpy(m.data, OUTPUT_FRAMES[i].defaults, 8);
         m.len = 8;
-        m.extended = false;
+        m.extended = OUTPUT_FRAMES[i].extended;
         m.interval = OUTPUT_FRAMES[i].intervalMs;
         m.param_name = OUTPUT_FRAMES[i].name;
     }

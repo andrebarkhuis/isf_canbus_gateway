@@ -1,54 +1,42 @@
 {
   "_comment": [
-    "The frames the gateway puts on the GT86 / ADU bus and the signals in them. tools/generate.py turns this,",
-    "plus ToyotaLens's data/{engine,ect,abs}.json, into src/uds/uds_definitions.cpp, src/translator_table.cpp",
-    "and gateway.dbc. Edit this file, run the generator, never edit the generated files.",
-    "",
-    "Every signal is little-endian; startBit is the bit position of its least significant bit (byte*8 + bit).",
-    "A signal without 'factor' is pass-through: the ECU's raw value goes into the frame unchanged, its width",
-    "comes from the ToyotaLens mask, and the DBC carries ToyotaLens's scale factor and offset. A signal with",
-    "'factor' (and 'bits') is re-encoded: raw = (physical - offset) / factor, the way the GT86 modules expect.",
-    "'blockByte' copies one byte of a Mode 21 block into one frame byte, every flag keeping its bit position.",
-    "",
-    "GT86 packets: ids, default bytes and the layouts below were taken from captures of the real GT86 bus in",
-    "gt86-isf-swap/logs/GT86 (cluster_working_no_errors.txt for the bytes; the two-minute drive for the",
-    "layouts: 0xD1 and 0xD4 at 0.0565 km/h per bit, 0x141 bits 32-45 engine rpm, 0x360 bytes 2-3 oil and",
-    "coolant temperature minus 40). Intervals are the rates seen in the drive capture.",
-    "",
-    "ADU frames: 0x5E0-0x5E7, the only band empty on the GT86 bus (its traffic spans 0x018-0x4DD, 0x63B,",
-    "0x6E1-0x6E2 and the 0x7xx diagnostic ids)."
+      "The frames the gateway puts on the GT86 / ADU bus and the signals in them. tools/generate.py turns this,",
+      "plus ToyotaLens's data/{engine,ect,abs}.json, into src/uds/uds_definitions.cpp, src/translator_table.cpp",
+      "and gateway.dbc. Edit this file, run the generator, never edit the generated files.",
+      "",
+      "Every signal is little-endian; startBit is the bit position of its least significant bit (byte*8 + bit).",
+      "A signal without 'factor' is pass-through: the ECU's raw value goes into the frame unchanged, its width",
+      "comes from the ToyotaLens mask, and the DBC carries ToyotaLens's scale factor and offset. A signal with",
+      "'factor' (and 'bits') is re-encoded: raw = (physical - offset) / factor, the way the GT86 modules expect.",
+      "'blockByte' copies one byte of a Mode 21 block into one frame byte, every flag keeping its bit position.",
+      "",
+      "GT86 packets: ids, default bytes and the layouts below were taken from captures of the real GT86 bus in",
+      "gt86-isf-swap/logs/GT86 (cluster_working_no_errors.txt for the bytes; the two-minute drive for the",
+      "layouts: 0xD1 and 0xD4 at 0.0565 km/h per bit, 0x141 bits 32-45 engine rpm, 0x360 bytes 2-3 oil and",
+      "coolant temperature minus 40). Intervals are the rates seen in the drive capture.",
+      "",
+      "ADU frames: 0x5E0-0x5E7, the only band empty on the GT86 bus (its traffic spans 0x018-0x4DD, 0x63B,",
+      "0x6E1-0x6E2 and the 0x7xx diagnostic ids)."
   ],
   "toyotaLensData": "../../ToyotaLens/data",
   "frames": [
     {
-      "id": "0xD0", "name": "GT86_GSensor", "gt86": true, "interval": 100,
-      "defaults": "8B FB 25 00 01 08 04 01",
-      "comment": "Steering angle and lateral/longitudinal G; default bytes only",
-      "signals": []
+      "id": "0xD0", "name": "GT86_GSensor", "gt86": true, "interval": 100, "defaults": "8B FB 25 00 01 08 04 01", "comment": "Steering angle and lateral/longitudinal G; default bytes only"
     },
     {
-      "id": "0xD1", "name": "GT86_VehicleSpeed", "gt86": true, "interval": 100,
-      "defaults": "F0 07 00 00 B8 0F FC 08",
-      "comment": "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data",
+      "id": "0xD1", "name": "GT86_VehicleSpeed", "gt86": true, "interval": 100, "defaults": "F0 07 00 00 B8 0F FC 08", "comment": "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data",
       "signals": [
         {"module": "engine", "uniqueId": "cLlSvC_7u", "name": "VehicleSpeed", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"}
       ]
     },
     {
-      "id": "0xD2", "name": "GT86_Unknown_D2", "gt86": true, "interval": 100,
-      "defaults": "00 00 FF FF 00 00 00 00",
-      "signals": []
+      "id": "0xD2", "name": "GT86_Unknown_D2", "gt86": true, "interval": 100, "defaults": "00 00 FF FF 00 00 00 00"
     },
     {
-      "id": "0xD3", "name": "GT86_LightStatus", "gt86": true, "interval": 100,
-      "defaults": "00 06 C0 0F 00 00 32 00",
-      "comment": "VSC / TCS / SCS lights; default bytes only",
-      "signals": []
+      "id": "0xD3", "name": "GT86_LightStatus", "gt86": true, "interval": 100, "defaults": "00 06 C0 0F 00 00 32 00", "comment": "VSC / TCS / SCS lights; default bytes only"
     },
     {
-      "id": "0xD4", "name": "GT86_WheelSpeeds", "gt86": true, "interval": 40,
-      "defaults": "F0 07 F0 07 F0 07 F0 07",
-      "comment": "Four wheel speeds, 16 bits each, 0.0565 km/h per bit",
+      "id": "0xD4", "name": "GT86_WheelSpeeds", "gt86": true, "interval": 40, "defaults": "F0 07 F0 07 F0 07 F0 07", "comment": "Four wheel speeds, 16 bits each, 0.0565 km/h per bit",
       "signals": [
         {"module": "abs", "uniqueId": "-HYSOLbJn", "name": "WheelSpeedFL", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
         {"module": "abs", "uniqueId": "v4xnACb-1", "name": "WheelSpeedFR", "startBit": 16, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
@@ -57,164 +45,467 @@
       ]
     },
     {
-      "id": "0x140", "name": "GT86_EngineData1", "gt86": true, "interval": 50,
-      "defaults": "00 05 00 43 00 00 00 01",
-      "comment": "Default bytes only: bytes 2-3 did not move with engine speed in the drive capture",
-      "signals": []
+      "id": "0x140", "name": "GT86_EngineData1", "gt86": true, "interval": 50, "defaults": "00 05 00 43 00 00 00 01", "comment": "Default bytes only: bytes 2-3 did not move with engine speed in the drive capture"
     },
     {
-      "id": "0x141", "name": "GT86_EngineData2", "gt86": true, "interval": 50,
-      "defaults": "00 00 00 00 00 83 A7 00",
-      "comment": "Engine rpm in bits 32-45 (bytes 4-5, 14 bits, 1 rpm per bit); bits 46-47 kept from the default",
+      "id": "0x141", "name": "GT86_EngineData2", "gt86": true, "interval": 50, "defaults": "00 00 00 00 00 83 A7 00", "comment": "Engine rpm in bits 32-45 (bytes 4-5, 14 bits, 1 rpm per bit); bits 46-47 kept from the default",
       "signals": [
         {"module": "engine", "uniqueId": "vxpyKZ0Zo", "name": "EngineRPM", "startBit": 32, "bits": 14, "factor": 1, "offset": 0, "unit": "rpm"}
       ]
     },
     {
-      "id": "0x142", "name": "GT86_EngineMisc", "gt86": true, "interval": 10,
-      "defaults": "00 00 00 00 00 00 00 00",
-      "signals": []
+      "id": "0x142", "name": "GT86_EngineMisc", "gt86": true, "interval": 10, "defaults": "00 00 00 00 00 00 00 00"
     },
     {
-      "id": "0x144", "name": "GT86_BrakeData1", "gt86": true, "interval": 50,
-      "defaults": "C0 00 58 02 01 A4 A0 00",
-      "comment": "In the cluster capture but missing from the old Readme table",
-      "signals": []
+      "id": "0x144", "name": "GT86_BrakeData1", "gt86": true, "interval": 50, "defaults": "C0 00 58 02 01 A4 A0 00", "comment": "In the cluster capture but missing from the old Readme table"
     },
     {
-      "id": "0x360", "name": "GT86_Temperatures", "gt86": true, "interval": 50,
-      "defaults": "00 00 84 50 00 00 11 00",
-      "comment": "Byte 2 engine oil temperature, byte 3 coolant temperature, both +40",
+      "id": "0x360", "name": "GT86_Temperatures", "gt86": true, "interval": 50, "defaults": "00 00 84 50 00 00 11 00", "comment": "Byte 2 engine oil temperature, byte 3 coolant temperature, both +40",
       "signals": [
         {"module": "engine", "uniqueId": "ycETY1A_7", "name": "EngineOilTemperature", "startBit": 16, "bits": 8, "factor": 1, "offset": -40, "unit": "degC"},
         {"module": "engine", "uniqueId": "pl8Tao3_P", "name": "CoolantTemperature", "startBit": 24, "bits": 8, "factor": 1, "offset": -40, "unit": "degC"}
       ]
     },
     {
-      "id": "0x361", "name": "GT86_GearData2", "gt86": true, "interval": 50,
-      "defaults": "00 29 00 DD 23 00 A4 34",
-      "signals": []
+      "id": "0x361", "name": "GT86_GearData2", "gt86": true, "interval": 50, "defaults": "00 29 00 DD 23 00 A4 34"
     },
     {
-      "id": "0x370", "name": "GT86_SteeringTorque2", "gt86": true, "interval": 50,
-      "defaults": "00 00 01 01 00 03 00 00",
-      "signals": []
+      "id": "0x370", "name": "GT86_SteeringTorque2", "gt86": true, "interval": 50, "defaults": "00 00 01 01 00 03 00 00"
     },
     {
-      "id": "0x4C8", "name": "GT86_Unknown_4C8", "gt86": true, "interval": 1000,
-      "defaults": "09 00 00 00 00 00 00 00",
-      "signals": []
+      "id": "0x4C8", "name": "GT86_Unknown_4C8", "gt86": true, "interval": 1000, "defaults": "09 00 00 00 00 00 00 00"
     },
     {
-      "id": "0x7A1", "name": "GT86_ClusterDiagRequest", "gt86": true, "interval": 1000,
-      "defaults": "02 19 81 00 00 00 00 00",
-      "signals": []
+      "id": "0x7A1", "name": "GT86_ClusterDiagRequest", "gt86": true, "interval": 1000, "defaults": "02 19 81 00 00 00 00 00"
     },
     {
-      "id": "0x7A9", "name": "GT86_ClusterDiagResponse", "gt86": true, "interval": 1000,
-      "defaults": "02 83 00 00 00 00 00 00",
-      "signals": []
+      "id": "0x7A9", "name": "GT86_ClusterDiagResponse", "gt86": true, "interval": 1000, "defaults": "02 83 00 00 00 00 00 00"
     },
-
     {
-      "id": "0x5E0", "name": "GW_EngineBasics", "interval": 100,
-      "comment": "Engine block 21 01",
+      "id": "0x1F0005E0", "extended": true, "isf": true, "name": "ENG_Speed_Load", "interval": 100, "comment": "From engine 21 01",
       "signals": [
         {"module": "engine", "uniqueId": "vxpyKZ0Zo", "name": "EngineSpeed", "startBit": 0},
-        {"module": "engine", "uniqueId": "pl8Tao3_P", "name": "CoolantTemp", "startBit": 16},
-        {"module": "engine", "uniqueId": "PINbBSGZE", "name": "IntakeAir", "startBit": 24},
-        {"module": "engine", "uniqueId": "cLlSvC_7u", "name": "VehicleSpeed", "startBit": 32},
-        {"module": "engine", "uniqueId": "BHZoJoMeQ", "name": "ThrottleSensorPosition", "startBit": 40},
-        {"module": "engine", "uniqueId": "GlSGt-9T7", "name": "CalculateLoad", "startBit": 48},
-        {"module": "engine", "uniqueId": "TorX8r1i2", "name": "AtmospherePressure", "startBit": 56}
+        {"module": "engine", "uniqueId": "cLlSvC_7u", "name": "VehicleSpeed", "startBit": 16},
+        {"module": "engine", "uniqueId": "GlSGt-9T7", "name": "CalculateLoad", "startBit": 24},
+        {"module": "engine", "uniqueId": "9BvEGq0dD", "name": "MAF", "startBit": 32},
+        {"module": "engine", "uniqueId": "AiyhbZOEd", "name": "EngineRunTime", "startBit": 48}
       ]
     },
     {
-      "id": "0x5E1", "name": "GW_FuelIgnition", "interval": 100,
-      "comment": "Engine block 21 03",
+      "id": "0x1F0005E1", "extended": true, "isf": true, "name": "ENG_Temperatures", "interval": 100, "comment": "From engine 21 01, engine 21 51, engine 21 05",
+      "signals": [
+        {"module": "engine", "uniqueId": "pl8Tao3_P", "name": "Coolant", "startBit": 0},
+        {"module": "engine", "uniqueId": "PINbBSGZE", "name": "IntakeAir", "startBit": 8},
+        {"module": "engine", "uniqueId": "ycETY1A_7", "name": "EngineOil", "startBit": 16},
+        {"module": "engine", "uniqueId": "G5xcpu12b", "name": "Ambient", "startBit": 24},
+        {"module": "engine", "uniqueId": "f9zM6QYVt", "name": "CatalystB1S1", "startBit": 32},
+        {"module": "engine", "uniqueId": "ZfHpLqF7i", "name": "CatalystB2S1", "startBit": 48}
+      ]
+    },
+    {
+      "id": "0x1F0005E2", "extended": true, "isf": true, "name": "ENG_Throttle_Pedal", "interval": 100, "comment": "From engine 21 01, engine 21 41",
+      "signals": [
+        {"module": "engine", "uniqueId": "BHZoJoMeQ", "name": "ThrottlePosition", "startBit": 0},
+        {"module": "engine", "uniqueId": "TaciUJ0rZ", "name": "AcceleratorPosition", "startBit": 8},
+        {"module": "engine", "uniqueId": "_XFhPTGTA", "name": "ThrottleMotorDuty", "startBit": 24},
+        {"module": "engine", "uniqueId": "g6UVgirBY", "name": "AccelSensor1", "startBit": 32},
+        {"module": "engine", "uniqueId": "g0qILoMhC", "name": "AccelSensor2", "startBit": 40},
+        {"module": "engine", "uniqueId": "0UJZdJfBS", "name": "ThrottleSensor1", "startBit": 48},
+        {"module": "engine", "uniqueId": "Q3h4Ar_Lc", "name": "ThrottleSensor2", "startBit": 56}
+      ]
+    },
+    {
+      "id": "0x1F0005E3", "extended": true, "isf": true, "name": "ENG_Fuel_Trims", "interval": 100, "comment": "From engine 21 03, engine 21 3C",
       "signals": [
         {"module": "engine", "uniqueId": "ijUXiEDm2", "name": "FuelSystemStatus1", "startBit": 0},
         {"module": "engine", "uniqueId": "p8BWeiQ3c", "name": "FuelSystemStatus2", "startBit": 8},
-        {"module": "engine", "uniqueId": "bs6JnDePY", "name": "ShortFT_B1S1", "startBit": 16},
-        {"module": "engine", "uniqueId": "mLBlTPAk2", "name": "LongFT_B1S1", "startBit": 24},
-        {"module": "engine", "uniqueId": "09gGwIG0l", "name": "ShortFT_B2S1", "startBit": 32},
-        {"module": "engine", "uniqueId": "CCWC9-jW7", "name": "LongFT_B2S1", "startBit": 40},
-        {"module": "engine", "uniqueId": "6fCXjj-K0", "name": "IgnitionAdvance", "startBit": 48},
-        {"module": "engine", "uniqueId": "W13lW2Nk9", "name": "EvapPurgeVSV", "startBit": 56}
+        {"module": "engine", "uniqueId": "bs6JnDePY", "name": "ShortFT_B1", "startBit": 16},
+        {"module": "engine", "uniqueId": "mLBlTPAk2", "name": "LongFT_B1", "startBit": 24},
+        {"module": "engine", "uniqueId": "09gGwIG0l", "name": "ShortFT_B2", "startBit": 32},
+        {"module": "engine", "uniqueId": "CCWC9-jW7", "name": "LongFT_B2", "startBit": 40},
+        {"module": "engine", "uniqueId": "oMp1BahA1", "name": "TotalFT_B1", "startBit": 48},
+        {"module": "engine", "uniqueId": "FopEh_oF8", "name": "TotalFT_B2", "startBit": 56}
       ]
     },
     {
-      "id": "0x5E2", "name": "GW_EngineExtras", "interval": 100,
-      "comment": "Engine blocks 21 51, 21 01, 21 05",
+      "id": "0x1F0005E4", "extended": true, "isf": true, "name": "ENG_AirFuel", "interval": 100, "comment": "From engine 21 04",
       "signals": [
-        {"module": "engine", "uniqueId": "ycETY1A_7", "name": "EngineOilTemperature", "startBit": 0},
-        {"module": "engine", "uniqueId": "G5xcpu12b", "name": "AmbientTemp", "startBit": 8},
-        {"module": "engine", "uniqueId": "9BvEGq0dD", "name": "MAF", "startBit": 16},
-        {"module": "engine", "uniqueId": "ku4nFD9dK", "name": "BatteryVoltage", "startBit": 32},
-        {"module": "engine", "uniqueId": "f9zM6QYVt", "name": "CatalystTemp_B1S1", "startBit": 48}
+        {"module": "engine", "uniqueId": "GRKiFVo3F", "name": "TargetAFR", "startBit": 0},
+        {"module": "engine", "uniqueId": "nbybVhTSr", "name": "Lambda_B1S1", "startBit": 16},
+        {"module": "engine", "uniqueId": "9W9bkJShz", "name": "Lambda_B2S1", "startBit": 32},
+        {"module": "engine", "uniqueId": "z98HX74lV", "name": "AFS_Voltage_B1S1", "startBit": 48}
       ]
     },
     {
-      "id": "0x5E3", "name": "GW_EngineSwitches", "interval": 100,
-      "comment": "Engine block 21 25 bytes 0, 1, 4, 5, 6, 8, 10, 11; every flag keeps its bit",
+      "id": "0x1F0005E5", "extended": true, "isf": true, "name": "ENG_AirFuel_Sensors", "interval": 100, "comment": "From engine 21 04",
       "signals": [
-        {"blockByte": {"module": "engine", "parameterAddress": "25", "bytePosition": 0}, "frameByte": 0},
-        {"blockByte": {"module": "engine", "parameterAddress": "25", "bytePosition": 1}, "frameByte": 1},
-        {"blockByte": {"module": "engine", "parameterAddress": "25", "bytePosition": 4}, "frameByte": 2},
-        {"blockByte": {"module": "engine", "parameterAddress": "25", "bytePosition": 5}, "frameByte": 3},
-        {"blockByte": {"module": "engine", "parameterAddress": "25", "bytePosition": 6}, "frameByte": 4},
-        {"blockByte": {"module": "engine", "parameterAddress": "25", "bytePosition": 8}, "frameByte": 5},
-        {"blockByte": {"module": "engine", "parameterAddress": "25", "bytePosition": 10}, "frameByte": 6},
-        {"blockByte": {"module": "engine", "parameterAddress": "25", "bytePosition": 11}, "frameByte": 7}
+        {"module": "engine", "uniqueId": "Q2Ikz0Rzx", "name": "AFS_Voltage_B2S1", "startBit": 0},
+        {"module": "engine", "uniqueId": "NqnCAC5WC", "name": "AFS_Current_B1S1", "startBit": 16},
+        {"module": "engine", "uniqueId": "CKwjqTtOL", "name": "AFS_Current_B2S1", "startBit": 32},
+        {"module": "engine", "uniqueId": "geQjIz4fl", "name": "O2S_B1S2", "startBit": 48},
+        {"module": "engine", "uniqueId": "BlC94S2ue", "name": "O2S_B2S2", "startBit": 56}
       ]
     },
     {
-      "id": "0x5E4", "name": "GW_Transmission", "interval": 100,
-      "comment": "ECT blocks 21 82 and 21 85",
+      "id": "0x1F0005E6", "extended": true, "isf": true, "name": "ENG_Fuel_Delivery", "interval": 100, "comment": "From engine 21 05, engine 21 3C, engine 21 03, engine 21 39",
       "signals": [
-        {"module": "ect", "uniqueId": "EJAh4TNHA", "name": "ATOilTemperature1", "startBit": 0},
-        {"module": "ect", "uniqueId": "uVqogLzei", "name": "ShiftStatus", "startBit": 16},
-        {"blockByte": {"module": "ect", "parameterAddress": "85", "bytePosition": 1}, "frameByte": 3},
-        {"blockByte": {"module": "ect", "parameterAddress": "85", "bytePosition": 2}, "frameByte": 4}
+        {"module": "engine", "uniqueId": "v5skr-i2E", "name": "FuelPressure", "startBit": 0},
+        {"module": "engine", "uniqueId": "ItoRxih8j", "name": "InjectorPulse", "startBit": 16},
+        {"module": "engine", "uniqueId": "h0_AFRofF", "name": "InjectionVolume", "startBit": 32},
+        {"module": "engine", "uniqueId": "W13lW2Nk9", "name": "EvapPurge", "startBit": 48},
+        {"module": "engine", "uniqueId": "Pw2b2fXZa", "name": "FuelPumpSpeedControl", "startBit": 56},
+        {"module": "engine", "uniqueId": "k18F2cGAw", "name": "IntankFuelPump", "startBit": 57}
       ]
     },
     {
-      "id": "0x5E5", "name": "GW_WheelsGear", "interval": 100,
-      "comment": "ABS blocks 21 03, 21 21, 21 1C, 21 1D",
+      "id": "0x1F0005E7", "extended": true, "isf": true, "name": "ENG_Ignition_Knock", "interval": 100, "comment": "From engine 21 03, engine 21 37, engine 21 45",
       "signals": [
-        {"module": "abs", "uniqueId": "v4xnACb-1", "name": "FRWheelSpeed", "startBit": 0},
-        {"module": "abs", "uniqueId": "-HYSOLbJn", "name": "FLWheelSpeed", "startBit": 8},
-        {"module": "abs", "uniqueId": "t1FnfghgK", "name": "RRWheelSpeed", "startBit": 16},
-        {"module": "abs", "uniqueId": "AcK0rmPvM", "name": "RLWheelSpeed", "startBit": 24},
-        {"blockByte": {"module": "abs", "parameterAddress": "03", "bytePosition": 4}, "frameByte": 4},
-        {"module": "abs", "uniqueId": "yRGYTZgNS", "name": "AbsVehicleSpeed", "startBit": 40},
-        {"blockByte": {"module": "abs", "parameterAddress": "1C", "bytePosition": 0}, "frameByte": 6},
-        {"blockByte": {"module": "abs", "parameterAddress": "1D", "bytePosition": 0}, "frameByte": 7}
+        {"module": "engine", "uniqueId": "6fCXjj-K0", "name": "IgnitionAdvance", "startBit": 0},
+        {"module": "engine", "uniqueId": "ZCvnPvIxk", "name": "KnockCorrectLearn", "startBit": 8},
+        {"module": "engine", "uniqueId": "vB3dxJsmB", "name": "KnockFeedback", "startBit": 24},
+        {"module": "engine", "uniqueId": "4z6yzKThG", "name": "MisfireRPM", "startBit": 40},
+        {"module": "engine", "uniqueId": "wR_cKb8N4", "name": "MisfireLoad", "startBit": 48},
+        {"module": "engine", "uniqueId": "wX7mIDbK8", "name": "AllCylindersMisfireCount", "startBit": 56}
       ]
     },
     {
-      "id": "0x5E6", "name": "GW_Dynamics", "interval": 100,
-      "comment": "ABS blocks 21 05 and 21 06",
+      "id": "0x1F0005E8", "extended": true, "isf": true, "name": "ENG_Misfire_Cylinders", "interval": 100, "comment": "From engine 21 45",
       "signals": [
-        {"module": "abs", "uniqueId": "mGjX_peX9", "name": "DecelerationSensor", "startBit": 0},
-        {"module": "abs", "uniqueId": "jxOKxiov0", "name": "DecelerationSensor2", "startBit": 8},
-        {"module": "abs", "uniqueId": "8sE4a6uUA", "name": "YawRateSensor", "startBit": 16},
-        {"module": "abs", "uniqueId": "L9zlH4nSS", "name": "YawRateSensor2", "startBit": 24},
-        {"module": "abs", "uniqueId": "D_hbw_J-H", "name": "SteeringAngleSensor", "startBit": 32},
-        {"module": "abs", "uniqueId": "BHWjdtIL-", "name": "RealEngineTorque", "startBit": 48}
+        {"module": "engine", "uniqueId": "icFqfmmtO", "name": "Misfire_Cyl1", "startBit": 0},
+        {"module": "engine", "uniqueId": "_uBwEI7dY", "name": "Misfire_Cyl2", "startBit": 8},
+        {"module": "engine", "uniqueId": "TyEd4O_0d", "name": "Misfire_Cyl3", "startBit": 16},
+        {"module": "engine", "uniqueId": "2wWfaTUvi", "name": "Misfire_Cyl4", "startBit": 24},
+        {"module": "engine", "uniqueId": "2-EEl1rdf", "name": "Misfire_Cyl5", "startBit": 32},
+        {"module": "engine", "uniqueId": "PY7XbcvrQ", "name": "Misfire_Cyl6", "startBit": 40},
+        {"module": "engine", "uniqueId": "_CHX--9Ea", "name": "Misfire_Cyl7", "startBit": 48},
+        {"module": "engine", "uniqueId": "DcU_wZAm4", "name": "Misfire_Cyl8", "startBit": 56}
       ]
     },
     {
-      "id": "0x5E7", "name": "GW_StabilityStatus", "interval": 100,
-      "comment": "ABS blocks 21 5A, 21 1F, 21 05; engine block 21 06 (MIL)",
+      "id": "0x1F0005E9", "extended": true, "isf": true, "name": "ENG_VVT", "interval": 100, "comment": "From engine 21 44",
       "signals": [
-        {"blockByte": {"module": "abs", "parameterAddress": "5A", "bytePosition": 0}, "frameByte": 0},
-        {"blockByte": {"module": "abs", "parameterAddress": "5A", "bytePosition": 1}, "frameByte": 1},
-        {"blockByte": {"module": "abs", "parameterAddress": "1F", "bytePosition": 0}, "frameByte": 2},
-        {"blockByte": {"module": "engine", "parameterAddress": "06", "bytePosition": 0}, "frameByte": 3},
-        {"blockByte": {"module": "engine", "parameterAddress": "06", "bytePosition": 1}, "frameByte": 4},
-        {"module": "abs", "uniqueId": "Jglou0v_s", "name": "AcceleratorOpeningAngle", "startBit": 40},
-        {"module": "abs", "uniqueId": "DbQb0AMct", "name": "AbsEngineRevolutions", "startBit": 48}
+        {"module": "engine", "uniqueId": "PVBgJnk6R", "name": "VVT_Intake1", "startBit": 0},
+        {"module": "engine", "uniqueId": "MhVd9_IhO", "name": "VVT_Intake2", "startBit": 16},
+        {"module": "engine", "uniqueId": "V4Lyw8pmo", "name": "VVT_Exhaust1", "startBit": 32},
+        {"module": "engine", "uniqueId": "FQiI0jDXi", "name": "VVT_Exhaust2", "startBit": 48}
+      ]
+    },
+    {
+      "id": "0x1F0005EA", "extended": true, "isf": true, "name": "ENG_Idle_Control", "interval": 100, "comment": "From engine 21 51, engine 21 52",
+      "signals": [
+        {"module": "engine", "uniqueId": "LBxbpEeps", "name": "ISC_Flow", "startBit": 0},
+        {"module": "engine", "uniqueId": "k0vPa3gX4", "name": "ISC_Position", "startBit": 16},
+        {"module": "engine", "uniqueId": "h8531Uoq_", "name": "ISC_Learning", "startBit": 32},
+        {"module": "engine", "uniqueId": "jnd76n_sz", "name": "MinimumEngineSpeed", "startBit": 48}
+      ]
+    },
+    {
+      "id": "0x1F0005EB", "extended": true, "isf": true, "name": "ENG_Electrical", "interval": 100, "comment": "From engine 21 01, engine 21 41, engine 21 39, engine 21 25",
+      "signals": [
+        {"module": "engine", "uniqueId": "ku4nFD9dK", "name": "BatteryVoltage", "startBit": 0},
+        {"module": "engine", "uniqueId": "acgFf0-WC", "name": "BM_Voltage", "startBit": 16},
+        {"module": "engine", "uniqueId": "zFcUhVFQh", "name": "ThrottleMotorCurrent", "startBit": 32},
+        {"module": "engine", "uniqueId": "gGP8X_1Qs", "name": "ElectricFan", "startBit": 40},
+        {"module": "engine", "uniqueId": "myuWtv8rB", "name": "ACClutchRelay", "startBit": 41},
+        {"module": "engine", "uniqueId": "MUn-rKGfW", "name": "StarterRelay", "startBit": 42},
+        {"module": "engine", "uniqueId": "JlCNHHMbp", "name": "ACCRelay", "startBit": 43},
+        {"module": "engine", "uniqueId": "us-c_BqAg", "name": "ElectricalLoad1", "startBit": 44}
+      ]
+    },
+    {
+      "id": "0x1F0005EC", "extended": true, "isf": true, "name": "ENG_Shifter_Range", "interval": 100, "comment": "From engine 21 25",
+      "signals": [
+        {"module": "engine", "uniqueId": "YDFlWhPK7", "name": "Shift_P", "startBit": 0},
+        {"module": "engine", "uniqueId": "FI1pnHXdO", "name": "Shift_R", "startBit": 1},
+        {"module": "engine", "uniqueId": "YVfm-fF-0", "name": "Shift_N", "startBit": 2},
+        {"module": "engine", "uniqueId": "mIfRvCOgv", "name": "Shift_D", "startBit": 3},
+        {"module": "engine", "uniqueId": "2dlmHarbD", "name": "Shift_4", "startBit": 4},
+        {"module": "engine", "uniqueId": "JgbVaaykW", "name": "Shift_3", "startBit": 5},
+        {"module": "engine", "uniqueId": "h9rHlztai", "name": "Shift_2", "startBit": 6},
+        {"module": "engine", "uniqueId": "GYPNxIWSl", "name": "Shift_L", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F0005ED", "extended": true, "isf": true, "name": "ENG_Shifter_Mode", "interval": 100, "comment": "From engine 21 25",
+      "signals": [
+        {"module": "engine", "uniqueId": "Td2tPkgfT", "name": "SportsMode", "startBit": 0},
+        {"module": "engine", "uniqueId": "U5-yUsYEs", "name": "PaddleUp", "startBit": 1},
+        {"module": "engine", "uniqueId": "uGJohyqzk", "name": "PaddleDown", "startBit": 2},
+        {"module": "engine", "uniqueId": "AEotfqn0i", "name": "Shift_B", "startBit": 3},
+        {"module": "engine", "uniqueId": "diGDiCcoq", "name": "ReverseSwitch", "startBit": 4},
+        {"module": "engine", "uniqueId": "7zTFk0ahg", "name": "PatternPWR", "startBit": 5},
+        {"module": "engine", "uniqueId": "q6VfXFaPA", "name": "SnowSwitch", "startBit": 6},
+        {"module": "engine", "uniqueId": "Z5ljYxjBl", "name": "ECOSwitch", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F0005EE", "extended": true, "isf": true, "name": "ENG_Brake_Cruise_Switches", "interval": 100, "comment": "From engine 21 25, engine 21 21",
+      "signals": [
+        {"module": "engine", "uniqueId": "LaaAftzU0", "name": "StopLightSwitch", "startBit": 0},
+        {"module": "engine", "uniqueId": "hjYESNCj7", "name": "BrakeSwitch", "startBit": 1},
+        {"module": "engine", "uniqueId": "pfEH5h1QD", "name": "BrakeSwitchStatus", "startBit": 2},
+        {"module": "engine", "uniqueId": "__FHX_t6O", "name": "CruiseMain", "startBit": 3},
+        {"module": "engine", "uniqueId": "G1GK3DGX4", "name": "CruiseCancel", "startBit": 4},
+        {"module": "engine", "uniqueId": "1UVZqZKwY", "name": "CruiseResAcc", "startBit": 5},
+        {"module": "engine", "uniqueId": "BitT646tJ", "name": "CruiseSetCoast", "startBit": 6},
+        {"module": "engine", "uniqueId": "3l0But04C", "name": "KickDown", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F0005EF", "extended": true, "isf": true, "name": "ENG_Starter_AC_Switches", "interval": 100, "comment": "From engine 21 25",
+      "signals": [
+        {"module": "engine", "uniqueId": "nciXdmoed", "name": "StarterSignal", "startBit": 0},
+        {"module": "engine", "uniqueId": "CY1ijYdOw", "name": "StarterControl", "startBit": 1},
+        {"module": "engine", "uniqueId": "4UftGpjce", "name": "ClutchStart", "startBit": 2},
+        {"module": "engine", "uniqueId": "XtvJTr4CS", "name": "IdleUp", "startBit": 3},
+        {"module": "engine", "uniqueId": "-zoeJoXh5", "name": "ACSignal", "startBit": 4},
+        {"module": "engine", "uniqueId": "qRAINqEqE", "name": "ACPressureNormal", "startBit": 5},
+        {"module": "engine", "uniqueId": "_8uEoAJUJ", "name": "ACPressureAbnormal", "startBit": 6},
+        {"module": "engine", "uniqueId": "22JXwqg7a", "name": "PowerSteeringSignal", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F0005F0", "extended": true, "isf": true, "name": "ENG_Status", "interval": 100, "comment": "From engine 21 06, engine 21 25, engine 21 37, engine 21 51",
+      "signals": [
+        {"module": "engine", "uniqueId": "Bbj0Pmhyr", "name": "MIL", "startBit": 0},
+        {"module": "engine", "uniqueId": "WCJGSumpU", "name": "EmissionDTCCount", "startBit": 1},
+        {"module": "engine", "uniqueId": "QrVBqDKae", "name": "OilPressureSwitch", "startBit": 8},
+        {"module": "engine", "uniqueId": "gAu-DN8VC", "name": "FuelCutCondition", "startBit": 9},
+        {"module": "engine", "uniqueId": "h-3rtqNGT", "name": "IdleFuelCut", "startBit": 10},
+        {"module": "engine", "uniqueId": "e3pvuDRp1", "name": "BrakeOverride", "startBit": 11},
+        {"module": "engine", "uniqueId": "BqGbQd4XC", "name": "NeutralControl", "startBit": 12},
+        {"module": "engine", "uniqueId": "jMDEYn5qc", "name": "ImmobiliserFuelCut", "startBit": 13}
+      ]
+    },
+    {
+      "id": "0x1F0005F1", "extended": true, "isf": true, "name": "TRANS_Temp_Speeds", "interval": 100, "comment": "From ect 21 82, ect 21 81, ect 21 22",
+      "signals": [
+        {"module": "ect", "uniqueId": "EJAh4TNHA", "name": "ATOilTemperature", "startBit": 0},
+        {"module": "ect", "uniqueId": "SpqvpeR8J", "name": "NT_Speed", "startBit": 16},
+        {"module": "ect", "uniqueId": "SJZ7oPa40", "name": "NC3_Speed", "startBit": 24},
+        {"module": "ect", "uniqueId": "iMojAwB1A", "name": "SP2_Speed", "startBit": 32},
+        {"module": "ect", "uniqueId": "V6n2SPQpo", "name": "EngineSpeedFromEFI", "startBit": 40}
+      ]
+    },
+    {
+      "id": "0x1F0005F2", "extended": true, "isf": true, "name": "TRANS_Shift_Solenoids", "interval": 100, "comment": "From ect 21 85",
+      "signals": [
+        {"module": "ect", "uniqueId": "uVqogLzei", "name": "ShiftStatus", "startBit": 0},
+        {"module": "ect", "uniqueId": "xNDFWfWrx", "name": "LockUp", "startBit": 8},
+        {"module": "ect", "uniqueId": "NCfYZpryP", "name": "SLT", "startBit": 9},
+        {"module": "ect", "uniqueId": "ktUrcNJB2", "name": "SLU", "startBit": 10},
+        {"module": "ect", "uniqueId": "0sho5CYXM", "name": "SLN", "startBit": 11},
+        {"module": "ect", "uniqueId": "pfH5jGZAK", "name": "SL", "startBit": 12},
+        {"module": "ect", "uniqueId": "8uWsA8nEj", "name": "ST", "startBit": 13},
+        {"module": "ect", "uniqueId": "dbNB5GR5P", "name": "SC", "startBit": 14}
+      ]
+    },
+    {
+      "id": "0x1F0005F3", "extended": true, "isf": true, "name": "TRANS_Shift_Status", "interval": 100, "comment": "From ect 21 85, ect 21 83",
+      "signals": [
+        {"module": "ect", "uniqueId": "YxfYDQ7uJ", "name": "SLS", "startBit": 0},
+        {"module": "ect", "uniqueId": "WLIDn7NaU", "name": "SLC", "startBit": 1},
+        {"module": "ect", "uniqueId": "5thzpoH_h", "name": "SLP", "startBit": 2},
+        {"module": "ect", "uniqueId": "Fg7GsLOd5", "name": "ShiftControlMode", "startBit": 3},
+        {"module": "ect", "uniqueId": "Yj5UsMWsV", "name": "UpShiftIndication", "startBit": 4},
+        {"module": "ect", "uniqueId": "N-VrAXF3I", "name": "DownShiftIndication", "startBit": 5},
+        {"module": "ect", "uniqueId": "AxTmJGDw6", "name": "TorqueConverterTempRaiseHistory", "startBit": 6}
+      ]
+    },
+    {
+      "id": "0x1F0005F4", "extended": true, "isf": true, "name": "TRANS_Sensor_Voltages", "interval": 100, "comment": "From ect 21 81",
+      "signals": [
+        {"module": "ect", "uniqueId": "NKb865K8G", "name": "NT_Voltage", "startBit": 0},
+        {"module": "ect", "uniqueId": "QY8axK3Nf", "name": "NC3_Voltage", "startBit": 16},
+        {"module": "ect", "uniqueId": "32BDW-f03", "name": "SP2_Voltage", "startBit": 32}
+      ]
+    },
+    {
+      "id": "0x1F0005F5", "extended": true, "isf": true, "name": "ABS_Wheel_Speeds", "interval": 50, "comment": "From abs 21 03, abs 21 21",
+      "signals": [
+        {"module": "abs", "uniqueId": "v4xnACb-1", "name": "FR", "startBit": 0},
+        {"module": "abs", "uniqueId": "-HYSOLbJn", "name": "FL", "startBit": 8},
+        {"module": "abs", "uniqueId": "t1FnfghgK", "name": "RR", "startBit": 16},
+        {"module": "abs", "uniqueId": "AcK0rmPvM", "name": "RL", "startBit": 24},
+        {"module": "abs", "uniqueId": "yRGYTZgNS", "name": "VehicleSpeed", "startBit": 32}
+      ]
+    },
+    {
+      "id": "0x1F0005F6", "extended": true, "isf": true, "name": "ABS_Wheel_Acceleration", "interval": 100, "comment": "From abs 21 42, abs 21 03",
+      "signals": [
+        {"module": "abs", "uniqueId": "R-ofHq_E6", "name": "FR_Accel", "startBit": 0},
+        {"module": "abs", "uniqueId": "8kTp8qubl", "name": "FL_Accel", "startBit": 8},
+        {"module": "abs", "uniqueId": "KCJS2t_xa", "name": "RR_Accel", "startBit": 16},
+        {"module": "abs", "uniqueId": "Y4iACr_dT", "name": "RL_Accel", "startBit": 24},
+        {"module": "abs", "uniqueId": "ENqaWxCqb", "name": "FR_Direction", "startBit": 32},
+        {"module": "abs", "uniqueId": "Hhcs40e-J", "name": "FL_Direction", "startBit": 33},
+        {"module": "abs", "uniqueId": "Ul0mHtzgx", "name": "RR_Direction", "startBit": 34},
+        {"module": "abs", "uniqueId": "QGQ65POtp", "name": "RL_Direction", "startBit": 35}
+      ]
+    },
+    {
+      "id": "0x1F0005F7", "extended": true, "isf": true, "name": "ABS_Dynamics", "interval": 50, "comment": "From abs 21 47, abs 21 05, abs 21 06",
+      "signals": [
+        {"module": "abs", "uniqueId": "x0YHJYGLk", "name": "LateralG", "startBit": 0},
+        {"module": "abs", "uniqueId": "a-Lmmkodv", "name": "LongitudinalG", "startBit": 8},
+        {"module": "abs", "uniqueId": "CjlWP50XW", "name": "YawRate", "startBit": 16},
+        {"module": "abs", "uniqueId": "YyxAXn7Bo", "name": "SteeringAngle", "startBit": 24},
+        {"module": "abs", "uniqueId": "mGjX_peX9", "name": "DecelerationSensorRaw", "startBit": 40},
+        {"module": "abs", "uniqueId": "8sE4a6uUA", "name": "YawRateSensorRaw", "startBit": 48}
+      ]
+    },
+    {
+      "id": "0x1F0005F8", "extended": true, "isf": true, "name": "ABS_Engine_Gear", "interval": 100, "comment": "From abs 21 05, abs 21 1C, abs 21 0C",
+      "signals": [
+        {"module": "abs", "uniqueId": "DbQb0AMct", "name": "EngineRevolutions", "startBit": 0},
+        {"module": "abs", "uniqueId": "BHWjdtIL-", "name": "RealEngineTorque", "startBit": 16},
+        {"module": "abs", "uniqueId": "Jglou0v_s", "name": "AcceleratorOpening", "startBit": 32},
+        {"module": "abs", "uniqueId": "jW8oylIb1", "name": "GearPosition", "startBit": 40},
+        {"module": "abs", "uniqueId": "RSHg0tiBi", "name": "ShiftLeverPosition", "startBit": 44},
+        {"module": "abs", "uniqueId": "J3rUuxCaI", "name": "IG1Voltage", "startBit": 48},
+        {"module": "abs", "uniqueId": "UFZO8JVEN", "name": "MotorVoltage", "startBit": 56}
+      ]
+    },
+    {
+      "id": "0x1F0005F9", "extended": true, "isf": true, "name": "ABS_Brake_Pedal", "interval": 100, "comment": "From abs 21 04, abs 21 1F, abs 21 5F",
+      "signals": [
+        {"module": "abs", "uniqueId": "yM3FOp0fA", "name": "MasterCylinderSensor", "startBit": 0},
+        {"module": "abs", "uniqueId": "UGeitSXq9", "name": "StopLightSW", "startBit": 8},
+        {"module": "abs", "uniqueId": "fJtEaqyyV", "name": "ParkingBrakeSW", "startBit": 9},
+        {"module": "abs", "uniqueId": "tWI548Zwy", "name": "BrakePedalLoadSW", "startBit": 10},
+        {"module": "abs", "uniqueId": "ESB906d-K", "name": "DecelerationSW", "startBit": 11},
+        {"module": "abs", "uniqueId": "FZM3q0Cap", "name": "BrakeAssistCtrl", "startBit": 14},
+        {"module": "abs", "uniqueId": "TNx07Rm12", "name": "PanicBrakeAssistCtrl", "startBit": 15}
+      ]
+    },
+    {
+      "id": "0x1F0005FA", "extended": true, "isf": true, "name": "ABS_Traction_Control", "interval": 100, "comment": "From abs 21 5A",
+      "signals": [
+        {"module": "abs", "uniqueId": "BioD10Xaj", "name": "TRC_Ctrl", "startBit": 0},
+        {"module": "abs", "uniqueId": "8cEHdXtyy", "name": "TRC_EngineCtrl", "startBit": 1},
+        {"module": "abs", "uniqueId": "-smIkMz-d", "name": "TRC_BrakeCtrl", "startBit": 2},
+        {"module": "abs", "uniqueId": "u4dVd8nTf", "name": "TRAC_VSC_OffMode", "startBit": 3},
+        {"module": "abs", "uniqueId": "KCEsfxful", "name": "VSC_FR", "startBit": 5},
+        {"module": "abs", "uniqueId": "doHPlEw7e", "name": "VSC_FL", "startBit": 6},
+        {"module": "abs", "uniqueId": "lrg-aSr92", "name": "VSC_RR", "startBit": 7},
+        {"module": "abs", "uniqueId": "1xb8Sace_", "name": "VSC_RL", "startBit": 8}
+      ]
+    },
+    {
+      "id": "0x1F0005FB", "extended": true, "isf": true, "name": "ABS_Brake_Control", "interval": 100, "comment": "From abs 21 5F",
+      "signals": [
+        {"module": "abs", "uniqueId": "9NNrtrd4i", "name": "ABS_FR", "startBit": 0},
+        {"module": "abs", "uniqueId": "yajwN879t", "name": "ABS_FL", "startBit": 1},
+        {"module": "abs", "uniqueId": "FyfwxEcPN", "name": "ABS_RR", "startBit": 2},
+        {"module": "abs", "uniqueId": "fEq8RXSPK", "name": "ABS_RL", "startBit": 3},
+        {"module": "abs", "uniqueId": "ic_kYrW4C", "name": "EBD_FR", "startBit": 4},
+        {"module": "abs", "uniqueId": "fE9uO2Yv_", "name": "EBD_FL", "startBit": 5},
+        {"module": "abs", "uniqueId": "HubfTRTQ9", "name": "EBD_RR", "startBit": 6},
+        {"module": "abs", "uniqueId": "3s2GpON2F", "name": "EBD_RL", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F0005FC", "extended": true, "isf": true, "name": "ABS_Driver_Switches", "interval": 100, "comment": "From abs 21 1D, abs 21 1F",
+      "signals": [
+        {"module": "abs", "uniqueId": "y4JcQxMDm", "name": "TRC_VSC_OffSwitch", "startBit": 0},
+        {"module": "abs", "uniqueId": "HJqSSz3Au", "name": "ReservoirWarning", "startBit": 1},
+        {"module": "abs", "uniqueId": "CwG0r8w3m", "name": "MainIdle", "startBit": 2},
+        {"module": "abs", "uniqueId": "1_XUmWvtc", "name": "AutoLSD", "startBit": 3},
+        {"module": "abs", "uniqueId": "g7LElUIT2", "name": "A_TRC", "startBit": 4},
+        {"module": "abs", "uniqueId": "gBxkD6qg3", "name": "DownhillAssist", "startBit": 5},
+        {"module": "abs", "uniqueId": "sLTLIXnGo", "name": "PreCrashBrakeOff", "startBit": 6},
+        {"module": "abs", "uniqueId": "C4Jxyks-4", "name": "FourWD", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F0005FD", "extended": true, "isf": true, "name": "ABS_Warning_Lights", "interval": 100, "comment": "From abs 21 3D",
+      "signals": [
+        {"module": "abs", "uniqueId": "iKKscx9z6", "name": "ABS_Light", "startBit": 0},
+        {"module": "abs", "uniqueId": "kh-t-W3s1", "name": "Brake_Light", "startBit": 1},
+        {"module": "abs", "uniqueId": "R-zWQlYfM", "name": "Slip_Light", "startBit": 2},
+        {"module": "abs", "uniqueId": "EucI2n7FQ", "name": "Buzzer", "startBit": 3},
+        {"module": "abs", "uniqueId": "gM7ne9lsy", "name": "TirePressure_Light", "startBit": 4},
+        {"module": "abs", "uniqueId": "Rj8AM5OSN", "name": "VSC_Light", "startBit": 5},
+        {"module": "abs", "uniqueId": "FpxpVVtjq", "name": "AutoLSD_Light", "startBit": 6},
+        {"module": "abs", "uniqueId": "-wBkniK8T", "name": "A_TRAC_Light", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F0005FE", "extended": true, "isf": true, "name": "ABS_Solenoids", "interval": 100, "comment": "From abs 21 3F",
+      "signals": [
+        {"module": "abs", "uniqueId": "63ajCakue", "name": "Solenoid_SFRH", "startBit": 0},
+        {"module": "abs", "uniqueId": "QhM9WQqjT", "name": "Solenoid_SFRR", "startBit": 1},
+        {"module": "abs", "uniqueId": "FifAukE0G", "name": "Solenoid_SFLH", "startBit": 2},
+        {"module": "abs", "uniqueId": "U4sp2wPDp", "name": "Solenoid_SFLR", "startBit": 3},
+        {"module": "abs", "uniqueId": "SU8B4ytHW", "name": "Solenoid_SRRH", "startBit": 4},
+        {"module": "abs", "uniqueId": "_b9CLFcGT", "name": "Solenoid_SRRR", "startBit": 5},
+        {"module": "abs", "uniqueId": "Uw3yti4vi", "name": "Solenoid_SRLH", "startBit": 6},
+        {"module": "abs", "uniqueId": "ZoKBy7ul5", "name": "Solenoid_SRLR", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F0005FF", "extended": true, "isf": true, "name": "ABS_TRC_Solenoids", "interval": 100, "comment": "From abs 21 3A",
+      "signals": [
+        {"module": "abs", "uniqueId": "c2sNAS_MZ", "name": "Solenoid_SPFL", "startBit": 0},
+        {"module": "abs", "uniqueId": "2mMgn5tcv", "name": "Solenoid_SPFR", "startBit": 1},
+        {"module": "abs", "uniqueId": "Dp45Y3lOT", "name": "Solenoid_SM2", "startBit": 2},
+        {"module": "abs", "uniqueId": "mvySNrvV-", "name": "Solenoid_SM1", "startBit": 3},
+        {"module": "abs", "uniqueId": "jSupDUS0c", "name": "Solenoid_SRM2", "startBit": 4},
+        {"module": "abs", "uniqueId": "BTXQfW_Zb", "name": "Solenoid_SRM1", "startBit": 5},
+        {"module": "abs", "uniqueId": "RZrLbtz2M", "name": "Solenoid_SRC2", "startBit": 6},
+        {"module": "abs", "uniqueId": "TqQv1OuGQ", "name": "Solenoid_SRC1", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F000600", "extended": true, "isf": true, "name": "ABS_Faults_Sensors", "interval": 500, "comment": "From abs 21 BE",
+      "signals": [
+        {"module": "abs", "uniqueId": "q6rbuDSSz", "name": "FR_SpeedOpen", "startBit": 0},
+        {"module": "abs", "uniqueId": "P0DfS8DlD", "name": "FL_SpeedOpen", "startBit": 1},
+        {"module": "abs", "uniqueId": "vxPqnDSUg", "name": "RR_SpeedOpen", "startBit": 2},
+        {"module": "abs", "uniqueId": "nJ4bOCcMq", "name": "RL_SpeedOpen", "startBit": 3},
+        {"module": "abs", "uniqueId": "HZNTusZoD", "name": "EFI_CommOpen", "startBit": 4},
+        {"module": "abs", "uniqueId": "wBvBOZ0bG", "name": "YawRateOpen", "startBit": 5},
+        {"module": "abs", "uniqueId": "mERKT2QAy", "name": "DecelerationOpen", "startBit": 6},
+        {"module": "abs", "uniqueId": "anW4cAp14", "name": "SteeringOpen", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F000601", "extended": true, "isf": true, "name": "ABS_Faults_Hydraulic", "interval": 500, "comment": "From abs 21 BE",
+      "signals": [
+        {"module": "abs", "uniqueId": "Gi9oyeUEH", "name": "MasterCylinderOpen", "startBit": 0},
+        {"module": "abs", "uniqueId": "SOyXZOpAQ", "name": "MasterCylinder2Open", "startBit": 1},
+        {"module": "abs", "uniqueId": "S0ka5gkVM", "name": "StrokeOpen", "startBit": 2},
+        {"module": "abs", "uniqueId": "W-e5oKjRf", "name": "Stroke2Open", "startBit": 3},
+        {"module": "abs", "uniqueId": "M9d-28qy1", "name": "FR_WheelCylinderOpen", "startBit": 4},
+        {"module": "abs", "uniqueId": "btOKNU-n9", "name": "FL_WheelCylinderOpen", "startBit": 5},
+        {"module": "abs", "uniqueId": "bp8JJCP3W", "name": "RR_WheelCylinderOpen", "startBit": 6},
+        {"module": "abs", "uniqueId": "PNxnJTKzf", "name": "RL_WheelCylinderOpen", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F000602", "extended": true, "isf": true, "name": "ABS_Faults_Power", "interval": 500, "comment": "From abs 21 BE",
+      "signals": [
+        {"module": "abs", "uniqueId": "8AFbO7sJI", "name": "AccumulatorOpen", "startBit": 0},
+        {"module": "abs", "uniqueId": "9C-6FoZAy", "name": "HV_CommOpen", "startBit": 1},
+        {"module": "abs", "uniqueId": "fECRw-SVj", "name": "IG_VoltageDecreased", "startBit": 2},
+        {"module": "abs", "uniqueId": "25--YeENa", "name": "IG_VoltageIncreased", "startBit": 3},
+        {"module": "abs", "uniqueId": "QJBKJz9fM", "name": "FR_SpeedVoltageOpen", "startBit": 4},
+        {"module": "abs", "uniqueId": "ZnfoOUltP", "name": "FL_SpeedVoltageOpen", "startBit": 5},
+        {"module": "abs", "uniqueId": "WSe8UBLFD", "name": "RR_SpeedVoltageOpen", "startBit": 6},
+        {"module": "abs", "uniqueId": "qdadXvOFf", "name": "RL_SpeedVoltageOpen", "startBit": 7}
+      ]
+    },
+    {
+      "id": "0x1F000603", "extended": true, "isf": true, "name": "ABS_Faults_Misc", "interval": 500, "comment": "From abs 21 BE",
+      "signals": [
+        {"module": "abs", "uniqueId": "UU99vWm_L", "name": "MC_SensorNoise", "startBit": 0},
+        {"module": "abs", "uniqueId": "qm3cSyYND", "name": "BrakePedalSwitchOpen", "startBit": 1},
+        {"module": "abs", "uniqueId": "wxlDmYelo", "name": "YawRateVoltageOpen", "startBit": 2},
+        {"module": "abs", "uniqueId": "hKgGQ-wi3", "name": "EFI_CommInvalid", "startBit": 3},
+        {"module": "abs", "uniqueId": "_-hMNLK8f", "name": "VerticalGOpen", "startBit": 4},
+        {"module": "abs", "uniqueId": "x4QnBHPd5", "name": "BodyECU_CommOpen", "startBit": 5},
+        {"module": "abs", "uniqueId": "YJ_LzWheF", "name": "MC_SensorSupplyOpen", "startBit": 6},
+        {"module": "abs", "uniqueId": "LG-3ey2e2", "name": "SolenoidSupplyOpen", "startBit": 7}
       ]
     }
   ]

@@ -73,8 +73,10 @@ void Logger::frame(const char *iface, uint32_t id, const uint8_t *data, uint8_t 
         return;
     }
     uint64_t us = nowUs();
-    printf("      (%llu.%06llu) %s %03X#", static_cast<unsigned long long>(us / 1000000),
-           static_cast<unsigned long long>(us % 1000000), iface, static_cast<unsigned>(id));
+    // candump writes an 11-bit id with 3 hex digits and a 29-bit id with 8.
+    printf(id > 0x7FF ? "      (%llu.%06llu) %s %08X#" : "      (%llu.%06llu) %s %03X#",
+           static_cast<unsigned long long>(us / 1000000), static_cast<unsigned long long>(us % 1000000), iface,
+           static_cast<unsigned>(id));
     for (uint8_t i = 0; i < len; i++)
     {
         printf("%02X", data[i]);

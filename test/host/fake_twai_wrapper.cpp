@@ -26,7 +26,7 @@ bool TwaiWrapper::isOpen() const
     return open_ && fakeBus().open;
 }
 
-bool TwaiWrapper::send(uint32_t id, const uint8_t *data, uint8_t len)
+bool TwaiWrapper::send(uint32_t id, const uint8_t *data, uint8_t len, bool)
 {
     Frame f;
     f.id = id;

@@ -135,6 +135,12 @@ private:
     static bool isFastBlock(uint32_t requestId, uint8_t parameterAddress);
     void fastStep(ModuleState &m);
     bool slowStep();
+    /// Sends a translated frame on the ISF bus too when its OutputFrame says so, at the frame's own interval.
+    void forwardToIsf(const CANMessage &frame);
+    /// Repeats the ISF-bus copies at their intervals between polls, so a slow block's frame is not sent only
+    /// when it is decoded; a frame not refreshed for TranslationHoldMs stops (the module went quiet).
+    void repeatIsfFrames();
+    static constexpr uint32_t TranslationHoldMs = 5000;
 
     int slowRotation_ = 0;
     TwaiWrapper *twai_ = nullptr;
@@ -142,6 +148,8 @@ private:
     bool ownsChannel_ = false;
     FrameSink sink_ = nullptr;
     MessageTranslator translator_;
+    uint32_t isfLastSentMs_[MessageTranslator::MaxFrames] = {0};
+    uint32_t isfLastTranslatedMs_[MessageTranslator::MaxFrames] = {0};
     ModuleState modules_[Modules::Count];
     uint8_t reply_[MAX_UDS_PAYLOAD_LEN];
 };

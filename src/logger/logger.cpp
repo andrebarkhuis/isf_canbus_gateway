@@ -100,6 +100,9 @@ void Logger::frame(const char *iface, uint32_t id, const uint8_t *data, uint8_t 
         n += snprintf(hex + n, sizeof(hex) - n, "%02X", data[i]);
     }
     hex[n] = '\0';
-    esp_log_write(ESP_LOG_INFO, TAG, "(%lld.%06lld) %s %03lX#%s\n", static_cast<long long>(us / 1000000),
-                  static_cast<long long>(us % 1000000), iface, static_cast<unsigned long>(id), hex);
+    // candump writes an 11-bit id with 3 hex digits and a 29-bit id with 8.
+    char idText[9];
+    snprintf(idText, sizeof(idText), id > 0x7FF ? "%08lX" : "%03lX", static_cast<unsigned long>(id));
+    esp_log_write(ESP_LOG_INFO, TAG, "(%lld.%06lld) %s %s#%s\n", static_cast<long long>(us / 1000000),
+                  static_cast<long long>(us % 1000000), iface, idText, hex);
 }

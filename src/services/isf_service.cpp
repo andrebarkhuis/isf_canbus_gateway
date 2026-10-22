@@ -14,7 +14,7 @@ struct FastBlock
     uint32_t requestId;
     uint8_t parameterAddress;
 };
-constexpr FastBlock FAST_BLOCKS[] = {{0x7E0, 0x01}, {0x7B0, 0x03}};
+constexpr FastBlock FAST_BLOCKS[] = {{0x7E0, 0x01}, {0x7B0, 0x03}, {0x7B0, 0x47}}; // rpm/speed, wheel speeds, G/yaw/steering
 } // namespace
 
 IsfService::IsfService()
@@ -177,9 +177,59 @@ void IsfService::decodeBlock(ModuleState &m, uint8_t parameterAddress, const uin
 
     CANMessage changed[MessageTranslator::MaxFrames];
     int changedCount = translator_.apply(values, defCount, changed, MessageTranslator::MaxFrames);
-    for (int i = 0; i < changedCount && sink_ != nullptr; i++)
+    for (int i = 0; i < changedCount; i++)
     {
-        sink_(changed[i]);
+        if (sink_ != nullptr)
+        {
+            sink_(changed[i]);
+        }
+        forwardToIsf(changed[i]);
+    }
+}
+
+void IsfService::forwardToIsf(const CANMessage &frame)
+{
+    // The ADU frames flagged in gateway_frames.json go onto the ISF bus as well (29-bit ids, so they never meet
+    // a module's id and lose every arbitration to them), at the frame's own interval rather than the poll rate.
+    for (size_t i = 0; i < OUTPUT_FRAMES_COUNT && i < static_cast<size_t>(MessageTranslator::MaxFrames); i++)
+    {
+        if (OUTPUT_FRAMES[i].id != frame.id)
+        {
+            continue;
+        }
+        if (!OUTPUT_FRAMES[i].alsoOnIsfBus || twai_ == nullptr)
+        {
+            return;
+        }
+        uint32_t now = nowMs();
+        isfLastTranslatedMs_[i] = now;
+        if (isfLastSentMs_[i] != 0 && now - isfLastSentMs_[i] < frame.interval)
+        {
+            return;
+        }
+        isfLastSentMs_[i] = now;
+        twai_->send(frame.id, frame.data, frame.len, frame.extended);
+        return;
+    }
+}
+
+void IsfService::repeatIsfFrames()
+{
+    if (twai_ == nullptr)
+    {
+        return;
+    }
+    const CANMessage *frames = translator_.frames();
+    uint32_t now = nowMs();
+    for (int i = 0; i < translator_.frameCount(); i++)
+    {
+        if (!OUTPUT_FRAMES[i].alsoOnIsfBus || isfLastTranslatedMs_[i] == 0 ||
+            now - isfLastTranslatedMs_[i] > TranslationHoldMs || now - isfLastSentMs_[i] < frames[i].interval)
+        {
+            continue;
+        }
+        isfLastSentMs_[i] = now;
+        twai_->send(frames[i].id, frames[i].data, frames[i].len, frames[i].extended);
     }
 }
 
@@ -388,4 +438,5 @@ void IsfService::listen()
         fastStep(m);
     }
     slowStep();
+    repeatIsfFrames();
 }

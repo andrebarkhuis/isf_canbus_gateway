@@ -14,7 +14,7 @@ Gt86Service::Gt86Service(QueueHandle_t translatedFrames) : mcp_(MCP2515_CS_PIN),
         memcpy(m.data, OUTPUT_FRAMES[i].defaults, 8);
         memcpy(defaults_[frameCount_], OUTPUT_FRAMES[i].defaults, 8);
         m.len = 8;
-        m.extended = false;
+        m.extended = OUTPUT_FRAMES[i].extended;
         m.interval = OUTPUT_FRAMES[i].intervalMs;
         m.param_name = OUTPUT_FRAMES[i].name;
         lastSentMs_[frameCount_] = 0;

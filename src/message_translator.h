@@ -20,13 +20,16 @@
 // ---------------------------------------------------------------------------------------------------------
 
 /// One output frame: its id, the bytes it starts with (the GT86 "cluster working, no errors" capture for the
-/// GT86 packets; zeros for the ADU frames) and how often the GT86 side repeats it.
+/// GT86 packets; zeros for the ADU frames), how often the GT86 side repeats it, whether the id is 29-bit, and
+/// whether the ISF task also sends it on the ISF bus (the ADU frames: a 29-bit id never meets a module's id).
 struct OutputFrame
 {
     uint32_t id;
     const char *name;
     uint8_t defaults[8];
     uint32_t intervalMs;
+    bool extended;
+    bool alsoOnIsfBus;
 };
 
 /// One signal: where it comes from and where it goes.
@@ -51,7 +54,7 @@ extern const size_t TRANSLATION_SIGNALS_COUNT;
 class MessageTranslator
 {
 public:
-    static constexpr int MaxFrames = 32;
+    static constexpr int MaxFrames = 64;
 
     MessageTranslator();
 

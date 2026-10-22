@@ -492,7 +492,7 @@ void translatorVectors()
     CANMessage changed[MessageTranslator::MaxFrames];
     int n = t.apply(values, 3, changed, MessageTranslator::MaxFrames);
     std::string got;
-    bool ok141 = false, ok360 = false, okD1 = false, ok5E0 = false;
+    bool ok141 = false, ok360 = false, okD1 = false, okSpeed = false, okTemps = false;
     for (int i = 0; i < n; i++)
     {
         got += (got.empty() ? "" : " ") + std::string(1, ' ') + std::to_string(changed[i].id) + ":" + hexOf(changed[i].data, 8);
@@ -502,13 +502,16 @@ void translatorVectors()
             ok360 = changed[i].data[2] == 0x84 && changed[i].data[3] == 90;
         if (changed[i].id == 0xD1)
             okD1 = (changed[i].data[0] | changed[i].data[1] << 8) == 1062 && changed[i].data[4] == 0xB8;
-        if (changed[i].id == 0x5E0)
-            ok5E0 = changed[i].data[0] == 0xF8 && changed[i].data[1] == 0x1A && changed[i].data[2] == 90 && changed[i].data[4] == 60;
+        if (changed[i].id == 0x1F0005E0) // ENG_Speed_Load: rpm bytes 0-1, speed byte 2
+            okSpeed = changed[i].data[0] == 0xF8 && changed[i].data[1] == 0x1A && changed[i].data[2] == 60;
+        if (changed[i].id == 0x1F0005E1) // ENG_Temperatures: coolant byte 0
+            okTemps = changed[i].data[0] == 90;
     }
     check("GT86 0x141: rpm 1726 in bits 32-45, default bits kept", ok141, got);
     check("GT86 0x360: coolant 50 degC -> byte 3 = 90, oil byte untouched", ok360, got);
     check("GT86 0xD1: 60 km/h -> round(60/0.0565) = 1062 in bytes 0-1, rest default", okD1, got);
-    check("ADU 0x5E0: raw rpm 6904 (1A F8) little-endian, coolant raw 90, speed raw 60", ok5E0, got);
+    check("ADU ENG_Speed_Load: raw rpm 6904 (1A F8) little-endian in bytes 0-1, speed raw 60 in byte 2", okSpeed, got);
+    check("ADU ENG_Temperatures: coolant raw 90 in byte 0", okTemps, got);
 }
 
 // ------------------------------------------------------------------ end to end: the session over a scripted engine ECU
@@ -618,7 +621,7 @@ void endToEnd()
     sunk.clear();
     bool got = service.read(engine, 0x01);
     std::string ids;
-    bool okGt = false, okRpm = false, okAdu = false, okExtras = false;
+    bool okGt = false, okRpm = false, okAdu = false, okTemps = false, okExtras = false;
     for (auto &m : sunk)
     {
         char b[8];
@@ -628,16 +631,28 @@ void endToEnd()
             okGt = m.data[3] == 0x3C; // coolant 20 degC -> 60
         if (m.id == 0x141)
             okRpm = m.data[4] == 0x00 && m.data[5] == 0x80 && m.data[6] == 0xA7; // rpm 0 written, bits 46-47 kept
-        if (m.id == 0x5E0)
-            okAdu = m.data[0] == 0 && m.data[1] == 0 && m.data[2] == 0x3C && m.data[3] == 0x3F;
-        if (m.id == 0x5E2)
-            okExtras = m.data[4] == 0xBC && m.data[5] == 0x32; // battery raw 0x32BC = 12.988 V
+        if (m.id == 0x1F0005E0) // ENG_Speed_Load: rpm 0
+            okAdu = m.data[0] == 0 && m.data[1] == 0;
+        if (m.id == 0x1F0005E1) // ENG_Temperatures: coolant raw 60, intake raw 63
+            okTemps = m.data[0] == 0x3C && m.data[1] == 0x3F;
+        if (m.id == 0x1F0005EB) // ENG_Electrical: battery raw 0x32BC = 12.988 V in bytes 0-1
+            okExtras = m.data[0] == 0xBC && m.data[1] == 0x32;
     }
     check("read 21 01: the 26-byte block (live-isf.log) expands through the map and decodes", got, "");
     check("read 21 01: GT86 0x360 byte 3 = 3C (coolant 20 degC + 40)", okGt, ids);
     check("read 21 01: GT86 0x141 refreshed with rpm 0 (constant values are still forwarded)", okRpm, ids);
-    check("read 21 01: ADU 0x5E0 = rpm 0, coolant raw 60, intake raw 63", okAdu, ids);
-    check("read 21 01: ADU 0x5E2 battery raw 32BC little-endian", okExtras, ids);
+    check("read 21 01: ADU ENG_Speed_Load rpm 0", okAdu, ids);
+    check("read 21 01: ADU ENG_Temperatures coolant raw 60, intake raw 63", okTemps, ids);
+    check("read 21 01: ADU ENG_Electrical battery raw 32BC little-endian", okExtras, ids);
+    bool fwdAdu = false, fwdGt86 = false;
+    for (auto &p : fakeBus().sent)
+    {
+        if (p.first.id == 0x1F0005E0)
+            fwdAdu = true;
+        if (p.first.id == 0x141 || p.first.id == 0x360)
+            fwdGt86 = true;
+    }
+    check("read 21 01: ADU ENG_Speed_Load is sent on the ISF bus as well; the GT86 packets are not", fwdAdu && !fwdGt86, sentText());
 }
 } // namespace
 

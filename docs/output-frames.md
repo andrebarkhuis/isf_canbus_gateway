@@ -21,8 +21,15 @@ A two-minute drive capture of the GT86 bus (`gt86-isf-swap/logs/GT86/GVRET_20230
 | 0x600–0x6FF | 63B, 6E1, 6E2 |
 | 0x700–0x7FF | 7A1, 7A9 (cluster diagnostics; the band is reserved for diagnostics) |
 
-Gateway-specific frames therefore use **0x5E0–0x5E7**: inside the empty band, above every GT86 broadcast id,
-below 0x63B, and clear of the 0x501–0x57C ids the earlier ADU project's OBD DBC used.
+Gateway-specific frames use **29-bit ids from 0x1F0005E0 upward** (CAN 2.0B extended frames). A 29-bit id can
+never collide with the 11-bit ids of the GT86 modules or of the IS F modules, and the top 11 bits (0x7C0) lose
+every arbitration against them, so the gateway's frames never delay a module's. The ids count up from 0x1F0005E0. Both the ECUmaster ADU and PMU accept 29-bit ids (CAN 2.0 A/B
+in their specifications); tick the extended-id option when creating the message objects, or import `gateway.dbc`,
+which carries the extended flag.
+
+The same eight frames are also sent on the **IS F bus** by the ISF task, at the same 100 ms interval, so an ADU
+or PMU on that bus sees them too. Only the ADU frames go there; the GT86 packets never do (their ids sit in the
+band the IS F modules broadcast in).
 
 ## 2. GT86 packets
 
@@ -63,25 +70,17 @@ not its bytes changed, so a constant value (engine off, rpm 0) keeps being refre
 back to its default bytes only when no refresh has arrived for 5 s (`Gt86Service::TranslationHoldMs`), i.e. when
 the ECU has stopped answering.
 
-## 3. ADU frames (0x5E0–0x5E7)
+## 3. ADU frames (29-bit ids from 0x1F0005E0)
 
-Dense, pass-through frames: each signal is the ECU's raw value, exactly the bytes ToyotaLens decodes, and the
-DBC carries ToyotaLens's scale factor, offset, unit and state texts. All signals are little-endian (DBC `@1`).
-Each frame is sent every 100 ms.
+Pass-through frames for the ECUmaster ADU and PMU, grouped by meaning (Techstream has no groups of its own; the
+ECU only has its Mode 21 blocks, so the groups are ours): ENG_ (engine ECU), TRANS_ (ECT) and ABS_ (ABS/VSC).
+Each signal is the ECU's raw value, exactly the bytes ToyotaLens decodes, and the DBC carries ToyotaLens's scale
+factor, offset, unit and state texts. All signals are little-endian (DBC `@1`). At most 8 signals per frame
+(ECUmaster per-frame limit), 36 frames, sent every 100 ms (wheel speeds and dynamics 50 ms, fault flags 500 ms) on
+the GT86 bus and on the IS F bus.
 
-| Id | Name | Source blocks | Content |
-|---|---|---|---|
-| 0x5E0 | GW_EngineBasics | engine `21 01` | EngineSpeed (16), CoolantTemp, IntakeAir, VehicleSpeed, ThrottleSensorPosition, CalculateLoad, AtmospherePressure |
-| 0x5E1 | GW_FuelIgnition | engine `21 03` | FuelSystemStatus1/2, ShortFT/LongFT bank 1 and 2, IgnitionAdvance, EvapPurgeVSV |
-| 0x5E2 | GW_EngineExtras | engine `21 51`, `21 01`, `21 05` | EngineOilTemperature, AmbientTemp, MAF (16), BatteryVoltage (16), CatalystTemp_B1S1 (16) |
-| 0x5E3 | GW_EngineSwitches | engine `21 25` | bytes 0, 1, 4, 5, 6, 8, 10, 11 of the block, every flag at its own bit (stop light, shift P/R/N/D, sport/snow/eco mode, brake switch, cruise …) |
-| 0x5E4 | GW_Transmission | ECT `21 82`, `21 85` | ATOilTemperature1 (16), ShiftStatus, lock-up and solenoid flag bytes |
-| 0x5E5 | GW_WheelsGear | ABS `21 03`, `21 21`, `21 1C`, `21 1D` | FR/FL/RR/RL wheel speed, wheel direction flags, AbsVehicleSpeed, gear and shift lever position, TRAC/VSC switches |
-| 0x5E6 | GW_Dynamics | ABS `21 05`, `21 06` | DecelerationSensor 1 and 2, YawRateSensor 1 and 2, SteeringAngleSensor (16), RealEngineTorque (16, signed) |
-| 0x5E7 | GW_StabilityStatus | ABS `21 5A`, `21 1F`, `21 05`; engine `21 06` | TRAC/VSC control and off mode, per-wheel VSC status, stop light and parking brake switches, MIL and monitor byte, AcceleratorOpeningAngle, AbsEngineRevolutions (16) |
-
-The full signal list with bit positions, factors and value tables is `gateway.dbc`; every signal's `CM_` comment
-names the ToyotaLens module, uniqueId, parameter name, block and byte position it comes from.
+The frame list with every signal's position, factor, unit and source is generated into `docs/adu-frames.md`;
+the layout itself is `tools/gateway_frames.json`.
 
 ## 4. Changing the frames
 

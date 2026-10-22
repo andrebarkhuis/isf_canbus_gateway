@@ -25,7 +25,7 @@ public:
     bool isOpen() const;
 
     /// Puts one frame on the bus; false when the driver did not accept it within N_As. Every frame is traced.
-    bool send(uint32_t id, const uint8_t *data, uint8_t len);
+    bool send(uint32_t id, const uint8_t *data, uint8_t len, bool extended = false);
 
     /// The next received frame, any id; false when none arrived within `timeoutMs`. Every frame is traced.
     bool tryReceive(uint32_t &id, uint8_t *data, uint8_t &len, uint32_t timeoutMs);

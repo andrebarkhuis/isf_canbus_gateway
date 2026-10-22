@@ -60,11 +60,11 @@ bool TwaiWrapper::isOpen() const
     return open_;
 }
 
-bool TwaiWrapper::send(uint32_t id, const uint8_t *data, uint8_t len)
+bool TwaiWrapper::send(uint32_t id, const uint8_t *data, uint8_t len, bool extended)
 {
     twai_message_t msg = {};
     msg.identifier = id;
-    msg.extd = 0;
+    msg.extd = extended ? 1 : 0;
     msg.data_length_code = len;
     memcpy(msg.data, data, len);
 
