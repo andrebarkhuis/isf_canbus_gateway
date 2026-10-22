@@ -1,154 +1,84 @@
 #pragma once
 
-#include <vector>
+#include <cstddef>
 #include <cstdint>
+
 #include "common.h"
-#include "logger/logger.h"
 #include "uds/uds_mapper.h"
+
+// ---------------------------------------------------------------------------------------------------------
+// Decoded ISF parameters -> frames on the GT86 / ADU bus. The output frames and the signals in them are one
+// table, generated from tools/gateway_frames.json into translator_table.h together with gateway.dbc, so the
+// code and the DBC cannot disagree. Every signal is little-endian (Intel, DBC "@1"): start bit = the bit
+// position of its least significant bit, bit 0 = byte 0 bit 0.
+//
+// Two kinds of signal:
+//   - pass-through (the ADU frames): the ECU's raw value goes into the frame unchanged and the DBC carries
+//     ToyotaLens's scale factor and offset, so nothing is lost in conversion;
+//   - converted (the GT86 packets): the physical value is re-encoded with the frame's own factor and offset,
+//     the way the GT86 modules expect it.
+// ---------------------------------------------------------------------------------------------------------
+
+/// One output frame: its id, the bytes it starts with (the GT86 "cluster working, no errors" capture for the
+/// GT86 packets; zeros for the ADU frames) and how often the GT86 side repeats it.
+struct OutputFrame
+{
+    uint32_t id;
+    const char *name;
+    uint8_t defaults[8];
+    uint32_t intervalMs;
+};
+
+/// One signal: where it comes from and where it goes.
+struct TranslationSignal
+{
+    const char *uniqueId;   // source parameter (UDS_DEFINITIONS)
+    uint32_t frameId;       // target frame
+    const char *name;       // DBC signal name
+    uint8_t startBit;       // LSB position, Intel
+    uint8_t bitLength;
+    bool isSigned;
+    bool passRaw;           // true: raw value unchanged; false: raw = (physical - offset) / factor
+    double factor;          // DBC factor / offset (pass-through: ToyotaLens scale and offset after the unit map)
+    double offset;
+};
+
+extern const OutputFrame OUTPUT_FRAMES[];
+extern const size_t OUTPUT_FRAMES_COUNT;
+extern const TranslationSignal TRANSLATION_SIGNALS[];
+extern const size_t TRANSLATION_SIGNALS_COUNT;
 
 class MessageTranslator
 {
 public:
-  /**
-   * Translates ISF CAN messages to GT86 format
-   *
-   * @param isfId The CAN ID of the ISF message
-   * @param isfData Pointer to the ISF message data
-   * @param dataLen Length of the data
-   * @return Vector of translated GT86 messages
-   */
-  static std::vector<CANMessage> translateIsfToGt86(uint32_t isfId, uint8_t *isfData, uint8_t dataLen)
-  {
-    std::vector<CANMessage> translatedMessages;
+    static constexpr int MaxFrames = 32;
 
-    // Check message ID and apply appropriate translation
-    switch (isfId)
+    MessageTranslator();
+
+    /// Applies decoded values to the frames they map to. Every frame a value was written into is copied to
+    /// `changed` (whether or not its bytes differ), so the consumer side is refreshed on every poll; returns how
+    /// many.
+    int apply(const ParameterValue *values, int count, CANMessage changed[], int maxChanged);
+
+    /// The current bytes of every output frame (defaults until a translation touched them).
+    const CANMessage *frames() const
     {
-    case ISFCAN::RPM: // RPM message
-      translatedMessages.push_back(translateRPM(isfData, dataLen));
-      break;
-
-    case ISFCAN::VEHICLE_SPEED: // Speed message
-      translatedMessages.push_back(translateSpeed(isfData, dataLen));
-      break;
-
-    case ISFCAN::ENGINE_TEMP: // Temperature message
-      translatedMessages.push_back(translateTemperature(isfData, dataLen));
-      break;
+        return frames_;
+    }
+    int frameCount() const
+    {
+        return frameCount_;
     }
 
-    return translatedMessages;
-  }
+    /// Writes `raw` into `data` at the signal's position, little-endian; bits outside the field are kept.
+    static void packSignal(uint8_t data[8], int startBit, int bitLength, uint64_t raw);
+    /// Reads a signal back (for the self-test).
+    static uint64_t unpackSignal(const uint8_t data[8], int startBit, int bitLength);
 
-  static CANMessage translateRPM(uint8_t *isfData, uint8_t dataLen)
-  {
-    // Check for valid data length
-    if (dataLen < 2)
-    {
-      return createEmptyMessage(GT86CAN::ENGINE_DATA);
-    }
+private:
+    int frameIndex(uint32_t id) const;
+    static uint64_t encode(const TranslationSignal &s, const ParameterValue &v);
 
-    // Example: Extract RPM from ISF data and format for GT86
-    uint16_t rpm = (isfData[0] << 8) | isfData[1];
-
-    // Create GT86 format message with RPM data
-    return createRPMMessage(rpm);
-  }
-
-  static CANMessage createRPMMessage(uint16_t rpm)
-  {
-    CANMessage gt86Msg;
-    gt86Msg.id = GT86CAN::ENGINE_DATA; // GT86 RPM message ID
-    gt86Msg.len = 8;
-
-    // Initialize data array
-    memset(gt86Msg.data, 0, 8);
-
-    // Set the RPM in GT86 format (adjust scaling as needed)
-    gt86Msg.data[0] = rpm & 0xFF;
-    gt86Msg.data[1] = (rpm >> 8) & 0xFF;
-
-    // Log the translation
-    LOG_DEBUG("Translated RPM: %u", rpm);
-
-    return gt86Msg;
-  }
-
-  static CANMessage translateSpeed(uint8_t *isfData, uint8_t dataLen)
-  {
-    // Check for valid data length
-    if (dataLen < 1)
-    {
-      return createEmptyMessage(GT86CAN::VEHICLE_SPEED);
-    }
-
-    // Extract speed from ISF data
-    uint8_t speed = isfData[0];
-
-    // Create GT86 speed message
-    return createSpeedMessage(speed);
-  }
-
-  static CANMessage createSpeedMessage(uint8_t speed)
-  {
-    CANMessage gt86Msg;
-    gt86Msg.id = GT86CAN::VEHICLE_SPEED; // GT86 Speed message ID
-    gt86Msg.len = 8;
-
-    // Initialize data array
-    memset(gt86Msg.data, 0, 8);
-
-    // Set the speed in GT86 format
-    gt86Msg.data[0] = speed;
-
-    // Additional data might be needed for a complete GT86 message
-    // For example, brake signal, etc.
-
-    // Log the translation
-    LOG_DEBUG("Translated Speed: %u km/h", speed);
-
-    return gt86Msg;
-  }
-
-  static CANMessage translateTemperature(uint8_t *isfData, uint8_t dataLen)
-  {
-    // Check for valid data length
-    if (dataLen < 1)
-    {
-      return createEmptyMessage(GT86CAN::ENGINE_TEMP);
-    }
-
-    // Extract temperature from ISF data
-    // Example: temperature in Celsius + 40 (common CAN protocol offset)
-    int8_t temp = isfData[0] - 40;
-
-    return createTemperatureMessage(temp);
-  }
-
-  static CANMessage createTemperatureMessage(int8_t temp)
-  {
-    CANMessage gt86Msg;
-    gt86Msg.id = GT86CAN::ENGINE_TEMP; // GT86 Temperature message ID
-    gt86Msg.len = 8;
-
-    // Initialize data array
-    memset(gt86Msg.data, 0, 8);
-
-    // Set the temperature in GT86 format
-    gt86Msg.data[0] = temp + 40; // Adding offset back for GT86 format
-
-    // Log the translation
-    LOG_DEBUG("Translated Temperature: %d°C", temp);
-
-    return gt86Msg;
-  }
-
-  static CANMessage createEmptyMessage(uint32_t id)
-  {
-    CANMessage emptyMsg;
-    emptyMsg.id = id;
-    emptyMsg.len = 8;
-    memset(emptyMsg.data, 0, 8);
-    return emptyMsg;
-  }
+    CANMessage frames_[MaxFrames];
+    int frameCount_ = 0;
 };

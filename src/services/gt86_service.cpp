@@ -1,92 +1,119 @@
-#include "gt86_service.h"
-#include "../logger/logger.h"
-#include "../message_translator.h"
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
+#include "services/gt86_service.h"
 
+#include <cstring>
 
-Gt86Service::Gt86Service()
+#include "logger/logger.h"
+
+Gt86Service::Gt86Service(QueueHandle_t translatedFrames) : mcp_(MCP2515_CS_PIN), queue_(translatedFrames)
 {
-    mcp = new MCP_CAN(10); // Initialize MCP_CAN with CS pin 10
-    lastMessageTime = new unsigned long[GT86_CAN_MESSAGES_COUNT](); // initialize all elements to 0
+    frameCount_ = 0;
+    for (size_t i = 0; i < OUTPUT_FRAMES_COUNT && frameCount_ < MaxFrames; i++)
+    {
+        CANMessage &m = frames_[frameCount_];
+        m.id = OUTPUT_FRAMES[i].id;
+        memcpy(m.data, OUTPUT_FRAMES[i].defaults, 8);
+        memcpy(defaults_[frameCount_], OUTPUT_FRAMES[i].defaults, 8);
+        m.len = 8;
+        m.extended = false;
+        m.interval = OUTPUT_FRAMES[i].intervalMs;
+        m.param_name = OUTPUT_FRAMES[i].name;
+        lastSentMs_[frameCount_] = 0;
+        lastTranslatedMs_[frameCount_] = 0;
+        frameCount_++;
+    }
 }
 
 Gt86Service::~Gt86Service()
 {
-    // Clean up dynamically allocated objects
-    delete mcp;
-    delete[] lastMessageTime;
 }
 
 bool Gt86Service::initialize()
 {
-    byte res = mcp->begin();
-    #ifdef DEBUG_GT86_SERVICE
-        LOG_INFO("MCP_CAN initialized with result: %d", res);
-    #endif
-    vTaskDelay(pdMS_TO_TICKS(10));
-    return res == CAN_OK;
+    byte res = mcp_.begin();
+    if (res != CAN_OK)
+    {
+        LOG_ERROR("MCP2515 (GT86 bus) failed to start: %d", res);
+        return false;
+    }
+    LOG_INFO("MCP2515 (GT86 bus) started at 500 kbit/s, %d output frames", frameCount_);
+    return true;
 }
 
 void Gt86Service::listen()
 {
-    sendPidRequests();
-    
-    vTaskDelay(pdMS_TO_TICKS(5));
-
+    takeTranslations();
+    sendDue();
     handleIncomingMessages();
 }
 
-bool Gt86Service::sendPidRequests()
+int Gt86Service::frameIndex(uint32_t id) const
 {
-    unsigned long currentTime = millis();
-    bool success = true;
-
-    for (int i = 0; i < GT86_CAN_MESSAGES_COUNT; i++) // Iterate through all messages
+    for (int i = 0; i < frameCount_; i++)
     {
-        CANMessage msg = GT86_PID_MESSAGES[i];
-        
-        if (currentTime - lastMessageTime[i] >= msg.interval)
+        if (frames_[i].id == id)
         {
-            
-            if (mcp->sendMsgBuf(msg.id, 0, 8, reinterpret_cast<byte *>(msg.data)) != CAN_OK)
-            {
-                #ifdef DEBUG_GT86_SERVICE
-                    LOG_ERROR("Failed to send message ID: 0x%X, %s", msg.id, msg.param_name.c_str());
-                #endif
-                success = false;
-            }
-            else
-            {
-                #ifdef DEBUG_GT86_SERVICE
-                    LOG_INFO("Sent message ID: 0x%X, %s", msg.id, msg.param_name.c_str());
-                #endif
-                lastMessageTime[i] = currentTime;
-            }
-
-            // Only introduce a delay after a certain number of messages to avoid unnecessary delays
-            if ((i + 1) % 2 == 0) // Introduce a delay after sending 2 messages
-            {
-                vTaskDelay(pdMS_TO_TICKS(10)); // You can adjust this delay if needed
-            }
+            return i;
         }
     }
+    return -1;
+}
 
+void Gt86Service::takeTranslations()
+{
+    if (queue_ == nullptr)
+    {
+        return;
+    }
+    CANMessage translated;
+    while (xQueueReceive(queue_, &translated, 0) == pdTRUE)
+    {
+        int i = frameIndex(translated.id);
+        if (i < 0)
+        {
+            continue;
+        }
+        memcpy(frames_[i].data, translated.data, 8);
+        lastTranslatedMs_[i] = nowMs();
+    }
+}
+
+bool Gt86Service::sendDue()
+{
+    uint32_t now = nowMs();
+    bool success = true;
+    for (int i = 0; i < frameCount_; i++)
+    {
+        CANMessage &m = frames_[i];
+        if (m.interval == 0 || now - lastSentMs_[i] < m.interval)
+        {
+            continue;
+        }
+        if (lastTranslatedMs_[i] != 0 && now - lastTranslatedMs_[i] > TranslationHoldMs)
+        {
+            // No fresh value for a while: back to the default bytes.
+            memcpy(m.data, defaults_[i], 8);
+            lastTranslatedMs_[i] = 0;
+        }
+        lastSentMs_[i] = now;
+        if (mcp_.sendMsgBuf(m.id, m.extended ? 1 : 0, m.len, m.data) != CAN_OK)
+        {
+            LOG_WARN("GT86 bus: send %03lX (%s) failed", static_cast<unsigned long>(m.id), m.param_name);
+            success = false;
+        }
+    }
     return success;
 }
 
-bool Gt86Service::handleIncomingMessages()
+void Gt86Service::handleIncomingMessages()
 {
-    bool success = true;
-    // uint32_t id;
-    // uint8_t data[8];
-    // uint8_t len;
-    // bool extended;
-    int messagesProcessed = 0;
-
-    while (mcp->checkReceive() == CAN_MSGAVAIL && messagesProcessed < 5)
+    // The GT86 modules' own traffic is not consumed; empty the controller so it does not overflow.
+    int drained = 0;
+    while (mcp_.checkReceive() == CAN_MSGAVAIL && drained < 8)
     {
-        messagesProcessed++;
+        unsigned long id;
+        byte len;
+        byte data[8];
+        mcp_.readMsgBufID(&id, &len, data);
+        drained++;
     }
-    return success;
 }

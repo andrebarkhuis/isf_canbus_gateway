@@ -1,95 +1,105 @@
-#include "logger.h"
+#include "logger/logger.h"
 
-// Static member definitions
-int Logger::logLevel = 4; // LOG_DEBUG
-bool Logger::serialInitialized = false;
-unsigned long Logger::startTime = 0;
-SemaphoreHandle_t Logger::serialMutex = nullptr;
+#include <cstdarg>
+#include <cstdio>
 
-void Logger::setMutex(SemaphoreHandle_t mutex) {
-    serialMutex = mutex;
-}
+#include "esp_log.h"
+#include "esp_timer.h"
 
-SemaphoreHandle_t Logger::getMutex() {
-    return serialMutex;
-}
+LogLevel Logger::level_ = LOG_LEVEL_INFO;
+bool Logger::traceFrames_ = true;
 
-void Logger::begin(int level, unsigned long baudRate) {
-    Serial.begin(baudRate);
-    serialInitialized = true;
-    logLevel = level;
-    startTime = millis();
-    Serial.println("----------------------------------------------------");
-    Serial.println("Logger initialized");
-    Serial.println("----------------------------------------------------");
-}
+namespace
+{
+const char *TAG = "gateway";
 
-void Logger::error(const char* func, const char *format, ...) {
-    if (logLevel >= 1) { // LOG_ERROR
-        if (serialMutex && xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
-            char buffer[BUFFER_SIZE];
-            int prefix_len = snprintf(buffer, sizeof(buffer), "[ERROR][%s] ", func);
-            va_list args;
-            va_start(args, format);
-            vsnprintf(buffer + prefix_len, sizeof(buffer) - prefix_len, format, args);
-            va_end(args);
-            Serial.println(buffer);
-            xSemaphoreGive(serialMutex);
-        }
+esp_log_level_t toEspLevel(LogLevel level)
+{
+    switch (level)
+    {
+    case LOG_LEVEL_ERROR:
+        return ESP_LOG_ERROR;
+    case LOG_LEVEL_WARN:
+        return ESP_LOG_WARN;
+    case LOG_LEVEL_INFO:
+        return ESP_LOG_INFO;
+    default:
+        return ESP_LOG_DEBUG;
     }
 }
 
-void Logger::warn(const char* func, const char *format, ...) {
-    if (logLevel >= 2) { // LOG_WARN
-        if (serialMutex && xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
-            char buffer[BUFFER_SIZE];
-            int prefix_len = snprintf(buffer, sizeof(buffer), "[WARN][%s] ", func);
-            va_list args;
-            va_start(args, format);
-            vsnprintf(buffer + prefix_len, sizeof(buffer) - prefix_len, format, args);
-            va_end(args);
-            Serial.println(buffer);
-            xSemaphoreGive(serialMutex);
-        }
+char levelLetter(LogLevel level)
+{
+    switch (level)
+    {
+    case LOG_LEVEL_ERROR:
+        return 'E';
+    case LOG_LEVEL_WARN:
+        return 'W';
+    case LOG_LEVEL_INFO:
+        return 'I';
+    default:
+        return 'D';
     }
 }
+} // namespace
 
-void Logger::info(const char* func, const char *format, ...) {
-    if (logLevel >= 3) { // LOG_INFO
-        if (serialMutex && xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
-            char buffer[BUFFER_SIZE];
-            int prefix_len = snprintf(buffer, sizeof(buffer), "[INFO][%s] ", func);
-            va_list args;
-            va_start(args, format);
-            vsnprintf(buffer + prefix_len, sizeof(buffer) - prefix_len, format, args);
-            va_end(args);
-            Serial.println(buffer);
-            xSemaphoreGive(serialMutex);
-        }
-    }
+void Logger::begin(LogLevel level, bool traceFrames)
+{
+    level_ = level;
+    traceFrames_ = traceFrames;
+    // esp_log filters by tag before our own level check; open it fully and let level_ decide.
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+    esp_log_write(ESP_LOG_INFO, TAG, "----------------------------------------------------\n");
+    esp_log_write(ESP_LOG_INFO, TAG, "Logger initialized (level %d, frame trace %s)\n", level, traceFrames ? "on" : "off");
+    esp_log_write(ESP_LOG_INFO, TAG, "----------------------------------------------------\n");
 }
 
-void Logger::debug(const char* func, const char *format, ...) {
-    if (logLevel >= 4) { // LOG_DEBUG
-        if (xSemaphoreTake(serialMutex, portMAX_DELAY) == pdTRUE) {
-            char buffer[BUFFER_SIZE];
-            int prefix_len = snprintf(buffer, sizeof(buffer), "[DEBUG][%s] ", func);
-            va_list args;
-            va_start(args, format);
-            vsnprintf(buffer + prefix_len, sizeof(buffer) - prefix_len, format, args);
-            va_end(args);
-            Serial.println(buffer);
-            xSemaphoreGive(serialMutex);
-        }
-    }
+void Logger::setLevel(LogLevel level)
+{
+    level_ = level;
 }
 
-std::string Logger::formatData(const uint8_t *data, uint8_t len) {
-    std::string result;
-    for (uint8_t i = 0; i < len; i++) {
-        char byteStr[4];
-        snprintf(byteStr, sizeof(byteStr), "%02X ", data[i]);
-        result += byteStr;
+LogLevel Logger::level()
+{
+    return level_;
+}
+
+void Logger::setTraceFrames(bool on)
+{
+    traceFrames_ = on;
+}
+
+void Logger::log(LogLevel level, const char *function, const char *format, ...)
+{
+    if (level > level_ || level == LOG_LEVEL_NONE)
+    {
+        return;
     }
-    return result;
+    char buffer[BUFFER_SIZE];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    esp_log_write(toEspLevel(level), TAG, "[%c][%s] %s\n", levelLetter(level), function, buffer);
+}
+
+void Logger::frame(const char *iface, uint32_t id, const uint8_t *data, uint8_t len)
+{
+    if (!traceFrames_)
+    {
+        return;
+    }
+    // candump line: "(1697700000.123456) isf 7E8#0661008400000100". The timestamp is seconds since boot;
+    // ToyotaLens only needs it monotonic.
+    int64_t us = esp_timer_get_time();
+    char hex[2 * 8 + 1];
+    int n = 0;
+    for (uint8_t i = 0; i < len && i < 8; i++)
+    {
+        n += snprintf(hex + n, sizeof(hex) - n, "%02X", data[i]);
+    }
+    hex[n] = '\0';
+    esp_log_write(ESP_LOG_INFO, TAG, "(%lld.%06lld) %s %03lX#%s\n", static_cast<long long>(us / 1000000),
+                  static_cast<long long>(us % 1000000), iface, static_cast<unsigned long>(id), hex);
 }

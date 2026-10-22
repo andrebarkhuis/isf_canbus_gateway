@@ -1,143 +1,30 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
-#include <string>
+#include <cstring>
 
+// ---------------------------------------------------------------------------------------------------------
+// Types shared by every component. Nothing here depends on ESP-IDF, so the self-test builds the same code on a
+// host compiler (see test/host). The platform functions at the bottom are implemented in common.cpp (ESP-IDF)
+// and in test/host/host_platform.cpp.
+// ---------------------------------------------------------------------------------------------------------
+
+/// One classic CAN frame: 11-bit identifier and up to 8 data bytes (ToyotaLens CanFrame). Plain data, so it can
+/// travel through a FreeRTOS queue by value. `interval` and `param_name` serve the GT86 side's periodic tables.
 struct CANMessage
 {
-  uint32_t id;
-  uint8_t data[8];
-  uint8_t len;
-  bool extended = false;
-  uint32_t interval = 0;
-  std::string param_name; // optional-like, default is empty string
+    uint32_t id = 0;
+    uint8_t data[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint8_t len = 8;
+    bool extended = false;
+    uint32_t interval = 0;         // periodic send interval in ms; 0 = sent only when translated
+    const char *param_name = "";   // label for the log
 };
 
-typedef enum
-{
-  ISOTP_IDLE = 0,
-  ISOTP_SEND,
-  ISOTP_SEND_FF,
-  ISOTP_SEND_CF,
-  ISOTP_WAIT_FIRST_FC,
-  ISOTP_WAIT_FC,
-  ISOTP_WAIT_DATA,
-  ISOTP_FINISHED,
-  ISOTP_ERROR
-} isotp_states_t;
-
-#define MAX_UDS_PAYLOAD_LEN 128
-
-struct Message_t
-{
-  //Expected length of the complete uds message with all its Consecutive Frames included.
-  uint16_t length = 0;
-  //The current Sequence number of the consecutive frame received.
-  uint8_t sequence_number = 0;
-  //The next expected sequence number for consecutive frames
-  uint8_t next_sequence = 1;
-  //Tracks how many bytes have been received so far
-  uint16_t bytes_received = 0;
-  //Tracks how many bytes still need to be received
-  uint16_t remaining_bytes = 0;
-  //The block size of the consecutive frame received.
-  uint8_t blocksize = 0;
-  //The tx_id of the message.
-  uint32_t tx_id = 0;
-  //The rx_id of the message.
-  uint32_t rx_id = 0;
-  //The service_id of the message.
-  uint8_t service_id = 0;
-  //The data_id of the message.
-  uint16_t data_id = 0;
-  //The buffer of the message.
-  uint8_t Buffer[MAX_UDS_PAYLOAD_LEN] = {0};
-  //The state of the message.
-  isotp_states_t tp_state = ISOTP_IDLE;
-
-  void reset()
-  {
-    length = 0;
-    sequence_number = 0;
-    next_sequence = 1;
-    bytes_received = 0;
-    remaining_bytes = 0;
-    blocksize = 0;
-    tx_id = 0;
-    rx_id = 0;
-    service_id = 0;
-    data_id = 0;
-    tp_state = ISOTP_IDLE;
-    memset(Buffer, 0, sizeof(Buffer));
-  }
-
-  std::string getStateStr() const
-  {
-    switch (tp_state)
-    {
-    case ISOTP_IDLE:
-      return "ISOTP_IDLE";
-    case ISOTP_SEND:
-      return "ISOTP_SEND";
-    case ISOTP_SEND_FF:
-      return "ISOTP_SEND_FF";
-    case ISOTP_SEND_CF:
-      return "ISOTP_SEND_CF";
-    case ISOTP_WAIT_FIRST_FC:
-      return "ISOTP_WAIT_FIRST_FC";
-    case ISOTP_WAIT_FC:
-      return "ISOTP_WAIT_FC";
-    case ISOTP_WAIT_DATA:
-      return "ISOTP_WAIT_DATA";
-    case ISOTP_FINISHED:
-      return "ISOTP_FINISHED";
-    case ISOTP_ERROR:
-      return "ISOTP_ERROR";
-    default:
-      return "UNKNOWN_STATE";
-    }
-  }
-};
-
-struct UDSRequest
-{
-  uint32_t tx_id;         // ECU transmit ID
-  uint32_t rx_id;         // ECU response ID
-  uint8_t service_id;     // UDS service identifier (e.g., 0x21, 0x22, etc.)
-  uint16_t pid = 0;       // OBD PID (optional)
-  uint16_t did = 0;       // UDS DID (optional)
-  unsigned long interval; // Polling interval (e.g., 100ms)
-  const char* param_name; // Display name / label
-  uint8_t length;     // Total length of payload[] (excluding CAN overhead)
-  uint8_t payload[8];     // The actual request payload
-};
-
-namespace ISFCAN
-{
-  // Standard ISF CAN IDs
-  constexpr uint32_t RPM = 0x2C4;
-  constexpr uint32_t VEHICLE_SPEED = 0xB4;
-  constexpr uint32_t ENGINE_TEMP = 0x360;
-  constexpr uint32_t THROTTLE_POSITION = 0x288;
-  constexpr uint32_t TRANSMISSION_DATA = 0x340;
-
-  // OBD-II Diagnostic IDs
-  constexpr uint32_t OBD_ECU_REQUEST_ID = 0x7DF;
-  
-}
-
-namespace GT86CAN
-{
-  // Engine & Powertrain
-  constexpr uint32_t ENGINE_DATA = 0x140;
-  constexpr uint32_t ENGINE_TEMP = 0x141;
-  constexpr uint32_t GEAR_POSITION = 0x142;
-
-  // Vehicle Dynamics
-  constexpr uint32_t VEHICLE_SPEED = 0xD1;
-  constexpr uint32_t WHEEL_SPEEDS = 0xD4;
-
-  // Vehicle Systems
-  constexpr uint32_t HVAC_STATUS = 0x220;
-  constexpr uint32_t LIGHT_STATUS = 0x280;
-}
+/// Milliseconds since boot (monotonic).
+uint32_t nowMs();
+/// Microseconds since boot (monotonic).
+uint64_t nowUs();
+/// Blocks the calling task for at least `ms` milliseconds.
+void sleepMs(uint32_t ms);

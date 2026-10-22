@@ -1,307 +1,435 @@
-#include <SPI.h>
-#include <Arduino.h>
-#include "iso_tp.h"
-#include "../can/twai_wrapper.h"
-#include "../logger/logger.h"
+#include "isotp/iso_tp.h"
 
+#include <cstring>
 
-IsoTp::IsoTp(TwaiWrapper *bus)
+#include "can/twai_wrapper.h"
+#include "common.h"
+#include "logger/logger.h"
+#include "uds/uds_mapper.h"
+
+// ------------------------------------------------------------------ framing (ToyotaLens IsoTp)
+
+namespace IsoTpFraming
 {
-  _twaiWrapper = bus;
-}
-
-
-// Convert UDS error code to string representation
-const char* getUdsErrorString(uint8_t errorCode) {
-  switch(errorCode) {
-    case UDS_NRC_SUCCESS: return "UDS_NRC_SUCCESS";
-    case UDS_NRC_SERVICE_NOT_SUPPORTED: return "UDS_NRC_SERVICE_NOT_SUPPORTED";
-    case UDS_NRC_SUB_FUNCTION_NOT_SUPPORTED: return "UDS_NRC_SUB_FUNCTION_NOT_SUPPORTED";
-    case UDS_NRC_INCORRECT_LENGTH_OR_FORMAT: return "UDS_NRC_INCORRECT_LENGTH_OR_FORMAT";
-    case UDS_NRC_CONDITIONS_NOT_CORRECT: return "UDS_NRC_CONDITIONS_NOT_CORRECT";
-    case UDS_NRC_REQUEST_OUT_OF_RANGE: return "UDS_NRC_REQUEST_OUT_OF_RANGE";
-    case UDS_NRC_SECURITY_ACCESS_DENIED: return "UDS_NRC_SECURITY_ACCESS_DENIED";
-    case UDS_NRC_INVALID_KEY: return "UDS_NRC_INVALID_KEY";
-    case UDS_NRC_TOO_MANY_ATTEMPS: return "UDS_NRC_TOO_MANY_ATTEMPS";
-    case UDS_NRC_TIME_DELAY_NOT_EXPIRED: return "UDS_NRC_TIME_DELAY_NOT_EXPIRED";
-    case UDS_NRC_RESPONSE_PENDING: return "UDS_NRC_RESPONSE_PENDING";
-    default: return "Unknown Error";
-  } 
-}
-
-bool IsoTp::is_next_consecutive_frame(Message_t *msg, uint8_t actual_seq_num)
+int separationTimeMicroseconds(uint8_t st)
 {
-  return actual_seq_num == msg->next_sequence;
-}
-
-bool IsoTp::handle_first_frame(Message_t *msg, uint8_t rxBuffer[])
-{ 
-  // Correct ISO-TP length calculation: 12 bits from first frame
-  // First 4 bits from rxBuffer[0] & 0x0F (high nibble)
-  // Last 8 bits from rxBuffer[1] (low byte)
-  uint16_t expected_length = ((rxBuffer[0] & 0x0F) << 8) | rxBuffer[1];
-  
-  //8,10,30,61,21,00,00,00,00
-
-  msg->length = expected_length;
-  msg->tp_state = ISOTP_WAIT_FC;
-  msg->bytes_received = 6; // First frame already contains 6 bytes
-  msg->remaining_bytes = expected_length - 6; // Remaining bytes to receive
-  msg->sequence_number = 0; // First CF will have sequence number 1;
-  msg->next_sequence = 1;
-
-  /* copy the first received data bytes */
-  memcpy(msg->Buffer, rxBuffer + 2, 6);  // Copy first data chunk (after PCI)
-
-  #ifdef ISO_TP_DEBUG
-    uint8_t ff_service_id = rxBuffer[2];
-    uint16_t ff_data_id = rxBuffer[3];  
-    LOG_DEBUG("First-frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, bytes_received=%u, remaining=%u, service_id=0x%X, data_id=0x%X", 
-      msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, expected_length, 
-      msg->bytes_received, msg->remaining_bytes, ff_service_id, ff_data_id);
-  #endif
-
-  if (!send_flow_control(msg->tx_id))
-  {
-    msg->tp_state = ISOTP_ERROR;
-
-    LOG_ERROR("Flow-Control Frame: tx_id=0x%lX", msg->tx_id);
-    return false;
-  }
-  
-  return true;
-}
-
-bool IsoTp::handle_single_frame(Message_t *msg, uint8_t rxBuffer[])
-{
-  uint8_t service_id = rxBuffer[1];
-  uint16_t data_id = 0;
-  
-  msg->length = rxBuffer[0] & 0x0F;
-  msg->service_id = service_id;
-  msg->data_id = data_id;
-  msg->tp_state = ISOTP_FINISHED;
-  
-  if (msg->length >= 3) {
-    data_id = (rxBuffer[2] << 8) | (msg->length >= 4 ? rxBuffer[3] : 0);
-  }
-  
-  //Read the data into the buffer
-  memcpy(msg->Buffer, rxBuffer + 1, msg->length); // Skip PCI, SF uses len bytes
-    
-  #ifdef ISO_TP_DEBUG
-    LOG_DEBUG("Single frame received: iso_tp_state=%s, tx_id=0x%lX, rx_id=0x%lX, length=%u, service_id=0x%X, data_id=0x%X", msg->getStateStr().c_str(), msg->tx_id, msg->rx_id, msg->length, service_id, data_id);
-  #endif
-
-  return true;
-}
-
-bool IsoTp::send_flow_control(uint32_t rx_id)
-{
-  // FC example: 30,00,00,00,00,00,00,00
-
-  #ifdef ISO_TP_DEBUG
-    LOG_DEBUG("Flow-Control Frame: rx_id=0x%lX", rx_id);
-  #endif
-
-  uint8_t TxBuf[8] = {0};
-
-  TxBuf[0] = (N_PCI_FC | ISOTP_FC_CTS); // Explicitly Clear To Send (0x30)
-  TxBuf[1] = 0x00;                      // No block size limit, send all data
-  TxBuf[2] = 0x01;                      // 1ms separation time
-
-  bool result = _twaiWrapper->sendMessage(rx_id, TxBuf, 8);
-  if (!result) 
-  {
-    #ifdef ISO_TP_DEBUG
-    LOG_ERROR("Failed to send Flow-Control Frame: rx_id: 0x%lX", rx_id);
-    #endif
-
-    return false;
-  }
-
-  return true;
-}
-
-bool IsoTp::send(Message_t *msg)
-{
-    #ifdef ISO_TP_DEBUG
-      LOG_DEBUG("Sending UDS message: tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, length: %d", msg->tx_id, msg->rx_id, msg->service_id, msg->length);
-    #endif
-
-    if (msg->length > 7) 
+    if (st <= SeparationTimeMaxMs)
     {
-      msg->tp_state = ISOTP_ERROR;
-      #ifdef ISO_TP_DEBUG
-        LOG_ERROR("Message too long for single frame: tx_id: 0x%lX, rx_id: 0x%lX, length: %d (max: 7), state: %s", msg->tx_id, msg->rx_id, msg->length, msg->getStateStr().c_str());
-      #endif
-      return false; // Error, too much data for single frame
+        return st * MicrosecondsPerMillisecond;
     }
-
-    bool result = _twaiWrapper->sendMessage(msg->tx_id, msg->Buffer, 8); 
-    if (!result) 
+    if (st >= SeparationTimeMicroFirst && st <= SeparationTimeMicroLast)
     {
-      msg->tp_state = ISOTP_ERROR;
-      #ifdef ISO_TP_DEBUG
-        LOG_ERROR("Failed to send single-frame: tx_id: 0x%lX, rx_id: 0x%lX, service_id: 0x%02X, state: %s", msg->tx_id, msg->rx_id, msg->service_id, msg->getStateStr().c_str());
-      #endif
-      return false;
+        return (st - SeparationTimeMicroFirst + 1) * SeparationTimeMicroStep;
     }
-  
-    msg->tp_state = ISOTP_FINISHED;
-  
-    #ifdef ISO_TP_DEBUG
-    Logger::logUdsMessage("IsoTp:send_single_frame", msg);
-    #endif
+    return SeparationTimeMaxMs * MicrosecondsPerMillisecond;
+}
 
+size_t segmentCount(size_t payloadLength)
+{
+    if (payloadLength > static_cast<size_t>(MaxMessageLength))
+    {
+        return 0;
+    }
+    if (payloadLength <= static_cast<size_t>(SingleFramePayload))
+    {
+        return 1;
+    }
+    size_t rest = payloadLength - FirstFramePayload;
+    return 1 + (rest + ConsecutiveFramePayload - 1) / ConsecutiveFramePayload;
+}
+
+bool segment(const uint8_t *payload, size_t payloadLength, size_t index, uint8_t frame[FrameLength])
+{
+    size_t count = segmentCount(payloadLength);
+    if (count == 0 || index >= count)
+    {
+        return false;
+    }
+    memset(frame, Padding, FrameLength);
+    if (count == 1)
+    {
+        frame[0] = singleFramePci(static_cast<int>(payloadLength));
+        memcpy(frame + 1, payload, payloadLength);
+        return true;
+    }
+    if (index == 0)
+    {
+        frame[0] = firstFramePciHigh(static_cast<int>(payloadLength));
+        frame[1] = firstFramePciLow(static_cast<int>(payloadLength));
+        memcpy(frame + 2, payload, FirstFramePayload);
+        return true;
+    }
+    // Consecutive frame `index`: sequence 1, 2, … F, 0, 1 …; the first one starts after the FF's 6 bytes.
+    size_t sent = FirstFramePayload + (index - 1) * ConsecutiveFramePayload;
+    int sequence = FirstSequence;
+    for (size_t i = 1; i < index; i++)
+    {
+        sequence = nextSequence(sequence);
+    }
+    size_t take = payloadLength - sent;
+    if (take > static_cast<size_t>(ConsecutiveFramePayload))
+    {
+        take = ConsecutiveFramePayload;
+    }
+    frame[0] = consecutiveFramePci(sequence);
+    memcpy(frame + 1, payload + sent, take);
+    return true;
+}
+} // namespace IsoTpFraming
+
+// ------------------------------------------------------------------ reassembly (ToyotaLens IsoTpReassembler)
+
+bool Message_t::feed(const uint8_t *data, uint8_t length)
+{
+    using namespace IsoTpFraming;
+    if (length == 0)
+    {
+        return false;
+    }
+    switch (pciType(data[0]))
+    {
+    case SingleFrame:
+    {
+        int len = singleFrameLength(data[0]);
+        if (len == 0 || len > length - 1)
+        {
+            return false;
+        }
+        reset();
+        memcpy(buffer, data + 1, len);
+        expected = static_cast<uint16_t>(len);
+        return true;
+    }
+    case FirstFrame:
+    {
+        if (length < 2)
+        {
+            return false;
+        }
+        int len = firstFrameLength(data[0], data[1]);
+        if (len < FirstFrameMinLength || len > static_cast<int>(MAX_UDS_PAYLOAD_LEN))
+        {
+            // Too short to be a first frame, or longer than anything a Toyota module sends (§8.3): dropped.
+            return false;
+        }
+        reset();
+        expected = static_cast<uint16_t>(len);
+        int take = length - 2;
+        if (take > len)
+        {
+            take = len;
+        }
+        memcpy(buffer, data + 2, take);
+        received = static_cast<uint16_t>(take);
+        nextSequence = FirstSequence;
+        inProgress = true;
+        return false;
+    }
+    case ConsecutiveFrame:
+    {
+        if (!inProgress)
+        {
+            return false; // consecutive frame without a first frame: not ours or already abandoned
+        }
+        int seq = sequenceNumber(data[0]);
+        if (seq != nextSequence)
+        {
+            abandoned++;
+            reset();
+            return false;
+        }
+        nextSequence = static_cast<uint8_t>(IsoTpFraming::nextSequence(nextSequence));
+        int take = length - 1;
+        if (take > expected - received)
+        {
+            take = expected - received;
+        }
+        memcpy(buffer + received, data + 1, take);
+        received = static_cast<uint16_t>(received + take);
+        if (received >= expected)
+        {
+            inProgress = false;
+            return true;
+        }
+        return false;
+    }
+    default:
+        // FlowControl, or anything else: not part of a message on this id
+        return false;
+    }
+}
+
+void Message_t::reset()
+{
+    expected = 0;
+    received = 0;
+    nextSequence = 0;
+    inProgress = false;
+}
+
+// ------------------------------------------------------------------ flow control (ToyotaLens FlowControl)
+
+FlowControl FlowControl::parse(const uint8_t *data)
+{
+    FlowControl fc;
+    fc.status = static_cast<uint8_t>(data[0] & IsoTpFraming::PciArgumentMask);
+    fc.blockSize = data[1];
+    fc.separationTimeUs = IsoTpFraming::separationTimeMicroseconds(data[2]);
+    return fc;
+}
+
+void FlowControl::continueAll(uint8_t frame[IsoTpFraming::FrameLength])
+{
+    memset(frame, IsoTpFraming::Padding, IsoTpFraming::FrameLength);
+    frame[0] = IsoTpFraming::flowControlPci(IsoTpFraming::FlowStatusContinueToSend);
+    frame[1] = IsoTpFraming::BlockSizeAll;
+    frame[2] = IsoTpFraming::SeparationTimeNone;
+}
+
+// ------------------------------------------------------------------ the channel (ToyotaLens IsoTpChannel)
+
+IsoTp::IsoTp(TwaiWrapper *can) : can_(can)
+{
+}
+
+void IsoTp::target(uint32_t requestId)
+{
+    txId_ = requestId;
+    rxId_ = requestId + Services::ResponseIdOffset;
+}
+
+size_t IsoTp::request(const uint8_t *payload, size_t payloadLength, uint32_t timeoutMs, uint8_t *reply,
+                      size_t replyCapacity)
+{
+    if (txId_ == 0)
+    {
+        LOG_ERROR("target() before request()");
+        return 0;
+    }
+    if (!can_->isOpen())
+    {
+        LOG_ERROR("ISF bus not open");
+        return 0;
+    }
+    can_->drain();
+    if (!sendMessage(payload, payloadLength))
+    {
+        return 0;
+    }
+    return receiveReply(timeoutMs, reply, replyCapacity);
+}
+
+// §5.1 send
+
+bool IsoTp::sendMessage(const uint8_t *payload, size_t payloadLength)
+{
+    using namespace IsoTpFraming;
+    size_t frames = segmentCount(payloadLength);
+    if (frames == 0)
+    {
+        LOG_ERROR("ISO-TP message too long: %u > %d", static_cast<unsigned>(payloadLength), MaxMessageLength);
+        return false;
+    }
+    uint8_t frame[FrameLength];
+    segment(payload, payloadLength, 0, frame);
+    if (!send(frame))
+    {
+        return false;
+    }
+    if (frames == 1)
+    {
+        return true;
+    }
+    size_t next = 1;
+    int waits = 0;
+    uint64_t lastConsecutive = 0; // STmin is measured from the previous consecutive frame, across blocks too
+    while (next < frames)
+    {
+        ::FlowControl fc; // the struct, not IsoTpFraming::FlowControl (the PCI type)
+        if (!waitForFlowControl(fc))
+        {
+            LOG_WARN("%03lX: no flow control within N_Bs %lu ms; request abandoned",
+                     static_cast<unsigned long>(rxId_), static_cast<unsigned long>(bsTimeoutMs));
+            return false;
+        }
+        if (fc.wait())
+        {
+            if (++waits > waitFramesMax)
+            {
+                LOG_WARN("%03lX: %d wait flow controls; request abandoned", static_cast<unsigned long>(rxId_),
+                         waits);
+                return false;
+            }
+            continue;
+        }
+        if (fc.abort())
+        {
+            LOG_WARN("%03lX: flow control status %X (overflow); request abandoned",
+                     static_cast<unsigned long>(rxId_), fc.status);
+            return false;
+        }
+        waits = 0;
+        size_t remaining = frames - next;
+        size_t block = fc.blockSize == BlockSizeAll ? remaining
+                                                     : (static_cast<size_t>(fc.blockSize) < remaining
+                                                            ? static_cast<size_t>(fc.blockSize)
+                                                            : remaining);
+        for (size_t i = 0; i < block; i++)
+        {
+            if (lastConsecutive != 0)
+            {
+                pauseSince(lastConsecutive, fc.separationTimeUs); // N_Cs: the gap the ECU asked for
+            }
+            segment(payload, payloadLength, next++, frame);
+            if (!send(frame))
+            {
+                return false;
+            }
+            lastConsecutive = nowUs();
+        }
+    }
     return true;
 }
 
-void IsoTp::handle_udsError(uint8_t serviceId, uint8_t nrc_code, const char* param_name)
+bool IsoTp::waitForFlowControl(FlowControl &fc)
 {
-  LOG_ERROR("UDS Negative Response for Service ID 0x%X: %s (0x%X) | param: %s", serviceId, getUdsErrorString(nrc_code), nrc_code, (param_name ? param_name : ""));
-}
-
-bool IsoTp::isSupportedDiagnosticId(uint32_t rxId) {
-  return rxId >= 0x700 && rxId < 0x800;
-}
-
-bool IsoTp::handle_consecutive_frame(Message_t *msg, const uint8_t *rxBuffer, uint8_t rxLen)
-{
-    if (rxLen < 2) {
-        // Not enough data to process a CF
-        #ifdef ISO_TP_DEBUG
-            LOG_WARN("CF frame too short: rxLen = %u", rxLen);
-        #endif
-        return false;
-    }
-
-    uint8_t sequence_num = rxBuffer[0] & 0x0F;
-
-    if (sequence_num != msg->next_sequence) {
-        #ifdef ISO_TP_DEBUG
-            LOG_WARN("CF sequence mismatch: got %u, expected %u", sequence_num, msg->next_sequence);
-        #endif
-        return false;
-    }
-
-    uint16_t bytes_to_copy = (msg->remaining_bytes > 7) ? 7 : msg->remaining_bytes;
-    uint16_t offset = msg->bytes_received;
-
-    if (offset + bytes_to_copy > MAX_UDS_PAYLOAD_LEN) {
-        #ifdef ISO_TP_DEBUG
-            LOG_ERROR("Buffer overflow prevented: offset + bytes_to_copy = %u > %u", offset + bytes_to_copy, MAX_UDS_PAYLOAD_LEN);
-        #endif
-        return false;
-    }
-
-    memcpy(msg->Buffer + offset, rxBuffer + 1, bytes_to_copy);
-    msg->bytes_received += bytes_to_copy;
-    msg->remaining_bytes -= bytes_to_copy;
-
-    msg->sequence_number = sequence_num;
-    msg->next_sequence = (sequence_num + 1) & 0x0F;
-
-    #ifdef ISO_TP_INFO_PRINT
-        LOG_DEBUG("Appended CF: seq=%u, copied=%u, total_received=%u, remaining=%u", 
-                  sequence_num, bytes_to_copy, msg->bytes_received, msg->remaining_bytes);
-    #endif
-
-    if (msg->remaining_bytes == 0) {
-        msg->tp_state = ISOTP_FINISHED;
-        return true;
-    } else {
-        msg->tp_state = ISOTP_WAIT_DATA;
-        return false;
+    uint32_t deadline = nowMs() + bsTimeoutMs;
+    while (true)
+    {
+        int32_t remaining = static_cast<int32_t>(deadline - nowMs());
+        if (remaining <= 0)
+        {
+            return false;
+        }
+        uint32_t id;
+        uint8_t data[IsoTpFraming::FrameLength];
+        uint8_t len;
+        if (!can_->tryReceive(id, data, len, static_cast<uint32_t>(remaining)))
+        {
+            continue;
+        }
+        if (id != rxId_)
+        {
+            otherFrames++;
+            continue;
+        }
+        if (len >= FlowControl::Length && IsoTpFraming::pciType(data[0]) == IsoTpFraming::FlowControl)
+        {
+            fc = FlowControl::parse(data);
+            return true;
+        }
+        LOG_DEBUG("%03lX: data frame while waiting for flow control; ignored", static_cast<unsigned long>(rxId_));
     }
 }
 
-bool IsoTp::receive(Message_t *msg, const char* param_name)
+bool IsoTp::send(const uint8_t frame[IsoTpFraming::FrameLength])
 {
-  uint32_t rxId;
-  uint8_t rxLen = 0;
-  uint8_t rxBuffer[8] = {0};
-  uint32_t startTime = millis();
+    return can_->send(txId_, frame, IsoTpFraming::FrameLength);
+}
 
-  while (_twaiWrapper->receiveMessage(rxId, rxBuffer, rxLen) && (millis() - startTime) < UDS_TIMEOUT)
-  {
-      if (!isSupportedDiagnosticId(rxId)) {
-        continue;
-      }
+/// Waits until `microseconds` have passed since `sinceUs`. Sleeps for all but the last two milliseconds, then
+/// spins: STmin is a minimum, so overshooting is allowed, undershooting is not.
+void IsoTp::pauseSince(uint64_t sinceUs, int microseconds)
+{
+    constexpr int64_t SpinTailUs = 2000;
+    uint64_t until = sinceUs + static_cast<uint64_t>(microseconds);
+    int64_t sleepUs = static_cast<int64_t>(until - nowUs()) - SpinTailUs;
+    if (sleepUs > 0)
+    {
+        sleepMs(static_cast<uint32_t>(sleepUs / IsoTpFraming::MicrosecondsPerMillisecond));
+    }
+    while (nowUs() < until)
+    {
+    }
+}
 
-      // Safety: Cap rxLen to 8 to prevent buffer overflow
-      if (rxLen > 8) rxLen = 8;
+// §5.2 receive
 
-      // Handle UDS Negative Response: [0x03] [0x7F] [original SID] [NRC]
-      if ((rxBuffer[0] & 0xF0) == N_PCI_SF && rxLen >= 4 && rxBuffer[1] == UDS_NEGATIVE_RESPONSE) 
-      {
-        msg->tp_state = ISOTP_ERROR;
-        uint8_t nrc_code = rxBuffer[3];
-        handle_udsError(msg->service_id, nrc_code, param_name);
-        return false;
-      }
-
-      //Skip messages that are not for this message
-      if(msg->rx_id != rxId) {
-        continue;
-      }
-     
-      uint8_t pciType = rxBuffer[0] & 0xF0;
-
-      if(pciType == N_PCI_SF) // Single Frame
-      {
-        #ifdef ISO_TP_INFO_PRINT
-            LOG_DEBUG("Single-Frame received");
-        #endif
-
-        msg->length = rxLen;
-        return handle_single_frame(msg, rxBuffer);
-      }
-      else if(pciType == N_PCI_FF) // First Frame
-      {
-        //FF example:
-        //8,10,30,61,21,00,00,00,00
-
-        if (handle_first_frame(msg, rxBuffer))
+size_t IsoTp::receiveReply(uint32_t timeoutMs, uint8_t *reply, size_t replyCapacity)
+{
+    reassembler_.reset();
+    reassembler_.id = rxId_;
+    uint32_t deadline = nowMs() + timeoutMs; // P2: the first response frame
+    int pending = 0;
+    while (true)
+    {
+        int32_t remaining = static_cast<int32_t>(deadline - nowMs());
+        if (remaining <= 0)
         {
-          #ifdef ISO_TP_INFO_PRINT
-            LOG_DEBUG("First-Frame handled successfully");
-          #endif
-          continue;
+            if (reassembler_.inProgress)
+            {
+                abandoned++;
+                LOG_WARN("%03lX: next consecutive frame did not arrive within N_Cr %lu ms; reply abandoned",
+                         static_cast<unsigned long>(rxId_), static_cast<unsigned long>(crTimeoutMs));
+            }
+            return 0; // silence is not an error (§8.5)
         }
-        else
+        uint32_t id;
+        uint8_t data[IsoTpFraming::FrameLength];
+        uint8_t len;
+        if (!can_->tryReceive(id, data, len, static_cast<uint32_t>(remaining)))
         {
-          msg->reset();
-          return false;
+            continue;
         }
-      }
-      else if(pciType == N_PCI_CF) // Consecutive Frame
-      {
-        //CF example:
-        // 21,80,02,00,80,00,00,00
-        // 22,00,00,00,00,00,00,00
-        // 23,00,01,00,00,00,00,51
-        // 24,42,65,3A,00,00,00,00
-        // 25,00,00,2C,7E,29,55,2C
-        // 26,01,00,00,0C,8F,34,1B
-
-        if(handle_consecutive_frame(msg, rxBuffer, rxLen))
+        if (id != rxId_)
         {
-          #ifdef ISO_TP_INFO_PRINT
-            LOG_DEBUG("Consecutive-Frame handled successfully. Len %d, received %d, remaining %d", msg->length, msg->bytes_received, msg->remaining_bytes);
-          #endif
-          return true;
+            otherFrames++; // software filter: other modules, our own echo
+            continue;
         }
-        else
+        if (len == 0 || IsoTpFraming::pciType(data[0]) == IsoTpFraming::FlowControl)
         {
-          startTime = millis();
-          continue;
+            continue; // an FC is for the ECU's own sends
         }
-      }
+        bool wasInProgress = reassembler_.inProgress;
+        int abandonedBefore = reassembler_.abandoned;
+        bool complete = reassembler_.feed(data, len);
+        if (reassembler_.abandoned > abandonedBefore)
+        {
+            abandoned++;
+            LOG_WARN("%03lX: consecutive frame out of sequence (%02X); reply abandoned",
+                     static_cast<unsigned long>(rxId_), data[0]);
+            return 0;
+        }
+        if (complete)
+        {
+            if (isResponsePending(reassembler_.buffer, reassembler_.expected))
+            {
+                if (++pending > maxResponsePending)
+                {
+                    LOG_WARN("%03lX: %d response-pending frames (7F %02X 78); giving up, treated as no reply",
+                             static_cast<unsigned long>(rxId_), pending, reassembler_.buffer[1]);
+                    return 0;
+                }
+                LOG_INFO("%03lX: response pending (7F %02X 78); waiting up to P2* %lu ms",
+                         static_cast<unsigned long>(rxId_), reassembler_.buffer[1],
+                         static_cast<unsigned long>(responsePendingMs));
+                deadline = nowMs() + responsePendingMs;
+                continue;
+            }
+            size_t n = reassembler_.expected;
+            if (n > replyCapacity)
+            {
+                n = replyCapacity;
+            }
+            memcpy(reply, reassembler_.buffer, n);
+            return n;
+        }
+        if (!wasInProgress && reassembler_.inProgress)
+        {
+            // The ECU's first frame: answer with flow control at once (N_Br = 0), then each CF within N_Cr.
+            uint8_t fc[IsoTpFraming::FrameLength];
+            FlowControl::continueAll(fc);
+            can_->send(txId_, fc, IsoTpFraming::FrameLength);
+        }
+        if (reassembler_.inProgress)
+        {
+            deadline = nowMs() + crTimeoutMs;
+        }
+    }
+}
 
-      vTaskDelay(pdMS_TO_TICKS(1));
-  }
-
-  msg->reset();
-  return false;
+bool IsoTp::isResponsePending(const uint8_t *payload, size_t length)
+{
+    return length >= static_cast<size_t>(Services::NegativeResponseLength) && payload[0] == Services::NegativeResponse &&
+           payload[2] == Nrc::ResponsePending;
 }

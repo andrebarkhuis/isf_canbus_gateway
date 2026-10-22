@@ -2,3 +2,11 @@
 desktop.ini
 .venv
 .cursor
+.pio
+sdkconfig.esp32-can-x2
+sdkconfig.old
+
+# PlatformIO regenerates these with machine-specific paths
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch/

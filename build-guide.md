@@ -1,55 +1,59 @@
-# 🛠️ Build Instructions – ESP32 Arduino Project
+# Build Guide
 
-This guide walks you through building the **ISF CAN‑Bus Gateway** for ESP32 using either the Arduino CLI or the Arduino IDE.
+The gateway is an ESP-IDF application built with PlatformIO. There is no Arduino framework and no Arduino IDE in
+the loop.
 
-## ✅ Prerequisites
+## Prerequisites
 
-| Requirement             | Version / Notes                                                                                                                                  |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Arduino CLI**        | v0.35 or newer installed and available on your`PATH`. ➡️ [Installation guide](https://arduino.github.io/arduino-cli/0.35/installation/) |
-| **ESP32 board support** | Core installed via**Arduino CLI**: `arduino-cli core install esp32:esp32`                                                                       |
+| Requirement | Notes |
+|---|---|
+| Python 3.10 or newer | PlatformIO is installed into the repository's own virtual environment. |
+| PlatformIO Core | `python -m venv .venv` then `.venv\Scripts\pip install -r requirements.txt`. The first `pio run` downloads the `espressif32` platform, ESP-IDF and the Xtensa toolchain into `%USERPROFILE%\.platformio` (several GB, once). |
+| Docker Desktop (optional) | Only for the host self-test, which compiles the protocol code with gcc in a container. |
 
-## ⚙️ Board Configuration (FQBN)
-
-```text
-esp32:esp32:aslcanx2
-```
-
-*Board details*: [https://wiki.autosportlabs.com/ESP32-CAN-X2](https://wiki.autosportlabs.com/ESP32-CAN-X2)
-
-## 🧪 Build Process
-
-### Arduino CLI
-
-> **Heads‑up:**
-> The include‑path flags **must mirror the folder names inside `/src`**.
-> If you add or rename sub‑directories, remember to update the `-I` paths below.
+## Compile
 
 ```bash
-arduino-cli compile 
-  --fqbn esp32:esp32:aslcanx2 
-  --build-property build.extra_flags="-I./src/common -I./src/can -I./src/services -I./src/uds -I./src/mcp_can -I./src/iso_tp" 
-  --build-property "compiler.cpp.extra_flags=-I./src/can -I./src/services -I./src/uds -I./src/mcp_can -I./src/iso_tp" 
-  --build-path ./.build 
-  --verbose .
+.venv\Scripts\pio run
 ```
 
-The command above will:
+Configuration lives in three files:
 
-1. Compile **`isf_canbus_gateway.ino`**
-2. Apply all required include paths
-3. Produce verbose output for easier debugging
-4. Place all build artifacts in **`./.build/`**
+- `platformio.ini` — environment `esp32-can-x2`: board `esp32-s3-devkitc-1`, `framework = espidf`, DIO flash, 4 MB.
+- `sdkconfig.defaults` — console on the native USB Serial/JTAG port, 1 ms FreeRTOS tick, no C++ exceptions,
+  custom partition table.
+- `partitions.csv` — one factory app partition of 3 MB.
 
-### Arduino IDE
+PlatformIO writes the merged configuration to `sdkconfig.esp32-can-x2` (ignored by git). To change a setting,
+edit `sdkconfig.defaults`, delete `sdkconfig.esp32-can-x2` and build again.
 
-Follow the step‑by‑step instructions in the official board guide:
-[https://wiki.autosportlabs.com/ESP32-CAN-X2#Step\_by\_step\_instruction\_for\_Arduino\_IDE](https://wiki.autosportlabs.com/ESP32-CAN-X2#Step_by_step_instruction_for_Arduino_IDE)
+Output: `.pio/build/esp32-can-x2/firmware.bin` (plus `bootloader.bin` and `partitions.bin`).
 
-## 📂 Output Artifacts
+## Regenerate the tables after editing the frame specification
 
-After a successful build, the following files will be located in **`./.build/`**:
+```bash
+python tools/generate.py
+```
 
-* `isf_canbus_gateway.ino.cpp`
-* `isf_canbus_gateway.ino.elf`
-* `isf_canbus_gateway.ino.bin`
+Reads `tools/gateway_frames.json` and `C:\projects\ToyotaLens\data\{engine,ect,abs}.json` (path in the JSON,
+override with `--toyotalens <dir>`), and writes `src/uds/uds_definitions.cpp`, `src/translator_table.cpp` and
+`gateway.dbc`. The generator refuses overlapping signals, unknown uniqueIds and signals that do not fit a frame.
+
+## Host self-test
+
+```bash
+bash test/host/run.sh        # add -v to see the session log and every frame
+```
+
+Compiles `src/isotp`, `src/uds`, `src/message_translator`, `src/services/isf_service` and the generated tables
+with gcc 14 in a Docker container, against a scripted CAN bus (`test/host/fake_bus.*`), and runs ToyotaLens's
+acceptance vectors: the specification's §1.6 frame examples, the ISO-TP channel cases (flow control, N_Bs, N_Cr,
+P2, response pending, sequence errors, the id filter), the §6.8 decode examples, the session interpreter, the
+translator, and an end-to-end discover-and-read of a scripted engine ECU. It ends with `RESULT: PASS` or
+`RESULT: FAIL`.
+
+## Clean build
+
+```bash
+.venv\Scripts\pio run -t clean
+```

@@ -1,0 +1,32 @@
+# ESP-IDF settings for the ISF CAN-bus gateway (ESP32-S3, ESP32-CAN-X2 board).
+# PlatformIO merges these into the generated sdkconfig on the first build.
+
+CONFIG_IDF_TARGET="esp32s3"
+
+# Console and logging go over the native USB Serial/JTAG port (the board's USB-C).
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESP_CONSOLE_UART=n
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+CONFIG_LOG_MAXIMUM_LEVEL_DEBUG=y
+CONFIG_LOG_COLORS=n
+
+# 1 ms tick so vTaskDelay() and the ISO-TP timers resolve to a millisecond.
+CONFIG_FREERTOS_HZ=1000
+
+# Flash: 4 MB, DIO, single factory app partition (partitions.csv).
+CONFIG_ESPTOOLPY_FLASHMODE_DIO=y
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions.csv"
+
+# No exceptions, no RTTI: the code uses neither.
+CONFIG_COMPILER_CXX_EXCEPTIONS=n
+CONFIG_COMPILER_CXX_RTTI=n
+
+# The two bus tasks pin to one core each; keep both cores on.
+CONFIG_FREERTOS_UNICORE=n
+
+# ESP-IDF 6.x deprecates driver/twai.h in favour of esp_twai.h; the classic driver is still shipped and is the
+# one proven on this board. Silence the deprecation warning (the build treats warnings as errors).
+CONFIG_TWAI_SUPPRESS_DEPRECATE_WARN=y

@@ -1,79 +1,44 @@
-#ifndef _TWAI_WRAPPER_H
-#define _TWAI_WRAPPER_H
+#pragma once
 
-#include <Arduino.h>
-#include <driver/twai.h>
-#include "../logger/logger.h"
-#include "../common.h"
-
-#define TWAI_DEBUG  0// Enable debug mode
-#define TWAI_INFO_PRINT 0
+#include <cstdint>
 
 /**
- * @brief Specialized wrapper for ESP32's TWAI (Two-Wire Automotive Interface) CAN controller
+ * @brief The ESP32's built-in CAN controller (TWAI) on the ISF bus, 500 kbit/s, pins TX 7 / RX 6.
  *
- * This class provides an implementation of the CanInterface for the ESP32's built-in
- * CAN controller (TWAI). It's primarily used for communicating with the GT86 CAN bus at 500kbps.
+ * This is the ICanTransport role of ToyotaLens (docs/direct-can-over-serial.md §4.2): one frame at a time and
+ * nothing more. It puts an 8-byte frame on the bus and hands back every frame that arrives; IsoTp does the
+ * segmentation, flow control, timers and id filtering on top of it. The header has no ESP-IDF types so the
+ * host self-test can substitute its own scripted implementation (test/host/fake_twai_wrapper.cpp).
  */
 class TwaiWrapper
 {
-private:
-    /** GPIO pin for TWAI TX (transmit) */
-    static const unsigned TWAI_TX = 7;
-
-    /** GPIO pin for TWAI RX (receive) */
-    static const unsigned TWAI_RX = 6;
-
-    /**
-     * @brief Check for and handle any TWAI alerts
-     *
-     * This method checks for bus errors, receive queue full conditions, and other alerts
-     * from the TWAI driver and logs them appropriately.
-     */
-    void checkAlerts();
-
-    bool isAcceptedDiagnosticId(uint16_t rxId);
-
 public:
-    /**
-     * @brief Construct a new TwaiWrapper instance
-     */
-    TwaiWrapper();
+    /// The interface column of the candump trace lines.
+    static constexpr const char *INTERFACE = "isf";
 
-    /**
-     * @brief Destroy the TwaiWrapper instance and clean up resources
-     */
+    TwaiWrapper();
     ~TwaiWrapper();
 
-    /**
-     * @brief Initialize the TWAI driver with appropriate settings
-     *
-     * Configures and starts the ESP32 TWAI driver with 500kbps baud rate
-     * and sets up the RX/TX pins defined in the class.
-     *
-     * @return true if initialization was successful, false otherwise
-     */
+    /// Installs and starts the TWAI driver at 500 kbit/s with an accept-all filter.
     bool initialize();
 
-    /**
-     * @brief Send a CAN message to the GT86 CAN bus
-     *
-     * @param id Reference to the ID of the message to send
-     * @param data Buffer to the data to send
-     * @param len Reference to the length of the data to send
-     * @return true if message was sent successfully
-     */
-    bool sendMessage(uint32_t id, uint8_t *data, uint8_t len);
+    bool isOpen() const;
 
-    /**
-     * @brief Check if a CAN message is available and receive it
-     *
-     * @param id Reference to the ID of the received message
-     * @param data Buffer to the data of the received message
-     * @param len Reference to the length of the data of the received message
-     * @return true if a message was received
-     */
-    bool receiveMessage(uint32_t &id, uint8_t *data, uint8_t &len);
+    /// Puts one frame on the bus; false when the driver did not accept it within N_As. Every frame is traced.
+    bool send(uint32_t id, const uint8_t *data, uint8_t len);
+
+    /// The next received frame, any id; false when none arrived within `timeoutMs`. Every frame is traced.
+    bool tryReceive(uint32_t &id, uint8_t *data, uint8_t &len, uint32_t timeoutMs);
+
+    /// Empties the receive queue, like IOCTL_CLEAR_RX_BUFFER before a request.
+    void drain();
+
+    /// Reads the driver's alerts: logs bus errors and starts recovery from bus-off, the one condition that is a
+    /// bus fault (specification §8.5); a silent ECU never is.
+    void checkAlerts();
+
+private:
+    static constexpr int TWAI_TX = 7;
+    static constexpr int TWAI_RX = 6;
+    bool open_ = false;
 };
-
-#endif

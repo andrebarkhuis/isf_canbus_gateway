@@ -1,163 +1,147 @@
-#ifndef _ISF_SERVICE_H
-#define _ISF_SERVICE_H
+#pragma once
 
-#include <Arduino.h>
-#include "../common.h"
-#include "../can/twai_wrapper.h"
-#include "../isotp/iso_tp.h"
+#include <cstddef>
 #include <cstdint>
-#include <string_view>
-#include <optional>
-#include <array>
+
+#include "common.h"
+#include "isotp/iso_tp.h"
+#include "message_translator.h"
+#include "uds/uds_mapper.h"
 
 class TwaiWrapper;
-class IsoTp;
 
-#define DEBUG_ISF
+/// One of the three control units in scope (ToyotaLens `ModuleDefinition` / `Modules`, requirements R3).
+struct ModuleDefinition
+{
+    const char *key;   // engine | ect | abs
+    const char *name;
+    uint32_t requestId;
 
-
-
-// Helper enum to tag the C++ type
-enum class ValueType : uint8_t {
-    Float,
-    UInt16,
-    UInt32,
-    Boolean
+    /// §1.1: the module answers on request id + 8 (7E0 -> 7E8).
+    uint32_t responseId() const
+    {
+        return requestId + Services::ResponseIdOffset;
+    }
 };
 
-struct UnitTypeInfo {
-    uint8_t                 id;
-    std::string             name;
-    std::string             description;
-    std::optional<float>    minValue;
-    std::optional<float>    maxValue;
-    ValueType               valueType;
+namespace Modules
+{
+constexpr ModuleDefinition Engine = {"engine", "Engine", 0x7E0};
+constexpr ModuleDefinition Ect = {"ect", "ECT", 0x7E1};
+constexpr ModuleDefinition Abs = {"abs", "ABS/VSC/TRAC", 0x7B0};
+constexpr ModuleDefinition All[] = {Engine, Ect, Abs};
+constexpr int Count = 3;
+} // namespace Modules
+
+/// What one request got back, as the session interprets it (ToyotaLens `ReplyType`).
+enum class ReplyType : uint8_t
+{
+    Silent,     // no reply before the timeout
+    Negative,   // 7F xx NRC: the module refused the request
+    Map,        // E8 11: a response data map (§3.3), stored on the module
+    Bitmap,     // 61 x0: a support bitmap (§3.2), merged into the supported set
+    Block,      // 61 xx: a data block, decoded
+    Other       // anything else
 };
 
-// Array of all infos, in increasing Id order
-inline const std::array<UnitTypeInfo, 32> unitTypeInfos{{
-    { 0,   "GENERAL",            "Generic / ECU Identifiers",         std::nullopt,    std::nullopt,    ValueType::Boolean },
-    { 1,   "ACCELERATION",       "Acceleration, Gradient",              -10.0f,          10.0f,           ValueType::Float },
-    { 2,   "G_FORCE",            "G-force sensors",                     -5.0f,           5.0f,            ValueType::Float },
-    { 3,   "ACCEL_REQUEST",      "Acceleration request signals",        0.0f,            100.0f,          ValueType::Float },
-    { 4,   "DECELERATION",       "Deceleration sensor",                 -10.0f,          10.0f,           ValueType::Float },
-    { 5,   "IGNITION_FEEDBACK",  "Ignition timing and feedback",        -20.0f,          60.0f,           ValueType::Float },
-    { 6,   "ANGLE_SENSOR",       "Absolute angles (Steering, Pinion)",  -900.0f,         900.0f,          ValueType::Float },
-    { 7,   "YAW_RATE",           "Yaw rate sensors",                    -200.0f,         200.0f,          ValueType::Float },
-    { 9,   "CURRENT_SENSOR",     "Current draw sensors (Throttle, Clutch)", -50.0f, 50.0f,     ValueType::Float },
-    { 11,  "PM_SENSOR",          "Particulate Matter Sensors",              0.0f,            1000.0f,         ValueType::Float },
-    { 13,  "DISTANCE",           "Distance / Mileage / Odometer-related",   0.0f, 999999.0f,   ValueType::Float },
-    { 14,  "FORWARD_DISTANCE",   "Forward vehicle distance measurement",    0.0f,    300.0f,       ValueType::Float },
-    { 17,  "ODOMETER",           "Odometer history and mileage",            0.0f,            999999.0f,       ValueType::UInt32 },
-    { 18,  "BATTERY_STATUS",     "Battery charge, hybrid systems",          0.0f,            100.0f,          ValueType::Float },
-    { 19,  "POWER_MANAGEMENT",   "Request Power, Wout Control",             0.0f,            100.0f,          ValueType::Float },
-    { 22,  "HYBRID_BATTERY",     "Hybrid / EV Battery power levels",        0.0f,            500.0f,          ValueType::Float },
-    { 23,  "FUEL_SYSTEM",        "Fuel system-related parameters",          0.0f,            100.0f,          ValueType::Float },
-    { 24,  "FUEL_INJECTION",     "Injection volume, fuel pump parameters",  0.0f, 200.0f,    ValueType::Float },
-    { 25,  "CRUISE_CONTROL",     "Cruise control request forces",             0.0f,            100.0f,          ValueType::Float },
-    { 29,  "FREQUENCY_SENSOR",   "Frequency-based sensors (Motor, Generator)", 0.0f, 5000.0f, ValueType::UInt16 },
-    { 30,  "ILLUMINATION_SENSOR","Light control, brightness",         0.0f,            100000.0f,       ValueType::UInt32 },
-    { 32,  "EXHAUST_SENSOR",     "NOx and exhaust emissions",         0.0f,            1000.0f,         ValueType::Float },
-    { 33,  "LOAD_FUEL_TRIM",     "Load calculations, Fuel trims",     0.0f,            100.0f,          ValueType::Float },
-    { 34,  "MAP_TIRE_PRESSURE",  "Manifold Pressure and Tire Inflation sensors", 10.0f, 400.0f, ValueType::Float },
-    { 39,  "ENGINE_RPM",         "Engine Speed, RPM",                 0.0f,            10000.0f,        ValueType::UInt16 },
-    { 42,  "SPEED_SENSOR",       "Vehicle Speed Sensors",             0.0f,            300.0f,          ValueType::UInt16 },
-    { 48,  "VOLTAGE_SENSOR",     "Oxygen Sensor, Solar Voltage, Battery Voltage", 0.0f, 18.0f, ValueType::Float },
-    { 57,  "TEMPERATURE_SENSOR", "Coolant Temperature, Intake Air Temp",    -40.0f, 150.0f,   ValueType::Float },
-    { 58,  "TORQUE_SENSOR",      "Steering, Motor, Brake Torque",           -500.0f,         1000.0f,         ValueType::Float },
-    { 59,  "POSITION_SENSOR",    "Throttle, Clutch, ASL Gear Position",     0.0f,   100.0f,        ValueType::Float },
-    { 66,  "AMBIENT_TEMP",       "Outside temperature sensors",             -50.0f,          60.0f,           ValueType::Float },
-    { 75,  "MASS_AIR_FLOW",      "MAF Sensors (filtered & raw values)",     0.0f,    655.0f,        ValueType::Float }
-}};
+/// Where translated frames go (main.cpp queues them for the GT86 task).
+typedef void (*FrameSink)(const CANMessage &frame);
 
-//NB: Interval is set to 0 to disable the interval timer.
-const CANMessage isf_pid_session_requests[] = {
-        { .id = 0x700, .data = {0x02, UDS_SID_TESTER_PRESENT, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, .len = 8, .extended = false, .interval = 0, .param_name = "Not sure" },    
-        { .id = 0x7E0, .data = {0x01, UDS_SID_TESTER_PRESENT, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, .len = 8, .extended = false, .interval = 0, .param_name = "Not sure" },
-        { .id = 0x7E2, .data = {0x01, UDS_SID_TESTER_PRESENT, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, .len = 8, .extended = false, .interval = 0, .param_name = "Not sure" },
-};
-
-const CANMessage isf_pid_requests[] = {
-    { .id = 0x7DF, .data = {0x02, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 }, .len = 8, .extended = false, .interval = 0, .param_name = "Number of DTCs" },
-    { .id = 0x7DF, .data = {0x02, 0x01, 0x0C, 0x00, 0x00, 0x00, 0x00, 0x00 }, .len = 8, .extended = false, .interval = 0, .param_name = "Engine RMP" },
-    { .id = 0x7DF, .data = {0x02, 0x01, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00 }, .len = 8, .extended = false, .interval = 0, .param_name = "Intake Air Temp" },
-    { .id = 0x7DF, .data = {0x02, 0x01, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00 }, .len = 8, .extended = false, .interval = 0, .param_name = "Engine Coolant Temperature" },
-};
-
-const UDSRequest isf_uds_requests[] = {
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x03, .interval = 100, .param_name = "request-0x03",  .length = 3, .payload = {0x02, 0x21, 0x03} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-0x04",  .length = 3, .payload = {0x02, 0x21, 0x04} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x05, .interval = 100, .param_name = "request-0x05",  .length = 3, .payload = {0x02, 0x21, 0x05} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06",  .length = 3, .payload = {0x02, 0x21, 0x06} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x21, .interval = 100, .param_name = "request-0x21",  .length = 3, .payload = {0x02, 0x21, 0x21} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x3C, .interval = 100, .param_name = "request-0x3C",  .length = 3, .payload = {0x02, 0x21, 0x3C} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x41, .interval = 100, .param_name = "request-0x41",  .length = 3, .payload = {0x02, 0x21, 0x41} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0x85, .interval = 100, .param_name = "request-0x85",  .length = 3, .payload = {0x02, 0x21, 0x85} },
-        // { .tx_id = 0x7B0, .rx_id = 0x7B8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1",  .length = 3, .payload = {0x02, 0x21, 0xE1} },
-        
-        { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xC1, .interval = 100, .param_name = "request-0xC1", .length = 3, .payload = {0x02, 0x21, 0xC1} },
-        { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-0x01", .length = 3, .payload = {0x02, 0x21, 0x01} },
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x04, .interval = 100, .param_name = "request-0x04", .length = 3, .payload = {0x02, 0x21, 0x04} },
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06", .length = 3, .payload = {0x02, 0x21, 0x06} },
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-0x25", .length = 3, .payload = {0x02, 0x21, 0x25} }, Returns error, not all bytes are returned
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x37, .interval = 100, .param_name = "request-0x37", .length = 3, .payload = {0x02, 0x21, 0x37} }, Retruns error, not all bytes are returned
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x39, .interval = 100, .param_name = "request-0x39", .length = 3, .payload = {0x02, 0x21, 0x39} },
-        { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x41, .interval = 100, .param_name = "request-0x41", .length = 3, .payload = {0x02, 0x21, 0x41} },
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x51, .interval = 100, .param_name = "request-0x51", .length = 3, .payload = {0x02, 0x21, 0x51} },
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x52, .interval = 100, .param_name = "request-0x52", .length = 3, .payload = {0x02, 0x21, 0x52} },
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-0x82", .length = 3, .payload = {0x02, 0x21, 0x82} }, UDS_NRC_SUB_FUNCTION_NOT_SUPPORTED (0x12)
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-0x83", .length = 3, .payload = {0x02, 0x21, 0x83} }, UDS_NRC_SUB_FUNCTION_NOT_SUPPORTED (0x12)
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0x85, .interval = 100, .param_name = "request-0x85", .length = 3, .payload = {0x02, 0x21, 0x85} }, UDS_NRC_SUB_FUNCTION_NOT_SUPPORTED (0x12)
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1", .length = 3, .payload = {0x02, 0x21, 0xE1} },
-        // { .tx_id = 0x7E0, .rx_id = 0x7E8, .service_id = 0x21, .pid = 0, .did = 0xE3, .interval = 100, .param_name = "request-0xE3", .length = 3, .payload = {0x02, 0x21, 0xE3} },
-        
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x01, .interval = 100, .param_name = "request-0x01", .length = 3, .payload = {0x02, 0x21, 0x01} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x06, .interval = 100, .param_name = "request-0x06", .length = 3, .payload = {0x02, 0x21, 0x06} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x25, .interval = 100, .param_name = "request-0x25", .length = 3, .payload = {0x02, 0x21, 0x25} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x82, .interval = 100, .param_name = "request-0x82", .length = 3, .payload = {0x02, 0x21, 0x82} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0x83, .interval = 100, .param_name = "request-0x83", .length = 3, .payload = {0x02, 0x21, 0x83} },
-        // { .tx_id = 0x7E1, .rx_id = 0x7E9, .service_id = 0x21, .pid = 0, .did = 0xE1, .interval = 100, .param_name = "request-0xE1", .length = 3, .payload = {0x02, 0x21, 0xE1} }
-   };
-
-
-const int PID_REQUESTS_SIZE = sizeof(isf_pid_requests) / sizeof(isf_pid_requests[0]);
-const int SESSION_REQUESTS_SIZE = sizeof(isf_pid_session_requests) / sizeof(isf_pid_session_requests[0]);
-const int ISF_UDS_REQUESTS_SIZE = sizeof(isf_uds_requests) / sizeof(isf_uds_requests[0]);
-
+/**
+ * @brief The one place that speaks Toyota Mode 21 to the ISF modules: the port of ToyotaLens `EcuSession`
+ * (specification §3, §5) plus the polling loop of its `LiveStream`.
+ *
+ * Every reply goes through one `interpret`: it learns support bitmaps and data maps and decodes data blocks.
+ * `discover` probes a module (21 00; any reply means present), walks the bitmaps and fetches the data maps of
+ * the blocks the gateway polls. `listen` is the task loop body: discovery while a module is silent (retried
+ * every RediscoverMs, as the ToyotaLens watch does while WAITING FOR CAR), then one polling step. A module's
+ * silence is never a bus fault (§8.5).
+ */
 class IsfService
 {
 public:
+    /// §3.7 / §8.1 P2: a present module answers 21 00 within 100 ms; 700 ms bounds the cost of an absent one.
+    static constexpr uint32_t ProbeTimeoutMs = 700;
+    /// §8.1 P2 for data: multi-frame blocks and slow modules finish well within 2 s.
+    static constexpr uint32_t DataTimeoutMs = 2000;
+    /// An absent module is probed again this often.
+    static constexpr uint32_t RediscoverMs = 3000;
+    /// Blocks polled every cycle; every other polled block takes its turn, one per cycle.
+    static constexpr int MaxFastBlocks = 4;
+    static constexpr int MaxPolledBlocks = 24;
+    static constexpr int MaxSupported = 255;
+    static constexpr int MaxValuesPerBlock = 64;
+
     IsfService();
     ~IsfService();
 
+    /// Opens the ISF bus and the ISO-TP channel.
     bool initialize();
+    /// One step of the session (call repeatedly from the task loop).
     void listen();
 
+    void setFrameSink(FrameSink sink)
+    {
+        sink_ = sink;
+    }
+
+    /// Set the timers short for the self-test.
+    uint32_t probeTimeoutMs = ProbeTimeoutMs;
+    uint32_t dataTimeoutMs = DataTimeoutMs;
+    uint32_t rediscoverMs = RediscoverMs;
+
+    /// Learnt per module from the 21 x0 bitmaps (R4.1).
+    struct ModuleState
+    {
+        const ModuleDefinition *module = nullptr;
+        bool present = false;
+        uint32_t lastProbeMs = 0;
+        bool supported[MaxSupported + 1] = {false};
+        int supportedCount = 0;
+        /// The blocks with definitions that the module supports, with their maps (R4.2) once learnt.
+        uint8_t polled[MaxPolledBlocks];
+        int polledCount = 0;
+        ResponseDataMap maps[MaxPolledBlocks];
+        bool hasMap[MaxPolledBlocks] = {false};
+    };
+
+    /// Classifies one reply, learns from it (bitmap, map) and decodes it (block). Public for the self-test.
+    ReplyType interpret(ModuleState &m, const uint8_t *request, size_t requestLength, const uint8_t *reply,
+                        size_t replyLength, uint8_t &nrc);
+
+    /// R3.3 / R4: probe the module (21 00; any reply means present), walk the support bitmaps, fetch the data
+    /// maps of the polled blocks not yet known. Returns false when the module is absent.
+    bool discover(ModuleState &m);
+
+    /// R5: read one block (21 <id>) and decode it through `interpret`; true when a block came back.
+    bool read(ModuleState &m, uint8_t parameterAddress);
+
+    ModuleState &state(int index)
+    {
+        return modules_[index];
+    }
+    MessageTranslator &translator()
+    {
+        return translator_;
+    }
+
+    /// For the self-test: run the session over a given channel instead of the real bus.
+    void attach(TwaiWrapper *twai, IsoTp *isotp);
+
 private:
-    bool initialize_diagnostic_session();
-    bool beginSend();
-    bool sendUdsRequest(Message_t& msg, const UDSRequest &request);
-    bool send_obd2_requests(const CANMessage* requests, int count);
-    bool processUdsResponse(Message_t& msg, const UDSRequest &request);
-    bool transformResponse(Message_t& msg, const UDSRequest &request);
+    size_t request(const ModuleDefinition &m, const uint8_t *payload, size_t length, uint32_t timeoutMs);
+    void decodeBlock(ModuleState &m, uint8_t parameterAddress, const uint8_t *raw, int rawLength);
+    int polledIndex(const ModuleState &m, uint8_t parameterAddress) const;
+    static bool isFastBlock(uint32_t requestId, uint8_t parameterAddress);
+    void fastStep(ModuleState &m);
+    bool slowStep();
 
-    // CAN bus interface for communication with ECUs
-    TwaiWrapper *twai = nullptr;
-
-    // ISO-TP protocol handler for multi-frame messaging
-    IsoTp *isotp = nullptr;
-    
-    // Flag to track if a UDS request is currently in progress
-    bool is_session_active = false;
-    
-    // Response buffer for UDS communications
-    uint8_t udsResponseBuffer[MAX_MSGBUF];
-
-    // Array tracking last request time for each UDS request
-    unsigned long *lastUdsRequestTime = nullptr;
-
-    // Timestamp for the last diagnostic session initialization
-    unsigned long last_diagnostic_session_time_ = 0;
+    int slowRotation_ = 0;
+    TwaiWrapper *twai_ = nullptr;
+    IsoTp *isotp_ = nullptr;
+    bool ownsChannel_ = false;
+    FrameSink sink_ = nullptr;
+    MessageTranslator translator_;
+    ModuleState modules_[Modules::Count];
+    uint8_t reply_[MAX_UDS_PAYLOAD_LEN];
 };
-
-#endif // _ISF_SERVICE_H

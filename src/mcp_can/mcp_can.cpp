@@ -1,10 +1,51 @@
-#include "mcp_can.h"
-#include "mcp_can_dfs.h"
+#include "mcp_can/mcp_can.h"
+#include "mcp_can/mcp_can_dfs.h"
 
-#define spi_readwrite SPI.transfer
-#define spi_read() spi_readwrite(0x00)
-#define SPI_BEGIN() SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0))
-#define SPI_END() SPI.endTransaction()
+#include <cstring>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#include "logger/logger.h"
+
+// ---------------------------------------------------------------------------------------------------------
+// SPI primitives on the ESP-IDF SPI master driver. Each MCP2515 command is one full-duplex transaction with the
+// chip select held low for its whole length, exactly as the Arduino version did with SELECT / transfer x n /
+// UNSELECT. The register-level logic below the primitives is unchanged from the version verified on the bench.
+// ---------------------------------------------------------------------------------------------------------
+
+namespace
+{
+constexpr int PIN_SCK = 12;   // ESP32-CAN-X2: MCP2515 on SPI2 (FSPI) pins, CS on GPIO 10
+constexpr int PIN_MISO = 13;
+constexpr int PIN_MOSI = 11;
+constexpr int SPI_CLOCK_HZ = 10 * 1000 * 1000;
+constexpr spi_host_device_t SPI_HOST_ID = SPI2_HOST;
+/// The longest command: WRITE + address + up to 14 register bytes.
+constexpr size_t MAX_TRANSFER = 2 + 14;
+
+void delayMs(uint32_t ms)
+{
+    vTaskDelay(pdMS_TO_TICKS(ms));
+}
+} // namespace
+
+void MCP_CAN::transfer(const byte *tx, byte *rx, size_t length)
+{
+    if (spi == nullptr || length == 0 || length > MAX_TRANSFER)
+    {
+        return;
+    }
+    spi_transaction_t t = {};
+    t.length = length * 8;
+    t.tx_buffer = tx;
+    t.rx_buffer = rx;
+    esp_err_t err = spi_device_polling_transmit(spi, &t);
+    if (err != ESP_OK)
+    {
+        LOG_ERROR("MCP2515 SPI transfer failed: %d", err);
+    }
+}
 
 /*********************************************************************************************************
 ** Function name:           mcp2515_reset
@@ -12,16 +53,10 @@
 *********************************************************************************************************/
 void MCP_CAN::mcp2515_reset(void)
 {
-#ifdef SPI_HAS_TRANSACTION
-    SPI_BEGIN();
-#endif
-    MCP2515_SELECT();
-    spi_readwrite(MCP_RESET);
-    MCP2515_UNSELECT();
-#ifdef SPI_HAS_TRANSACTION
-    SPI_END();
-#endif
-    delay(10);
+    byte tx[1] = {MCP_RESET};
+    byte rx[1] = {0};
+    transfer(tx, rx, 1);
+    delayMs(10);
 }
 
 /*********************************************************************************************************
@@ -30,21 +65,10 @@ void MCP_CAN::mcp2515_reset(void)
 *********************************************************************************************************/
 byte MCP_CAN::mcp2515_readRegister(const byte address)
 {
-    byte ret;
-
-#ifdef SPI_HAS_TRANSACTION
-    SPI_BEGIN();
-#endif
-    MCP2515_SELECT();
-    spi_readwrite(MCP_READ);
-    spi_readwrite(address);
-    ret = spi_read();
-    MCP2515_UNSELECT();
-#ifdef SPI_HAS_TRANSACTION
-    SPI_END();
-#endif
-
-    return ret;
+    byte tx[3] = {MCP_READ, address, 0x00};
+    byte rx[3] = {0, 0, 0};
+    transfer(tx, rx, 3);
+    return rx[2];
 }
 
 /*********************************************************************************************************
@@ -53,22 +77,15 @@ byte MCP_CAN::mcp2515_readRegister(const byte address)
 *********************************************************************************************************/
 void MCP_CAN::mcp2515_readRegisterS(const byte address, byte values[], const byte n)
 {
-    byte i;
-#ifdef SPI_HAS_TRANSACTION
-    SPI_BEGIN();
-#endif
-    MCP2515_SELECT();
-    spi_readwrite(MCP_READ);
-    spi_readwrite(address);
+    byte count = n < CAN_MAX_CHAR_IN_MESSAGE ? n : CAN_MAX_CHAR_IN_MESSAGE;
+    byte tx[MAX_TRANSFER] = {MCP_READ, address};
+    byte rx[MAX_TRANSFER] = {0};
     // mcp2515 has auto-increment of address-pointer
-    for (i = 0; i < n && i < CAN_MAX_CHAR_IN_MESSAGE; i++)
+    transfer(tx, rx, 2 + count);
+    for (byte i = 0; i < count; i++)
     {
-        values[i] = spi_read();
+        values[i] = rx[2 + i];
     }
-    MCP2515_UNSELECT();
-#ifdef SPI_HAS_TRANSACTION
-    SPI_END();
-#endif
 }
 
 /*********************************************************************************************************
@@ -77,17 +94,9 @@ void MCP_CAN::mcp2515_readRegisterS(const byte address, byte values[], const byt
 *********************************************************************************************************/
 void MCP_CAN::mcp2515_setRegister(const byte address, const byte value)
 {
-#ifdef SPI_HAS_TRANSACTION
-    SPI_BEGIN();
-#endif
-    MCP2515_SELECT();
-    spi_readwrite(MCP_WRITE);
-    spi_readwrite(address);
-    spi_readwrite(value);
-    MCP2515_UNSELECT();
-#ifdef SPI_HAS_TRANSACTION
-    SPI_END();
-#endif
+    byte tx[3] = {MCP_WRITE, address, value};
+    byte rx[3] = {0, 0, 0};
+    transfer(tx, rx, 3);
 }
 
 /*********************************************************************************************************
@@ -96,22 +105,14 @@ void MCP_CAN::mcp2515_setRegister(const byte address, const byte value)
 *********************************************************************************************************/
 void MCP_CAN::mcp2515_setRegisterS(const byte address, const byte values[], const byte n)
 {
-    byte i;
-#ifdef SPI_HAS_TRANSACTION
-    SPI_BEGIN();
-#endif
-    MCP2515_SELECT();
-    spi_readwrite(MCP_WRITE);
-    spi_readwrite(address);
-
-    for (i = 0; i < n; i++)
+    byte count = n < (MAX_TRANSFER - 2) ? n : (MAX_TRANSFER - 2);
+    byte tx[MAX_TRANSFER] = {MCP_WRITE, address};
+    byte rx[MAX_TRANSFER] = {0};
+    for (byte i = 0; i < count; i++)
     {
-        spi_readwrite(values[i]);
+        tx[2 + i] = values[i];
     }
-    MCP2515_UNSELECT();
-#ifdef SPI_HAS_TRANSACTION
-    SPI_END();
-#endif
+    transfer(tx, rx, 2 + count);
 }
 
 /*********************************************************************************************************
@@ -120,18 +121,9 @@ void MCP_CAN::mcp2515_setRegisterS(const byte address, const byte values[], cons
 *********************************************************************************************************/
 void MCP_CAN::mcp2515_modifyRegister(const byte address, const byte mask, const byte data)
 {
-#ifdef SPI_HAS_TRANSACTION
-    SPI_BEGIN();
-#endif
-    MCP2515_SELECT();
-    spi_readwrite(MCP_BITMOD);
-    spi_readwrite(address);
-    spi_readwrite(mask);
-    spi_readwrite(data);
-    MCP2515_UNSELECT();
-#ifdef SPI_HAS_TRANSACTION
-    SPI_END();
-#endif
+    byte tx[4] = {MCP_BITMOD, address, mask, data};
+    byte rx[4] = {0, 0, 0, 0};
+    transfer(tx, rx, 4);
 }
 
 /*********************************************************************************************************
@@ -140,19 +132,10 @@ void MCP_CAN::mcp2515_modifyRegister(const byte address, const byte mask, const 
 *********************************************************************************************************/
 byte MCP_CAN::mcp2515_readStatus(void)
 {
-    byte i;
-#ifdef SPI_HAS_TRANSACTION
-    SPI_BEGIN();
-#endif
-    MCP2515_SELECT();
-    spi_readwrite(MCP_READ_STATUS);
-    i = spi_read();
-    MCP2515_UNSELECT();
-#ifdef SPI_HAS_TRANSACTION
-    SPI_END();
-#endif
-
-    return i;
+    byte tx[2] = {MCP_READ_STATUS, 0x00};
+    byte rx[2] = {0, 0};
+    transfer(tx, rx, 2);
+    return rx[1];
 }
 
 /*********************************************************************************************************
@@ -344,7 +327,7 @@ byte MCP_CAN::mcp2515_init(const byte canSpeed)
 {
     mcp2515_reset();
 
-    delay(10);
+    delayMs(10);
 
     byte res = mcp2515_configRate(canSpeed);
 
@@ -510,12 +493,12 @@ byte MCP_CAN::mcp2515_getNextFreeTXBuf(byte *txbuf_n) // get Next free txbuf
 ** Descriptions:            Default constructor for singleton pattern
 *********************************************************************************************************/
 MCP_CAN::MCP_CAN()
-    : SPICS(10)
+    : SPICS(10), spi(nullptr)
 {
 }
 
 MCP_CAN::MCP_CAN(byte _CS)
-    : SPICS(_CS)
+    : SPICS(_CS), spi(nullptr)
 {
 }
 
@@ -525,28 +508,43 @@ MCP_CAN::MCP_CAN(byte _CS)
 *********************************************************************************************************/
 byte MCP_CAN::begin()
 {
-    pinMode(SPICS, OUTPUT);
-    MCP2515_UNSELECT();
-
-    SPI.begin();
+    if (spi == nullptr)
+    {
+        spi_bus_config_t bus = {};
+        bus.sclk_io_num = PIN_SCK;
+        bus.miso_io_num = PIN_MISO;
+        bus.mosi_io_num = PIN_MOSI;
+        bus.quadwp_io_num = -1;
+        bus.quadhd_io_num = -1;
+        bus.max_transfer_sz = MAX_TRANSFER;
+        esp_err_t err = spi_bus_initialize(SPI_HOST_ID, &bus, SPI_DMA_DISABLED);
+        if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) // INVALID_STATE: the bus is already initialised
+        {
+            LOG_ERROR("spi_bus_initialize failed: %d", err);
+            return CAN_FAILINIT;
+        }
+        spi_device_interface_config_t dev = {};
+        dev.clock_speed_hz = SPI_CLOCK_HZ;
+        dev.mode = 0;
+        dev.spics_io_num = SPICS;
+        dev.queue_size = 1;
+        err = spi_bus_add_device(SPI_HOST_ID, &dev, &spi);
+        if (err != ESP_OK)
+        {
+            LOG_ERROR("spi_bus_add_device failed: %d", err);
+            spi = nullptr;
+            return CAN_FAILINIT;
+        }
+    }
 
     mcp2515_setCANCTRL_Mode(MODE_CONFIG);
 
     byte res = mcp2515_init(CAN_500KBPS);
-
-    // // Write full masks
-    // write_Mask(0, 0, 0x7FF);
-    // write_Mask(1, 0, 0x7FF);
-
-    // // Write filters
-    // write_Filt(0, 0, 0x7E8);
-    // write_Filt(1, 0, 0x7E0);
-    // write_Filt(2, 0, 0x7C8);
-    // write_Filt(3, 0, 0x7C0);
-    // write_Filt(4, 0, 0x7B8);
-    // write_Filt(5, 0, 0x7B0);
-
-    // delay(5);
+    if (res != MCP2515_OK)
+    {
+        LOG_ERROR("MCP2515 init failed (no answer on SPI?)");
+        return CAN_FAILINIT;
+    }
 
     res = mcp2515_setCANCTRL_Mode(MODE_NORMAL);
 
@@ -561,17 +559,17 @@ byte MCP_CAN::init_Mask(byte num, byte ext, unsigned long ulData)
 {
     byte res = MCP2515_OK;
 #if DEBUG_MCP_CAN
-    Serial.print("Begin to set Mask!!\r\n");
+    LOG_DEBUG("Begin to set Mask!!");
 #else
-    delay(5);
+    delayMs(5);
 #endif
     res = mcp2515_setCANCTRL_Mode(MODE_CONFIG);
     if (res > 0)
     {
 #if DEBUG_MCP_CAN
-        Serial.print("Enter setting mode fall\r\n");
+        LOG_DEBUG("Enter setting mode fall");
 #else
-        delay(5);
+        delayMs(5);
 #endif
         return res;
     }
@@ -591,16 +589,16 @@ byte MCP_CAN::init_Mask(byte num, byte ext, unsigned long ulData)
     if (res > 0)
     {
 #if DEBUG_MCP_CAN
-        Serial.print("Enter normal mode fall\r\n");
+        LOG_DEBUG("Enter normal mode fall");
 #else
-        delay(5);
+        delayMs(5);
 #endif
         return res;
     }
 #if DEBUG_MCP_CAN
-    Serial.print("set Mask success!!\r\n");
+    LOG_DEBUG("set Mask success!!");
 #else
-    delay(5);
+    delayMs(5);
 #endif
     return res;
 }
@@ -613,17 +611,17 @@ byte MCP_CAN::init_Filt(byte num, byte ext, unsigned long ulData)
 {
     byte res = MCP2515_OK;
 #if DEBUG_MCP_CAN
-    Serial.print("Begin to set Filter!!\r\n");
+    LOG_DEBUG("Begin to set Filter!!");
 #else
-    delay(5);
+    delayMs(5);
 #endif
     res = mcp2515_setCANCTRL_Mode(MODE_CONFIG);
     if (res > 0)
     {
 #if DEBUG_MCP_CAN
-        Serial.print("Enter setting mode fall\r\n");
+        LOG_DEBUG("Enter setting mode fall");
 #else
-        delay(5);
+        delayMs(5);
 #endif
         return res;
     }
@@ -662,16 +660,16 @@ byte MCP_CAN::init_Filt(byte num, byte ext, unsigned long ulData)
     if (res > 0)
     {
 #if DEBUG_MCP_CAN
-        Serial.print("Enter normal mode fall\r\nSet filter fail!!\r\n");
+        LOG_DEBUG("Enter normal mode fallSet filter fail!!");
 #else
-        delay(5);
+        delayMs(5);
 #endif
         return res;
     }
 #if DEBUG_MCP_CAN
-    Serial.print("set Filter success!!\r\n");
+    LOG_DEBUG("set Filter success!!");
 #else   
-    delay(5);
+    delayMs(5);
 #endif
 
     return res;
@@ -749,7 +747,7 @@ byte MCP_CAN::setMsg(unsigned long id, byte ext, byte len, byte rtr, byte *pData
     can_id = id;
     // dta_len     = min(len, MAX_CHAR_IN_MESSAGE);
     dta_len = len > MAX_CHAR_IN_MESSAGE ? MAX_CHAR_IN_MESSAGE : len;
-    rtr = rtr;
+    this->rtr = rtr;
     for (int i = 0; i < dta_len; i++)
     {
         dta[i] = *(pData + i);

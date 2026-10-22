@@ -1,541 +1,391 @@
-#include "isf_service.h"
-#include "../can/twai_wrapper.h"
-#include "../logger/logger.h"
-#include "../uds/uds_mapper.h"
-#include "../isotp/iso_tp.h"
-#include <algorithm>
-#include <cstdint> // <-- NEW
-#include <string>
-#include <unordered_map>
-#include <tuple>
-#include <optional>
-#include <set>
+#include "services/isf_service.h"
 
-/**
- * @brief Represents a decoded signal value from a CAN message
- *
- * Contains all the metadata about the signal as well as the decoded value
- * and formatted display value if available.
- */
-struct SignalValue
+#include <cstring>
+
+#include "can/twai_wrapper.h"
+#include "isotp/iso_tp.h"
+#include "logger/logger.h"
+
+namespace
 {
-    std::uint16_t obd2_request_id_hex;
-    std::uint16_t parameter_id_hex;
-    std::uint16_t uds_data_identifier_hex;
-    std::string parameter_name;
-    double value;
-    std::optional<std::string> display_value;
-    std::optional<const char *> unit_name;
-
-    // Constructor for signal values
-    SignalValue(
-        std::uint16_t obd2_id,
-        std::uint16_t param_id,
-        std::uint16_t data_id,
-        std::string name,
-        double val,
-        std::optional<std::string> display,
-        std::optional<const char *> unit) : obd2_request_id_hex(obd2_id),
-                                            parameter_id_hex(param_id),
-                                            uds_data_identifier_hex(data_id),
-                                            parameter_name(std::move(name)),
-                                            value(val),
-                                            display_value(display),
-                                            unit_name(unit)
-    {
-    }
+/// Blocks read every cycle: engine 21 01 (rpm, speed, coolant, throttle) and ABS 21 03 (wheel speeds).
+struct FastBlock
+{
+    uint32_t requestId;
+    uint8_t parameterAddress;
 };
+constexpr FastBlock FAST_BLOCKS[] = {{0x7E0, 0x01}, {0x7B0, 0x03}};
+} // namespace
 
 IsfService::IsfService()
 {
-    // Initialize the array with the correct size
-    lastUdsRequestTime = new unsigned long[ISF_UDS_REQUESTS_SIZE]();
+    for (int i = 0; i < Modules::Count; i++)
+    {
+        modules_[i].module = &Modules::All[i];
+    }
 }
 
 IsfService::~IsfService()
 {
-    delete isotp;
-    delete twai;
-    delete[] lastUdsRequestTime; // Clean up the array
+    if (ownsChannel_)
+    {
+        delete isotp_;
+        delete twai_;
+    }
 }
 
-/**
- * @brief Initializes the ISF service and CAN interface
- *
- * Sets up the CAN interface and validates that the UDS and ISO-TP objects
- * are properly initialized.
- *
- * @return true if initialization was successful, false otherwise
- */
 bool IsfService::initialize()
 {
-    // Initialize UDS response mappings
-    init_udsDefinitions();
-
-    // Create TwaiWrapper instance
-    twai = new TwaiWrapper();
-    if (twai == nullptr)
+    if (twai_ == nullptr)
     {
-        LOG_ERROR("Failed to create TwaiWrapper instance.");
+        twai_ = new TwaiWrapper();
+        isotp_ = new IsoTp(twai_);
+        ownsChannel_ = true;
+    }
+    if (!twai_->initialize())
+    {
+        LOG_ERROR("ISF bus failed to open");
         return false;
     }
-    else
-    {
-        LOG_INFO("TwaiWrapper instance created successfully.");
-    }
-
-    // Initialize the TwaiWrapper directly
-    bool initResult = twai->initialize();
-    if (!initResult)
-    {
-        LOG_ERROR("TwaiWrapper initialization failed.");
-        return false;
-    }
-    else
-    {
-        LOG_INFO("TwaiWrapper initialized successfully.");
-    }
-
-    // Create IsoTp instance
-    isotp = new IsoTp(twai);
-    if (isotp == nullptr)
-    {
-        LOG_ERROR("Failed to create IsoTp instance.");
-        return false;
-    }
-    else
-    {
-        LOG_INFO("IsoTp instance created successfully.");
-    }
-
-    // ISO-TP already initialized
-
-#ifdef DEBUG_ISF
-    LOG_DEBUG("Running on core %d", xPortGetCoreID());
-#endif
+    LOG_INFO("ISF session ready: %u parameter definitions, %u output frames",
+             static_cast<unsigned>(UDS_DEFINITIONS_COUNT), static_cast<unsigned>(OUTPUT_FRAMES_COUNT));
     return true;
 }
 
-/**
- * @brief Sends diagnostic session initialization messages
- *
- * Sends all predefined session initialization messages from isf_pid_session_requests
- * to prepare the ECUs for diagnostic communication.
- * Includes retry logic and appropriate delays between messages.
- *
- * @return true if all session messages were sent successfully, false otherwise
- */
-bool IsfService::initialize_diagnostic_session()
+void IsfService::attach(TwaiWrapper *twai, IsoTp *isotp)
 {
-    // Use the generic sender for session init array
-    return send_obd2_requests(isf_pid_session_requests, SESSION_REQUESTS_SIZE);
+    twai_ = twai;
+    isotp_ = isotp;
+    ownsChannel_ = false;
 }
 
-bool IsfService::send_obd2_requests(const CANMessage* requests, int count)
+size_t IsfService::request(const ModuleDefinition &m, const uint8_t *payload, size_t length, uint32_t timeoutMs)
 {
-    for (int i = 0; i < count; ++i)
-    {
-        CANMessage msg = requests[i];
+    isotp_->target(m.requestId);
+    return isotp_->request(payload, length, timeoutMs, reply_, sizeof(reply_));
+}
 
-        if (!twai->sendMessage(msg.id, msg.data, msg.len))
+// ------------------------------------------------------------------ the single interpreter
+
+ReplyType IsfService::interpret(ModuleState &m, const uint8_t *request, size_t requestLength, const uint8_t *reply,
+                                size_t replyLength, uint8_t &nrc)
+{
+    nrc = 0;
+    if (reply == nullptr || replyLength == 0)
+    {
+        return ReplyType::Silent;
+    }
+    if (reply[0] == Services::NegativeResponse && replyLength >= static_cast<size_t>(Services::NegativeResponseLength))
+    {
+        nrc = reply[2];
+        if (reply[1] == Services::ReadDataByLocalId && requestLength > 1)
         {
-            return false;
+            LOG_INFO("%s: negative response to %02X: NRC %02X %s (parameter address %02X)", m.module->name, reply[1],
+                     nrc, Nrc::name(nrc), request[1]);
         }
-
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
-
-    return true;
-}
-
-/**
- * @brief Main processing function that sends requests and receives messages
- *
- * This method should be called periodically from a task loop to:
- * 1. Send scheduled UDS requests to the ECU
- * 2. Process incoming CAN messages
- */
-void IsfService::listen()
-{
-    unsigned long current_time = millis();
-
-    if (current_time - last_diagnostic_session_time_ >= 2000)
-    {
-        if (initialize_diagnostic_session())
+        else
         {
-            last_diagnostic_session_time_ = current_time;
+            LOG_INFO("%s: negative response to %02X: NRC %02X %s", m.module->name, reply[1], nrc, Nrc::name(nrc));
         }
+        return ReplyType::Negative;
     }
-
-    //send_obd2_requests(isf_pid_requests, PID_REQUESTS_SIZE);
-
-    beginSend();
-
-    vTaskDelay(pdMS_TO_TICKS(5));
+    if (replyLength >= static_cast<size_t>(Services::DataMapHeaderLength) && reply[0] == Services::ReadDataMapReply &&
+        reply[1] == Services::ReadDataMapSubFunction)
+    {
+        ResponseDataMap map;
+        if (!ResponseDataMap::fromReply(reply, replyLength, map))
+        {
+            return ReplyType::Other;
+        }
+        int slot = polledIndex(m, map.parameterAddress);
+        if (slot >= 0)
+        {
+            m.maps[slot] = map;
+            m.hasMap[slot] = true;
+        }
+        LOG_INFO("%s: map 21 %02X: %d/%d present", m.module->name, map.parameterAddress, map.presentCount(),
+                 map.fullLength);
+        return ReplyType::Map;
+    }
+    if (replyLength >= static_cast<size_t>(Services::ReadDataHeaderLength) && reply[0] == Services::ReadDataByLocalIdReply)
+    {
+        int parameterAddress = reply[1];
+        const uint8_t *raw = reply + Services::ReadDataHeaderLength;
+        int rawLength = static_cast<int>(replyLength) - Services::ReadDataHeaderLength;
+        if (SupportBitmap::isBitmapId(parameterAddress) && rawLength >= SupportBitmap::Length)
+        {
+            uint8_t ids[SupportBitmap::MaxIds];
+            bool next = false;
+            int count = SupportBitmap::parse(parameterAddress, raw, rawLength, ids, next);
+            for (int i = 0; i < count; i++)
+            {
+                if (!m.supported[ids[i]])
+                {
+                    m.supported[ids[i]] = true;
+                    m.supportedCount++;
+                }
+            }
+            LOG_INFO("%s: bitmap 21 %02X -> %d ids%s", m.module->name, parameterAddress, count, next ? " (more)" : "");
+            (void)next;
+            return ReplyType::Bitmap;
+        }
+        decodeBlock(m, static_cast<uint8_t>(parameterAddress), raw, rawLength);
+        return ReplyType::Block;
+    }
+    return ReplyType::Other;
 }
 
-bool IsfService::beginSend()
+void IsfService::decodeBlock(ModuleState &m, uint8_t parameterAddress, const uint8_t *raw, int rawLength)
 {
-    if (is_session_active)
+    // Expand through the response data map when one is known (§3.3), then decode every parameter defined for
+    // the block (§6.8): ToyotaLens DecodedBlock.Decode.
+    int slot = polledIndex(m, parameterAddress);
+    const ResponseDataMap *map = (slot >= 0 && m.hasMap[slot]) ? &m.maps[slot] : nullptr;
+    uint8_t full[ResponseDataMap::MaxLayoutLength];
+    const uint8_t *block = raw;
+    int blockLength = rawLength;
+    if (map != nullptr)
     {
-        return false;
-    }
-
-    is_session_active = true; // Set session active for the entire batch
-
-    for (int i = 0; i < ISF_UDS_REQUESTS_SIZE; i++)
-    {
-        const UDSRequest &request = isf_uds_requests[i];
-
-        Message_t msg_to_send;
-        msg_to_send.tx_id = request.tx_id;
-        msg_to_send.rx_id = request.rx_id;
-        msg_to_send.service_id = request.service_id;
-        msg_to_send.data_id = request.did;
-        msg_to_send.length = request.length;
-
-        memcpy(msg_to_send.Buffer, request.payload, request.length);
-
-        sendUdsRequest(msg_to_send, request);
-
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-
-    is_session_active = false; // Clear session active after all requests
-    return true;
-}
-
-bool IsfService::sendUdsRequest(Message_t &msg, const UDSRequest &request)
-{
-    if (!isotp->send(&msg))
-    {
-        msg.reset();
-        return false;
-    }
-
-    if (!isotp->receive(&msg, request.param_name))
-    {
-        msg.reset();
-        return false;
-    }
-
-    processUdsResponse(msg, request);
-
-    msg.reset();
-    return true;
-}
-
-bool IsfService::processUdsResponse(Message_t &msg, const UDSRequest &request)
-{
-    // For now we only support Read Data By Local ID and Read Data By ID
-    switch (request.service_id)
-    {
-    case UDS_SID_READ_DATA_BY_LOCAL_ID: // Local Identifier (Techstream)
-    case UDS_SID_READ_DATA_BY_ID:
-        return transformResponse(msg, request);
-    default:
-        LOG_ERROR("Unsupported response SID: %02X", request.service_id);
-        return false;
-    }
-}
-
-/**
- * @brief Safely extracts raw data bits from a CAN data buffer.
- *
- * Ensures bit boundaries are valid before extracting.
- *
- * @param data            Raw data buffer (must be non-null)
- * @param byte_pos        Starting byte position to extract from
- * @param bit_offset      Bit offset within starting byte
- * @param bit_length      Total number of bits to extract
- * @param data_len        Length of the data buffer
- * @param raw_value       Output parameter - extracted raw value
- * @return true if extraction was successful, false on error
- */
-bool get_raw_value(
-    const uint8_t *data,
-    int8_t byte_pos,
-    int8_t bit_pos,
-    int8_t bit_length,
-    int8_t data_len,
-    uint32_t &raw_value)
-{
-    const int MAX_BIT_LENGTH = 32; 
-        
-    // Validate bit length range
-    if (bit_length <= 0 || bit_length > MAX_BIT_LENGTH)
-    {
-        LOG_ERROR("Invalid bit length: %d", bit_length);
-        return false;
-    }
-
-    // Validate starting byte position
-    if (byte_pos < 0 || byte_pos >= data_len)
-    {
-        LOG_ERROR("Invalid byte position: %d", byte_pos);
-        return false;
-    }
-
-    // Calculate how many bytes are needed
-    int8_t total_bit_offset = bit_pos + bit_length;
-    int8_t required_bytes = (total_bit_offset + 7) / 8;
-    int8_t end_byte = byte_pos + required_bytes;
-
-    if (end_byte > data_len)
-    {
-        LOG_ERROR("Invalid end byte: %d", end_byte);
-        return false;
-    }
-
-    // Copy exactly the bytes needed for this bitfield
-    uint32_t raw = 0;
-    memcpy(&raw, &data[byte_pos], required_bytes); // No more than needed
-
-    raw >>= bit_pos;
-
-    uint32_t mask = (bit_length == MAX_BIT_LENGTH) ? 0xFFFFFFFF : ((1U << bit_length) - 1);
-    raw_value = raw & mask;
-    
-    return true;
-}
-
-/**
- * @brief Safely extracts a single bit from a CAN data buffer.
- *
- * This function is optimized for single-bit extraction (like MIL status, warning flags, etc.)
- * and always extracts exactly 1 bit.
- *
- * @param data            Raw data buffer (must be non-null)
- * @param byte_pos        Starting byte position to extract from
- * @param bit_offset      Bit offset within starting byte (0-7)
- * @param data_len        Length of the data buffer
- * @param bit_value       Output parameter - extracted bit value (0 or 1)
- * @param param_name      Optional parameter name for logging context
- * @return true if extraction was successful, false on error
- */
-bool get_single_bit(
-    const uint8_t *data,
-    int8_t byte_pos,
-    int8_t bit_pos,
-    int8_t data_len,
-    uint8_t &bit_value,
-    const char *param_name)
-{
-    // Validate starting byte position
-    if (byte_pos < 0 || byte_pos >= data_len)
-    {
-        LOG_ERROR("Invalid byte position: %d (param: %s)", byte_pos, (param_name ? param_name : ""));
-        return false;
-    }
-
-    // Validate bit position within byte
-    if (bit_pos < 0 || bit_pos > 7)
-    {
-        LOG_ERROR("Invalid bit position: %d (param: %s)", bit_pos, (param_name ? param_name : ""));
-        return false;
-    }
-
-    // Extract the single bit
-    uint8_t byte_value = data[byte_pos];
-    bit_value = (byte_value >> bit_pos) & 0x01;
-    
-    return true;
-}
-
-/**
- * @brief Finds UnitTypeInfo by unit ID
- *
- * Searches through the unitTypeInfos array to find the entry with matching unit ID.
- * This is necessary because unit IDs are not consecutive and cannot be used as direct array indices.
- *
- * @param unit_id The unit ID to search for
- * @return Pointer to UnitTypeInfo if found, nullptr if not found
- */
-const UnitTypeInfo* findUnitTypeInfo(uint8_t unit_id)
-{
-    for (const auto &info : unitTypeInfos) {
-        if (info.id == unit_id) {
-            return &info;
+        int n = map->expand(raw, rawLength, full);
+        if (n < 0)
+        {
+            LOG_WARN("%s: 21 %02X map expects %d bytes, got %d; decoded raw layout", m.module->name, parameterAddress,
+                     map->presentCount(), rawLength);
+        }
+        else
+        {
+            block = full;
+            blockLength = n;
         }
     }
-    return nullptr;
-}
-
-/**
- * @brief Retrieves the matching enum definition for a given raw value from UDS definitions.
- *
- * Searches through the UDS map for matching enum definitions that correspond to
- * the given raw value and returns the complete matching UdsDefinition.
- *
- * @param tx_id           CAN transmit ID
- * @param data_id         UDS data identifier
- * @param def             UDS definition containing position and name info
- * @param raw_value       Raw extracted value to match against enum definitions
- * @return Optional UdsDefinition containing the matching enum definition, or nullopt if not found
- */
-std::optional<UdsDefinition> get_enum_value(
-    uint32_t tx_id,
-    uint16_t data_id,
-    const UdsDefinition &def,
-    uint32_t raw_value)
-{
-    auto enumRange = udsMap.equal_range(uds_key{tx_id, data_id});
-                     
-    for (auto enumIt = enumRange.first; enumIt != enumRange.second; ++enumIt)
+    const UdsDefinition *defs[MaxValuesPerBlock];
+    int defCount = definitionsOf(m.module->requestId, parameterAddress, defs, MaxValuesPerBlock);
+    ParameterValue values[MaxValuesPerBlock];
+    int decoded = 0;
+    for (int i = 0; i < defCount; i++)
     {
-        const UdsDefinition &enumDef = enumIt->second;
-        
-        if (enumDef.name == def.name &&
-            enumDef.byte_position == def.byte_position &&
-            enumDef.bit_offset_position == def.bit_offset_position &&
-            enumDef.value.has_value() &&
-            enumDef.value.value() == raw_value &&
-            enumDef.display_value.has_value())
+        values[i] = ParameterDecoder::decode(*defs[i], block, blockLength, map);
+        if (values[i].isAvailable)
         {
-            return enumDef;
+            decoded++;
+            LOG_DEBUG("%s 21 %02X %s = %g %s (raw %lld)", m.module->name, parameterAddress, defs[i]->name,
+                      values[i].value, values[i].unit, static_cast<long long>(values[i].raw));
         }
     }
-    
-    return std::nullopt;
-}
+    LOG_DEBUG("%s: 21 %02X: %d bytes, %d/%d parameters decoded", m.module->name, parameterAddress, rawLength, decoded,
+              defCount);
 
-void logBufferHex(int byte_pos, int bit_pos, const uint8_t* buffer, size_t buffer_length) {
-    
-    const size_t maxOutputLen = 64 + buffer_length * 5; // generous headroom
-    char output[maxOutputLen];
-    size_t pos = snprintf(output, sizeof(output), "byte_pos: %d, bit_pos: %d, buffer_length: %zu |", byte_pos, bit_pos, buffer_length);
-  
-    for (size_t i = 0; i < buffer_length && pos < sizeof(output) - 5; ++i) {
-      pos += snprintf(output + pos, sizeof(output) - pos, " 0x%02X", buffer[i]);
-    }
-  
-    // Optional newline
-    if (pos < sizeof(output) - 2) {
-      output[pos++] = '\n';
-      output[pos] = '\0';
-    }
-  
-    LOG_DEBUG("%s", output);
-}
-  
-
-/**
- * @brief Transforms a UDS response into signal values
- *
- * This method processes raw diagnostic response data from vehicle ECUs by:
- *
- * 1. Finding all signal definitions that match the request parameters
- *    - Uses (tx_id, pid, did) tuple as the lookup key in udsMap
- *    - Each definition specifies where (byte/bit position) a signal exists in the data
- *
- * 2. Grouping definitions by their physical location in the message
- *    - Groups by (data_id, byte_position, bit_offset_position)
- *    - Each group represents one physical signal that may have multiple interpretations
- *    - For example: same field could be engine temperature AND a warning level
- *
- * 3. Extracting values for each signal group
- *    - Decodes raw bytes according to position, length, scaling factors
- *    - Handles signals even if response is shorter than expected (partial response)
- *    - Some ECUs may respond with only a subset of values
- *
- * 4. Logging results for diagnostics and debugging
- *    - Logs both raw data and decoded signals
- *    - Provides units and display values where available
- *
- * This implementation is resilient to partial responses, allowing extraction
- * of signals that fit within the available data, even if some expected signals
- * are missing from the response.
- *
- * @return true     if at least one signal was successfully extracted and processed
- * @return false    if no signals could be extracted
- */
-bool IsfService::transformResponse(Message_t &msg, const UDSRequest &request)
-{
-    auto matchingDefinitions = udsMap.equal_range(std::make_tuple(msg.tx_id, msg.data_id));
-    bool at_least_one_success = false;
-    
-    // Track processed (byte_position, bit_offset_position) pairs to avoid duplicates
-    std::set<std::pair<int8_t, int8_t>> processedPositions;
-    
-    for (auto it = matchingDefinitions.first; it != matchingDefinitions.second; ++it)
+    CANMessage changed[MessageTranslator::MaxFrames];
+    int changedCount = translator_.apply(values, defCount, changed, MessageTranslator::MaxFrames);
+    for (int i = 0; i < changedCount && sink_ != nullptr; i++)
     {
-        const UdsDefinition &def = it->second;
-        const uint8_t* payload = &msg.Buffer[2]; //Skip UDS Header, SID and DID
-                
-        //logBufferHex(def.byte_position, def.bit_offset_position, payload, msg.length);
+        sink_(changed[i]);
+    }
+}
 
-        // Check if this byte/bit position has already been processed
-        std::pair<int8_t, int8_t> position = {def.byte_position, def.bit_offset_position};
-        if (processedPositions.find(position) != processedPositions.end())
+int IsfService::polledIndex(const ModuleState &m, uint8_t parameterAddress) const
+{
+    for (int i = 0; i < m.polledCount; i++)
+    {
+        if (m.polled[i] == parameterAddress)
         {
-            continue; // Skip this definition as we've already processed this position
+            return i;
         }
-        
-        // Mark this position as processed
-        processedPositions.insert(position);
+    }
+    return -1;
+}
 
-        const UnitTypeInfo* unit_info = findUnitTypeInfo(def.unit);
-        if(unit_info == nullptr)
+bool IsfService::isFastBlock(uint32_t requestId, uint8_t parameterAddress)
+{
+    for (const FastBlock &f : FAST_BLOCKS)
+    {
+        if (f.requestId == requestId && f.parameterAddress == parameterAddress)
         {
-            LOG_ERROR("Unit type not found for unit %d", def.unit);
+            return true;
+        }
+    }
+    return false;
+}
+
+// ------------------------------------------------------------------ live
+
+bool IsfService::discover(ModuleState &m)
+{
+    const ModuleDefinition &module = *m.module;
+    m.lastProbeMs = nowMs();
+    uint8_t probe[] = {Services::ReadDataByLocalId, Services::ProbeParameterAddress};
+    size_t probeLength = request(module, probe, sizeof(probe), probeTimeoutMs);
+    if (probeLength == 0)
+    {
+        LOG_INFO("%s @ %03lX: absent (no reply to 21 00)", module.name, static_cast<unsigned long>(module.requestId));
+        m.present = false;
+        return false;
+    }
+    memset(m.supported, 0, sizeof(m.supported));
+    m.supportedCount = 0;
+    m.polledCount = 0;
+    memset(m.hasMap, 0, sizeof(m.hasMap));
+
+    uint8_t nrc;
+    uint8_t probeReply[MAX_UDS_PAYLOAD_LEN];
+    memcpy(probeReply, reply_, probeLength);
+    for (int baseId = 0; baseId <= SupportBitmap::LastBaseId; baseId += SupportBitmap::Stride)
+    {
+        uint8_t req[] = {Services::ReadDataByLocalId, static_cast<uint8_t>(baseId)};
+        const uint8_t *r = probeReply;
+        size_t n = probeLength;
+        if (baseId != Services::ProbeParameterAddress)
+        {
+            n = request(module, req, sizeof(req), dataTimeoutMs);
+            r = reply_;
+        }
+        // The walk stops at the first bitmap that is refused or whose last bit is clear.
+        bool next = false;
+        if (n > 0 && r[0] == Services::ReadDataByLocalIdReply && n >= static_cast<size_t>(Services::ReadDataHeaderLength + SupportBitmap::Length))
+        {
+            uint8_t ids[SupportBitmap::MaxIds];
+            SupportBitmap::parse(baseId, r + Services::ReadDataHeaderLength, n - Services::ReadDataHeaderLength, ids, next);
+        }
+        ReplyType kind = interpret(m, req, sizeof(req), r, n, nrc);
+        if (kind != ReplyType::Bitmap || !next)
+        {
+            break;
+        }
+    }
+    m.present = true;
+    LOG_INFO("%s @ %03lX: present, %d supported parameter address(es)", module.name,
+             static_cast<unsigned long>(module.requestId), m.supportedCount);
+
+    // The blocks this gateway polls: every block with definitions that the module supports (R4.4).
+    for (size_t i = 0; i < UDS_DEFINITIONS_COUNT && m.polledCount < MaxPolledBlocks; i++)
+    {
+        const UdsDefinition &d = UDS_DEFINITIONS[i];
+        if (d.requestId != module.requestId || !m.supported[d.parameterAddress] || polledIndex(m, d.parameterAddress) >= 0)
+        {
             continue;
         }
-
-        switch (unit_info->valueType)
+        m.polled[m.polledCount++] = d.parameterAddress;
+    }
+    int maps = 0;
+    for (int i = 0; i < m.polledCount; i++)
+    {
+        uint8_t req[] = {Services::ReadDataMap, Services::ReadDataMapSubFunction, m.polled[i]};
+        size_t n = request(module, req, sizeof(req), dataTimeoutMs);
+        if (interpret(m, req, sizeof(req), reply_, n, nrc) == ReplyType::Map)
         {
-            case ValueType::UInt16:
-            case ValueType::UInt32:
-            case ValueType::Float:
+            maps++;
+        }
+    }
+    LOG_INFO("%s: polling %d block(s), data maps: %d/%d", module.name, m.polledCount, maps, m.polledCount);
+    return true;
+}
+
+bool IsfService::read(ModuleState &m, uint8_t parameterAddress)
+{
+    uint8_t req[] = {Services::ReadDataByLocalId, parameterAddress};
+    size_t n = request(*m.module, req, sizeof(req), dataTimeoutMs);
+    uint8_t nrc;
+    ReplyType kind = interpret(m, req, sizeof(req), reply_, n, nrc);
+    if (kind == ReplyType::Block && reply_[1] == parameterAddress)
+    {
+        return true;
+    }
+    if (kind == ReplyType::Silent)
+    {
+        LOG_WARN("%s: 21 %02X: no reply", m.module->name, parameterAddress);
+        // A module that stops answering is re-discovered (the car may have been switched off).
+        m.present = false;
+    }
+    else if (kind == ReplyType::Negative && nrc == Nrc::SubFunctionNotSupported)
+    {
+        // §8.5: 7F 21 12 on a local id means "not implemented"; drop that id from the poll list.
+        int slot = polledIndex(m, parameterAddress);
+        if (slot >= 0)
+        {
+            for (int i = slot; i + 1 < m.polledCount; i++)
             {
-                uint32_t raw_value;
-                if (!get_raw_value(payload, def.byte_position, def.bit_offset_position,4, msg.length, raw_value))
-                {
-                    continue; // Skip this definition if extraction failed
-                }
-                // Has decimals
-
-                float calculated_value = (float)raw_value * def.scaling_factor + def.offset_value;
-
-                if (unit_info->minValue.has_value() && calculated_value < unit_info->minValue.value())
-                {
-                    calculated_value = unit_info->minValue.value();
-                }
-                if (unit_info->maxValue.has_value() && calculated_value > unit_info->maxValue.value())
-                {
-                    calculated_value = unit_info->maxValue.value();
-                }
-
-                LOG_DEBUG("%s raw: %u value: %f", def.name.c_str(), raw_value, calculated_value);
-
-                at_least_one_success = true;
-                break;
+                m.polled[i] = m.polled[i + 1];
+                m.maps[i] = m.maps[i + 1];
+                m.hasMap[i] = m.hasMap[i + 1];
             }
-            case ValueType::Boolean:
-            {
-                uint8_t bit_value;
-                if (!get_single_bit(payload, def.byte_position, def.bit_offset_position, msg.length, bit_value, request.param_name))
-                {
-                    continue; // Skip this definition if bit extraction failed
-                }
+            m.polledCount--;
+        }
+    }
+    return false;
+}
 
-                auto udsDefinitionValue = get_enum_value(msg.tx_id, msg.data_id, def, bit_value);
+void IsfService::fastStep(ModuleState &m)
+{
+    for (int i = 0; i < m.polledCount && m.present; i++)
+    {
+        if (isFastBlock(m.module->requestId, m.polled[i]))
+        {
+            read(m, m.polled[i]);
+        }
+    }
+}
 
-                if (udsDefinitionValue.has_value())
-                {
-                     LOG_DEBUG("%s raw: %u value: %s", def.name.c_str(), bit_value, udsDefinitionValue.value().display_value.value().c_str());
-                }
-                
-                at_least_one_success = true;
-                break;
-            }
-            default:
+bool IsfService::slowStep()
+{
+    // One slow block per cycle, rotating over every present module's slow blocks in turn, so the fast blocks
+    // (rpm, speed) come round every ~300 ms and the rest within a few seconds.
+    int total = 0;
+    for (int i = 0; i < Modules::Count; i++)
+    {
+        ModuleState &m = modules_[i];
+        for (int j = 0; j < m.polledCount && m.present; j++)
+        {
+            if (!isFastBlock(m.module->requestId, m.polled[j]))
             {
-                LOG_ERROR("%s Unknown value type: %d", def.name.c_str(), unit_info->valueType);
-                break;
+                total++;
             }
         }
-
     }
+    if (total == 0)
+    {
+        return false;
+    }
+    int pick = slowRotation_ % total;
+    slowRotation_++;
+    int seen = 0;
+    for (int i = 0; i < Modules::Count; i++)
+    {
+        ModuleState &m = modules_[i];
+        for (int j = 0; j < m.polledCount && m.present; j++)
+        {
+            if (isFastBlock(m.module->requestId, m.polled[j]))
+            {
+                continue;
+            }
+            if (seen++ == pick)
+            {
+                read(m, m.polled[j]);
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
-    return at_least_one_success;
+void IsfService::listen()
+{
+    if (twai_ == nullptr)
+    {
+        return;
+    }
+    twai_->checkAlerts();
+    for (int i = 0; i < Modules::Count; i++)
+    {
+        ModuleState &m = modules_[i];
+        if (!m.present)
+        {
+            if (m.lastProbeMs == 0 || nowMs() - m.lastProbeMs >= rediscoverMs)
+            {
+                discover(m);
+            }
+            continue;
+        }
+        fastStep(m);
+    }
+    slowStep();
 }

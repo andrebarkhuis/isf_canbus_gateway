@@ -1,14 +1,21 @@
 #ifndef _MCP_CAN_H
 #define _MCP_CAN_H
 
-#include <stdint.h>
-#include "mcp_can.h"
-#include "mcp_can_dfs.h"
+#include <cstddef>
+#include <cstdint>
 
-// Define byte type if not already defined
-#ifndef byte
+#include "driver/spi_master.h"
+
+#include "mcp_can/mcp_can_dfs.h"
+
+/**
+ * @brief MCP2515 CAN controller (CAN 2 of the ESP32-CAN-X2) on the GT86 bus, 500 kbit/s, 16 MHz crystal.
+ *
+ * The register sequences are the Seeed-derived driver verified on the bench; only the SPI primitives changed,
+ * from Arduino SPI to the ESP-IDF SPI master driver (SPI2 on SCK 12 / MISO 13 / MOSI 11, CS 10). Reception
+ * is polled through checkReceive(); the interrupt line (GPIO 3) is not used.
+ */
 typedef uint8_t byte;
-#endif
 
 #define MAX_CHAR_IN_MESSAGE 8
 
@@ -22,11 +29,15 @@ private:
     byte rtr;                      // rtr
     byte filhit;
     byte SPICS;
+    spi_device_handle_t spi;       // the MCP2515 on the ESP-IDF SPI master driver
+
     /*
      *  mcp2515 driver function
      */
 
 private:
+    void transfer(const byte *tx, byte *rx, size_t length); // one full-duplex SPI command, CS low throughout
+
     void mcp2515_reset(void); // reset mcp2515
 
     byte mcp2515_readRegister(const byte address); // read mcp2515's register
