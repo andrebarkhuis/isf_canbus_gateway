@@ -35,15 +35,17 @@ band the IS F modules broadcast in).
 
 Sent whether or not the IS F answers, so the GT86 modules see a complete car. The default bytes are the frames
 recorded in `gt86-isf-swap/logs/GT86/cluster_working_no_errors.txt` (the cluster showed no warnings with exactly
-these); intervals are the rates seen in the drive capture.
+these), except that the speed fields of 0x0D1 and 0x0D4 are zero: that capture was taken at 114 km/h, and the
+defaults are what the GT86 sees before the first IS F answer and whenever the IS F stops answering, so they must
+describe a standing car. Intervals are the rates seen in the drive capture.
 
 | Id | Name | Default bytes | Interval | Translated signals |
 |---|---|---|---|---|
 | 0x0D0 | GT86_GSensor | `8B FB 25 00 01 08 04 01` | 100 ms | none |
-| 0x0D1 | GT86_VehicleSpeed | `F0 07 00 00 B8 0F FC 08` | 100 ms | VehicleSpeed: bytes 0–1, 0.0565 km/h per bit, from engine `21 01` pos 12 |
+| 0x0D1 | GT86_VehicleSpeed | `00 00 00 00 B8 0F FC 08` | 100 ms | VehicleSpeed: bytes 0–1, 0.0565 km/h per bit, from engine `21 01` pos 12 |
 | 0x0D2 | GT86_Unknown_D2 | `00 00 FF FF 00 00 00 00` | 100 ms | none |
 | 0x0D3 | GT86_LightStatus | `00 06 C0 0F 00 00 32 00` | 100 ms | none |
-| 0x0D4 | GT86_WheelSpeeds | `F0 07 F0 07 F0 07 F0 07` | 40 ms | FL, FR, RL, RR: 16 bits each, 0.0565 km/h per bit, from ABS `21 03` |
+| 0x0D4 | GT86_WheelSpeeds | `00 00 00 00 00 00 00 00` | 40 ms | FL, FR, RL, RR: 16 bits each, 0.0565 km/h per bit, from ABS `21 03` |
 | 0x140 | GT86_EngineData1 | `00 05 00 43 00 00 00 01` | 50 ms | none (bytes 2–3 did not follow engine speed in the capture) |
 | 0x141 | GT86_EngineData2 | `00 00 00 00 00 83 A7 00` | 50 ms | EngineRPM: bits 32–45, 1 rpm per bit, from engine `21 01` pos 10; bits 46–47 kept |
 | 0x142 | GT86_EngineMisc | `00 00 00 00 00 00 00 00` | 10 ms | none |
@@ -58,7 +60,9 @@ these); intervals are the rates seen in the drive capture.
 How the layouts were verified against the drive capture:
 
 - 0x0D1 bytes 0–1 × 0.0565 ranges 0 to 76.6 km/h over the drive and is 0 at the start; the "cluster working"
-  bytes decode to 114 km/h, the speed that capture was taken at.
+  bytes (`F0 07`) decode to 114 km/h, the speed that capture was taken at, which is why the default is `00 00`
+  instead (the same for the four `F0 07` wheel speeds of 0x0D4; the drive capture starts with all four at
+  `00 00`).
 - 0x0D4 raw wheel values peak at 1384 while 0x0D1 reads 76.6 km/h: the same 0.0565 scale (the community DBC's
   0.0157 is wrong for this car).
 - 0x141 bits 32–45 idle at about 750, rise to 2314 at 60 km/h, and the "cluster working" bytes decode to 768.

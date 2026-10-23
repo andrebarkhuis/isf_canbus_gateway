@@ -24,7 +24,7 @@
       "id": "0xD0", "name": "GT86_GSensor", "gt86": true, "interval": 100, "defaults": "8B FB 25 00 01 08 04 01", "comment": "Steering angle and lateral/longitudinal G; default bytes only"
     },
     {
-      "id": "0xD1", "name": "GT86_VehicleSpeed", "gt86": true, "interval": 100, "defaults": "F0 07 00 00 B8 0F FC 08", "comment": "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data",
+      "id": "0xD1", "name": "GT86_VehicleSpeed", "gt86": true, "interval": 100, "defaults": "00 00 00 00 B8 0F FC 08", "comment": "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data",
       "signals": [
         {"module": "engine", "uniqueId": "cLlSvC_7u", "name": "VehicleSpeed", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"}
       ]
@@ -36,7 +36,7 @@
       "id": "0xD3", "name": "GT86_LightStatus", "gt86": true, "interval": 100, "defaults": "00 06 C0 0F 00 00 32 00", "comment": "VSC / TCS / SCS lights; default bytes only"
     },
     {
-      "id": "0xD4", "name": "GT86_WheelSpeeds", "gt86": true, "interval": 40, "defaults": "F0 07 F0 07 F0 07 F0 07", "comment": "Four wheel speeds, 16 bits each, 0.0565 km/h per bit",
+      "id": "0xD4", "name": "GT86_WheelSpeeds", "gt86": true, "interval": 40, "defaults": "00 00 00 00 00 00 00 00", "comment": "Four wheel speeds, 16 bits each, 0.0565 km/h per bit",
       "signals": [
         {"module": "abs", "uniqueId": "-HYSOLbJn", "name": "WheelSpeedFL", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
         {"module": "abs", "uniqueId": "v4xnACb-1", "name": "WheelSpeedFR", "startBit": 16, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
