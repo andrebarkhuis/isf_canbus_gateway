@@ -111,7 +111,28 @@ void TwaiWrapper::checkAlerts()
     }
     if (alerts & TWAI_ALERT_BUS_ERROR)
     {
-        LOG_WARN("ISF bus: bus error");
+        // One line a second with the controller's own counters, so the cause (our transmits, bad frames seen on
+        // the bus, or a receive side that is too slow) can be told apart from the console.
+        static uint32_t errorsSinceReport = 0;
+        static uint32_t lastReportMs = 0;
+        errorsSinceReport++;
+        uint32_t now = nowMs();
+        if (lastReportMs == 0 || now - lastReportMs >= 1000)
+        {
+            twai_status_info_t st = {};
+            twai_get_status_info(&st);
+            LOG_WARN("ISF bus: %lu bus error alert(s) in the last %lu ms; state %d tec %lu rec %lu bus_err %lu "
+                     "arb_lost %lu tx_fail %lu rx_miss %lu rx_ovr %lu tx_q %lu rx_q %lu",
+                     static_cast<unsigned long>(errorsSinceReport),
+                     static_cast<unsigned long>(lastReportMs == 0 ? 0 : now - lastReportMs), static_cast<int>(st.state),
+                     static_cast<unsigned long>(st.tx_error_counter), static_cast<unsigned long>(st.rx_error_counter),
+                     static_cast<unsigned long>(st.bus_error_count), static_cast<unsigned long>(st.arb_lost_count),
+                     static_cast<unsigned long>(st.tx_failed_count), static_cast<unsigned long>(st.rx_missed_count),
+                     static_cast<unsigned long>(st.rx_overrun_count), static_cast<unsigned long>(st.msgs_to_tx),
+                     static_cast<unsigned long>(st.msgs_to_rx));
+            errorsSinceReport = 0;
+            lastReportMs = now;
+        }
     }
     if (alerts & TWAI_ALERT_RX_QUEUE_FULL)
     {
