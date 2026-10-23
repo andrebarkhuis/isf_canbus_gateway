@@ -133,6 +133,9 @@ the layout itself is `tools/gateway_frames.json`.
    `name` is the bare signal name; the generator prefixes it with the frame's first name token (`ENG_`, `TRANS_`,
    `ABS_`, `GT86_`, `ISF_`), so `EngineSpeed` in `ENG_Speed_Load` becomes the channel `ENG_EngineSpeed`. The ADU
    needs channel names to be unique across the whole project, and the prefix sorts them by source module.
+   Units in the DBC files are spelled the way the ADU spells them (degree sign, `cm^3`), the acceleration signals
+   are scaled to `G` there because the ADU has no m/s2, and torque, m3/s and g/rev carry no unit text because the
+   ADU has none for them. `docs/adu-frames.md` keeps ToyotaLens's units; the frame bytes are the same either way.
 2. Run `python tools/generate.py`. It rejects overlaps, unknown ids and signals that do not fit.
 3. Run `bash test/host/run.sh`, then `.venv\Scripts\pio run`.
 4. Load the new `gt86-bus.dbc` / `isf-bus.dbc` into the ADU and SavvyCAN.

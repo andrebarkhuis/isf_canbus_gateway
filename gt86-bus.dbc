@@ -132,7 +132,7 @@ BO_ 2667578855 ENG_Ignition_Knock: 8 GATEWAY
  SG_ ENG_KnockCorrectLearn : 8|16@1+ (0.03125,-1024) [-1024|1023.97] "°" ADU
  SG_ ENG_KnockFeedback : 24|16@1+ (0.03125,-1024) [-1024|1023.97] "°" ADU
  SG_ ENG_MisfireRPM : 40|8@1+ (25,0) [0|6375] "rpm" ADU
- SG_ ENG_MisfireLoad : 48|8@1+ (0.015625,0) [0|3.98438] "g/rev" ADU
+ SG_ ENG_MisfireLoad : 48|8@1+ (0.015625,0) [0|3.98438] "" ADU
  SG_ ENG_AllCylindersMisfireCount : 56|8@1+ (1,0) [0|255] "" ADU
 
 BO_ 2667578856 ENG_Misfire_Cylinders: 8 GATEWAY
@@ -152,9 +152,9 @@ BO_ 2667578857 ENG_VVT: 8 GATEWAY
  SG_ ENG_VVT_Exhaust2 : 48|16@1+ (0.009765625,0) [0|639.99] "°" ADU
 
 BO_ 2667578858 ENG_Idle_Control: 8 GATEWAY
- SG_ ENG_ISC_Flow : 0|16@1+ (0.001220703125,0) [0|79.9988] "m3/s" ADU
+ SG_ ENG_ISC_Flow : 0|16@1+ (0.001220703125,0) [0|79.9988] "" ADU
  SG_ ENG_ISC_Position : 16|16@1+ (0.00762939453125,0) [0|499.992] "°" ADU
- SG_ ENG_ISC_Learning : 32|16@1+ (0.001220703125,-40) [-40|39.9988] "m3/s" ADU
+ SG_ ENG_ISC_Learning : 32|16@1+ (0.001220703125,-40) [-40|39.9988] "" ADU
  SG_ ENG_MinimumEngineSpeed : 48|16@1+ (0.78125,0) [0|51199.2] "rpm" ADU
 
 BO_ 2667578859 ENG_Electrical: 8 GATEWAY
@@ -256,26 +256,26 @@ BO_ 2667578869 ABS_Wheel_Speeds: 8 GATEWAY
  SG_ ABS_VehicleSpeed : 32|8@1+ (1.28,0) [0|326.4] "km/h" ADU
 
 BO_ 2667578870 ABS_Wheel_Acceleration: 8 GATEWAY
- SG_ ABS_FR_Accel : 0|8@1- (1.569064,0) [-200.84|199.271] "m/s2" ADU
- SG_ ABS_FL_Accel : 8|8@1- (1.569064,0) [-200.84|199.271] "m/s2" ADU
- SG_ ABS_RR_Accel : 16|8@1- (1.569064,0) [-200.84|199.271] "m/s2" ADU
- SG_ ABS_RL_Accel : 24|8@1- (1.569064,0) [-200.84|199.271] "m/s2" ADU
+ SG_ ABS_FR_Accel : 0|8@1- (0.16,0) [-20.48|20.32] "G" ADU
+ SG_ ABS_FL_Accel : 8|8@1- (0.16,0) [-20.48|20.32] "G" ADU
+ SG_ ABS_RR_Accel : 16|8@1- (0.16,0) [-20.48|20.32] "G" ADU
+ SG_ ABS_RL_Accel : 24|8@1- (0.16,0) [-20.48|20.32] "G" ADU
  SG_ ABS_FR_Direction : 32|1@1+ (1,0) [0|1] "" ADU
  SG_ ABS_FL_Direction : 33|1@1+ (1,0) [0|1] "" ADU
  SG_ ABS_RR_Direction : 34|1@1+ (1,0) [0|1] "" ADU
  SG_ ABS_RL_Direction : 35|1@1+ (1,0) [0|1] "" ADU
 
 BO_ 2667578871 ABS_Dynamics: 8 GATEWAY
- SG_ ABS_LateralG : 0|8@1- (0.196133,0) [-25.105|24.9089] "m/s2" ADU
- SG_ ABS_LongitudinalG : 8|8@1- (0.196133,0) [-25.105|24.9089] "m/s2" ADU
+ SG_ ABS_LateralG : 0|8@1- (0.02,0) [-2.56|2.54] "G" ADU
+ SG_ ABS_LongitudinalG : 8|8@1- (0.02,0) [-2.56|2.54] "G" ADU
  SG_ ABS_YawRate : 16|8@1+ (1,-128) [-128|127] "°/s" ADU
  SG_ ABS_SteeringAngle : 24|16@1+ (0.1,-3276.8) [-3276.8|3276.7] "°" ADU
- SG_ ABS_DecelerationSensorRaw : 40|8@1+ (0.14318,-18.327) [-18.327|18.1839] "m/s2" ADU
+ SG_ ABS_DecelerationSensorRaw : 40|8@1+ (0.014600296737417978,-1.8688339035246493) [-1.86883|1.85424] "G" ADU
  SG_ ABS_YawRateSensorRaw : 48|8@1+ (1,-128) [-128|127] "°/s" ADU
 
 BO_ 2667578872 ABS_Engine_Gear: 8 GATEWAY
  SG_ ABS_EngineRevolutions : 0|16@1+ (1,0) [0|65535] "rpm" ADU
- SG_ ABS_RealEngineTorque : 16|16@1- (0.03125,0) [-1024|1023.97] "Nm" ADU
+ SG_ ABS_RealEngineTorque : 16|16@1- (0.03125,0) [-1024|1023.97] "" ADU
  SG_ ABS_AcceleratorOpening : 32|8@1+ (0.5,0) [0|127.5] "%" ADU
  SG_ ABS_GearPosition : 40|4@1+ (1,0) [0|15] "" ADU
  SG_ ABS_ShiftLeverPosition : 44|4@1+ (1,0) [0|15] "" ADU

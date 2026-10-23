@@ -263,13 +263,27 @@ def write_translator_table(path, frames, broadcast):
 
 
 # Unit spellings for the DBC files only. The ECUmaster ADU recognises units by their exact text from a fixed list
-# (its own log and CANX files write the degree sign, UTF-8, and cm^3 for millilitres); anything else is flagged on
-# import and has to be mapped by hand. The firmware's unit map and gateway_frames.json keep the ASCII names.
-DBC_UNITS = {"degC": "°C", "deg": "°", "deg/s": "°/s", "ml": "cm^3"}
+# (its own log and CANX files write the degree sign and cm^3 for millilitres); anything else is flagged on import
+# and has to be mapped by hand. Torque, m3/s and g/rev have no ADU unit at all, so the DBC carries no unit text for
+# them (docs/adu-frames.md still states the unit). The firmware's unit map and gateway_frames.json keep the ASCII
+# names and ToyotaLens's units.
+DBC_UNITS = {"degC": "°C", "deg": "°", "deg/s": "°/s", "ml": "cm^3", "Nm": "", "m3/s": "", "g/rev": ""}
+# Conversions for the DBC files only: unit -> (ADU unit, multiply factor and offset by). The ADU has G but not
+# m/s2, so the acceleration signals are scaled to G in the DBC; the frame bytes are unchanged.
+DBC_CONVERT = {"m/s2": ("G", 1.0 / 9.80665)}
 
 
 def dbc_unit(unit):
     return DBC_UNITS.get(unit, unit)
+
+
+def dbc_scaling(factor, offset, unit):
+    """What the DBC says for a signal: ToyotaLens's factor and offset, unless the unit is one the ADU only has
+    in another scale, and the ADU's spelling of the unit."""
+    if unit in DBC_CONVERT:
+        to_unit, k = DBC_CONVERT[unit]
+        return factor * k, offset * k, to_unit
+    return factor, offset, dbc_unit(unit)
 
 
 def dbc_signal_name(p):
@@ -307,7 +321,7 @@ def write_dbc(path, frames, broadcast, title, nodes):
         out.append("BO_ %d %s: 8 GATEWAY" % (dbc_id(fr), fr["name"]))
         for s in fr["resolved"]:
             p = s["param"]
-            factor, offset, unit = dbc_factor_offset(s)
+            factor, offset, unit = dbc_scaling(*dbc_factor_offset(s))
             signed = p["signed"] if s["passRaw"] else s.get("signed", False)
             if signed:
                 lo, hi = -(2 ** (s["bits"] - 1)), 2 ** (s["bits"] - 1) - 1
@@ -316,7 +330,7 @@ def write_dbc(path, frames, broadcast, title, nodes):
             vmin, vmax = sorted((lo * factor + offset, hi * factor + offset))
             out.append(' SG_ %s : %d|%d@1%s (%s,%s) [%s|%s] "%s" %s' % (
                 s["name"], s["startBit"], s["bits"], "-" if signed else "+", fmt(factor).rstrip("0").rstrip("."),
-                fmt(offset).rstrip("0").rstrip("."), ("%g" % vmin), ("%g" % vmax), dbc_unit(unit), receiver))
+                fmt(offset).rstrip("0").rstrip("."), ("%g" % vmin), ("%g" % vmax), unit, receiver))
             # No per-signal comment: the ECUmaster importer limits a message's DBC text to about 1000 bytes, and
             # docs/adu-frames.md carries the source of every signal instead.
             if s["passRaw"] and p.get("states"):
