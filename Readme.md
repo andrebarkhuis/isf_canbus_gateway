@@ -50,6 +50,7 @@ Every frame sent or received on the IS F bus is written to the serial log in can
 ```text
 isf_canbus_gateway/
 ├── CLAUDE.md                    the reading list: which documents to read, in which order (the rules are in Rules.md)
+├── sessions-prompt.md           the prompt that opens the next working session, with the current state of board and bus
 ├── platformio.ini, sdkconfig.defaults, partitions.csv, CMakeLists.txt   PlatformIO + ESP-IDF project
 ├── src/
 │   ├── main.cpp                 app_main: the two tasks and the queue between them
