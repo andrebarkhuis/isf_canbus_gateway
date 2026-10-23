@@ -11,11 +11,11 @@ work; it edits the XML as text so the client's formatting survives, and refuses 
 not well-formed XML. Always write to a **new file** (`--out`) and keep the user's original.
 
 ```
-python adu_project.py info        gt86-isf.adu
-python adu_project.py import-canx gt86-isf.adu isf-bus.canx --bus CAN2 --group CAN2_IN_ISF \
-                                  --channels ENG_Coolant,ENG_KnockFeedback --out gt86-isf-gateway.adu
-python adu_project.py set-channel gt86-isf-gateway.adu --page PAGE_HOME --label "TIMING ADV" \
-                                  --channel ecu.ignAngle --decimals 1 --out gt86-isf-gateway.adu
+python adu_project.py info        isf-old.adu
+python adu_project.py import-canx isf-old.adu isf-bus.canx --bus CAN2 --group CAN2_IN_ISF \
+                                  --channels ENG_Coolant,ENG_KnockFeedback --out isf-new.adu
+python adu_project.py set-channel isf-new.adu --page PAGE_HOME --label "TIMING ADV" \
+                                  --channel ecu.ignAngle --decimals 1 --out isf-new.adu
 python adu_project.py replace-channel in.adu --from c_speed --to ecu.speed --out out.adu
 python adu_project.py remove-mob   in.adu --name m_rpm --out out.adu     # also drops its inputs, renumbers the rest
 python adu_project.py extract in.adu dir / pack dir out.adu              # for hand edits
