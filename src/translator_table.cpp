@@ -198,7 +198,7 @@ const TranslationSignal TRANSLATION_SIGNALS[] = {
     {"Fg7GsLOd5", 0x1F0005F3, "TRANS_ShiftControlMode", 3, 1, false, true, 1.0, 0.0},
     {"Yj5UsMWsV", 0x1F0005F3, "TRANS_UpShiftIndication", 4, 1, false, true, 1.0, 0.0},
     {"N-VrAXF3I", 0x1F0005F3, "TRANS_DownShiftIndication", 5, 1, false, true, 1.0, 0.0},
-    {"AxTmJGDw6", 0x1F0005F3, "TRANS_TorqueConverterTempRaiseHistory", 6, 1, false, true, 1.0, 0.0},
+    {"AxTmJGDw6", 0x1F0005F3, "TRANS_TorqueConvTempRaiseHist", 6, 1, false, true, 1.0, 0.0},
     {"NKb865K8G", 0x1F0005F4, "TRANS_NT_Voltage", 0, 16, false, true, 7.62939453125e-05, 0.0},
     {"QY8axK3Nf", 0x1F0005F4, "TRANS_NC3_Voltage", 16, 16, false, true, 7.62939453125e-05, 0.0},
     {"32BDW-f03", 0x1F0005F4, "TRANS_SP2_Voltage", 32, 16, false, true, 7.62939453125e-05, 0.0},

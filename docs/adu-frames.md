@@ -233,7 +233,7 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 | TRANS_ShiftControlMode | byte 0 bit 3 | 1 | 0 |  | ect Fg7GsLOd5: Shift Control Mode, 21 83 byte 0 (0=S-mode, 1=M-mode) |
 | TRANS_UpShiftIndication | byte 0 bit 4 | 1 | 0 |  | ect Yj5UsMWsV: MT Up Shift Indication, 21 83 byte 0 (0=OFF, 1=ON) |
 | TRANS_DownShiftIndication | byte 0 bit 5 | 1 | 0 |  | ect N-VrAXF3I: MT Down Shift Indication, 21 83 byte 0 (0=OFF, 1=ON) |
-| TRANS_TorqueConverterTempRaiseHistory | byte 0 bit 6 | 1 | 0 |  | ect AxTmJGDw6: Torque Converter Temperature Raise History, 21 83 byte 0 (0=OFF, 1=ON) |
+| TRANS_TorqueConvTempRaiseHist | byte 0 bit 6 | 1 | 0 |  | ect AxTmJGDw6: Torque Converter Temperature Raise History, 21 83 byte 0 (0=OFF, 1=ON) |
 
 ## TRANS_Sensor_Voltages  (0x1F0005F4, every 100 ms)
 

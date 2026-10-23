@@ -326,7 +326,9 @@ def write_dbc(path, frames, broadcast, title, nodes):
             comments.append('CM_ BO_ %d "%s";' % (dbc_id(fr), fr["comment"].replace('"', "'")))
         out.append("")
     out += comments + [""] + vals + [""]
-    with open(path, "w", encoding="utf-8", newline="\n") as f:
+    # Windows-1252, not UTF-8: the ECUmaster importer (like Vector's tools) reads a DBC as ANSI text, so a UTF-8
+    # degree sign came out as "A-circumflex, degree" and the unit was not recognised.
+    with open(path, "w", encoding="cp1252", newline="\n") as f:
         f.write("\n".join(out))
 
 
