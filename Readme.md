@@ -70,7 +70,6 @@ isf_canbus_gateway/
 ├── gt86-bus.canx                GENERATED: the GT86 bus as an ECUmaster CANX stream (what the ADU imports)
 ├── isf-bus.canx                 GENERATED: the IS F bus as an ECUmaster CANX stream
 ├── test/host/                   self-test on a host compiler (ToyotaLens's vectors), run in Docker
-├── Ecumaster/                   the ECUmaster ADU and PMU manuals (the ADU project itself is not in the repo)
 └── docs/                        output frames, port map, the ADU and its project, reference material
 ```
 
@@ -104,6 +103,6 @@ and the module's support bitmap lists it. Timers: P2 700 ms for the probe, 2000 
 - `C:\projects\ToyotaLens` — the reference implementation; `docs/techstream-J2534-protocol.md` is the
   specification (cited as §n in the code), `docs/requirements.md` the device requirements.
 - `C:\projects\gt86-isf-swap\logs\GT86` — captures of the GT86 bus the output frames were taken from.
-- `docs/adu-project.md` — the ECUmaster ADU: wiring and what it imports from the gateway. The manuals are
-  `Ecumaster/adu_manual_en.pdf` and `Ecumaster/PMU_Manual.pdf`.
+- `docs/adu-project.md` — the ECUmaster ADU: wiring and what it imports from the gateway. The ADU and PMU
+  manuals are on ecumaster.com; the ADU project itself is not part of this repository.
 - `docs/Decoding Techstream DTC canbus messages.md` — notes on IS F DTC frames (not used by the gateway).

@@ -2,8 +2,8 @@
 
 What is known about the ECUmaster ADU 7 (client and firmware 0.120) as far as the gateway is concerned: how
 it is wired and how the gateway's files reach it. The ADU project itself is not part of this repository; the
-owner builds and maintains it in the ADU client from the files described here. The manuals are in
-`Ecumaster/adu_manual_en.pdf` and `Ecumaster/PMU_Manual.pdf`.
+owner builds and maintains it in the ADU client from the files described here. The ADU and PMU manuals are
+on ecumaster.com.
 
 ## 1. Wiring
 
