@@ -25,11 +25,11 @@ drop the fast-polled blocks (`FAST_BLOCKS`, `fastStep`, `slowStep`) and never sl
 Explore first and get the plan approved before changing code. Do not introduce a new domain concept (a new
 kind of signal, frame, source or configuration key) without asking.
 
-## The ADU project is the user's
+## The ADU project is out of scope
 
-`Ecumaster/*.adu` is edited only by the user, in the ECUmaster ADU client. The gateway's job ends at
-`gt86-bus.canx` / `isf-bus.canx` (and the DBC files), which the client imports. `docs/adu-project.md` records
-what is known about the ADU and the project file for reading and diagnosing it, not for editing it.
+The ECUmaster ADU project (.adu) is not part of this repository and is never edited or generated here. The
+gateway's job ends at `gt86-bus.canx` / `isf-bus.canx` (and the DBC files), which the owner imports in the ADU
+client. `docs/adu-project.md` records what the ADU needs from those files.
 
 ## Commands
 
