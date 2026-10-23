@@ -4,8 +4,10 @@ What the gateway puts on CAN 2 (the GT86 chassis bus, which also carries the ECU
 came from, and how to change them. The machine-readable form of this document is `tools/gateway_frames.json`;
 `tools/generate.py` turns it into `src/translator_table.cpp`, `src/uds/uds_definitions.cpp` and two DBC files, one
 per bus: `gt86-bus.dbc` (everything the gateway sends on the GT86 bus) and `isf-bus.dbc` (the IS F modules'
-broadcast frames the gateway decodes, §2.1, plus the ADU frames it repeats on that bus). Load the file of the bus
-the ADU sits on into its configuration, and both into SavvyCAN.
+broadcast frames the gateway decodes, §2.1, plus the ADU frames it repeats on that bus). Each DBC has a twin CANX
+file (`gt86-bus.canx`, `isf-bus.canx`) in ECUmaster's own stream format, which also carries the ADU's integer
+scaling and which built-in `ecu.` channel a signal feeds. Import the CANX of the bus the ADU sits on into the ADU
+(Project tree, Add, Import .CANX/.DBC file), and load the DBC files into SavvyCAN.
 
 ## 1. What is on the GT86 bus already
 
@@ -136,9 +138,14 @@ the layout itself is `tools/gateway_frames.json`.
    Units in the DBC files are spelled the way the ADU spells them (degree sign, `cm^3`), the acceleration signals
    are scaled to `G` there because the ADU has no m/s2, and torque, m3/s and g/rev carry no unit text because the
    ADU has none for them. `docs/adu-frames.md` keeps ToyotaLens's units; the frame bytes are the same either way.
+   `"adu": "ecu.clt"` on a signal names the ADU's built-in channel it feeds; the CANX writer turns it into the
+   channel's `override`, so the ADU's stock pages, gauges and warnings use the gateway's value. The built-in
+   channels and the unit and decimal places each expects are listed in `ECU_CHANNELS` in the generator; one signal
+   per file per built-in channel (rpm and speed come from the GT86 packets in `gt86-bus.canx` and from the IS F
+   broadcasts in `isf-bus.canx`).
 2. Run `python tools/generate.py`. It rejects overlaps, unknown ids and signals that do not fit.
 3. Run `bash test/host/run.sh`, then `.venv\Scripts\pio run`.
-4. Load the new `gt86-bus.dbc` / `isf-bus.dbc` into the ADU and SavvyCAN.
+4. Import the new `gt86-bus.canx` / `isf-bus.canx` into the ADU, and load the DBC files into SavvyCAN.
 
 Adding a parameter from a block that is not yet polled makes the gateway poll that block; keep an eye on the cycle
 time (about 100 ms per request, fast blocks every cycle, one slow block per cycle).

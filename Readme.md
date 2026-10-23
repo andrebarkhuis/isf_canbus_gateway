@@ -63,9 +63,11 @@ isf_canbus_gateway/
 │   ├── mcp_can/                 MCP2515 driver on the ESP-IDF SPI master
 │   └── logger/                  text log and the candump frame trace
 ├── tools/gateway_frames.json    the output-frame specification (edit this)
-├── tools/generate.py            writes uds_definitions.cpp, translator_table.cpp and the two DBC files
+├── tools/generate.py            writes uds_definitions.cpp, translator_table.cpp, the DBC and the CANX files
 ├── gt86-bus.dbc                 GENERATED: what the gateway sends on the GT86 bus, for the ADU and SavvyCAN
 ├── isf-bus.dbc                  GENERATED: the IS F broadcasts the gateway decodes + the ADU frames repeated there
+├── gt86-bus.canx                GENERATED: the GT86 bus as an ECUmaster CANX stream (what the ADU imports)
+├── isf-bus.canx                 GENERATED: the IS F bus as an ECUmaster CANX stream
 ├── test/host/                   self-test on a host compiler (ToyotaLens's vectors), run in Docker
 └── docs/                        output frames, port map, reference material
 ```

@@ -11,6 +11,8 @@ Outputs (checked in; regenerate after editing the inputs):
   gt86-bus.dbc                       what the gateway sends on the GT86 bus (GT86 packets + ADU frames)
   isf-bus.dbc                        the IS F bus: the modules' broadcast frames the gateway decodes, and the
                                      ADU frames the gateway repeats there (for SavvyCAN / an ECUmaster on that bus)
+  gt86-bus.canx, isf-bus.canx        the same two buses as ECUmaster CANX streams for the ADU: integer scaling
+                                     with decimal places, and the built-in ecu. channel a signal feeds
   docs/adu-frames.md                 the ADU frames as a readable table
 
 Usage:
@@ -18,9 +20,12 @@ Usage:
 """
 import argparse
 import json
+import math
 import os
 import re
 import sys
+from fractions import Fraction
+from xml.sax.saxutils import escape
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -90,6 +95,7 @@ def load_broadcast(spec, params):
     for fr in spec.get("broadcast", []):
         fr = dict(fr)
         fr["idInt"] = int(fr["id"], 16)
+        fr["extended"], fr["broadcast"] = False, True
         if fr["idInt"] > 0x7FF:
             fail("broadcast %s: the IS F modules use 11-bit ids" % fr["id"])
         fr["resolved"] = []
@@ -104,7 +110,7 @@ def load_broadcast(spec, params):
             p = {"uniqueId": uid, "name": s["name"], "module": "isf", "isfId": fr["idInt"], "frameName": fr["name"],
                  "startBit": s["startBit"], "bits": s["bits"], "bigEndian": s.get("order", "big") == "big",
                  "signed": bool(s.get("signed", False)), "scaleFactor": s.get("factor", 1.0), "offset": s.get("offset", 0.0),
-                 "unitType": UNIT_CODES[s.get("unit", "")], "unit": s.get("unit", "")}
+                 "unitType": UNIT_CODES[s.get("unit", "")], "unit": s.get("unit", ""), "adu": s.get("adu")}
             params[uid] = p
             fr["resolved"].append(p)
         frames.append(fr)
@@ -165,10 +171,10 @@ def expand_signals(frame, params):
                 fail("frame %s signal %s: a converted signal needs 'bits'" % (frame["id"], name))
             out.append({"param": p, "name": name, "startBit": s["startBit"], "bits": s["bits"], "passRaw": False,
                         "factor": s["factor"], "offset": s.get("offset", 0.0), "signed": s.get("signed", False),
-                        "unit": s.get("unit", "")})
+                        "unit": s.get("unit", ""), "adu": s.get("adu")})
         else:
             out.append({"param": p, "name": name, "startBit": s["startBit"], "bits": s.get("bits", raw_bits(p)),
-                        "passRaw": True})
+                        "passRaw": True, "adu": s.get("adu")})
     return out
 
 
@@ -346,12 +352,140 @@ def write_dbc(path, frames, broadcast, title, nodes):
         f.write("\n".join(out))
 
 
+
+# ---------------------------------------------------------------------------------------------------------------
+# ECUmaster CANX: the ADU's own stream format (Project tree > Add > Import .CANX/.DBC file). One file per bus like
+# the DBC files, with the same frames, channel names and unit spellings, plus what a DBC cannot carry: the ADU's
+# integer scaling with decimal places, and the built-in "ecu." channel a signal feeds ("adu" in gateway_frames.json,
+# CANX "override"), so the ADU's stock pages, gauges and warnings work from the gateway's data. The format is
+# taken from the streams ECUmaster ships in Documents/ADU/CANX.
+# ---------------------------------------------------------------------------------------------------------------
+
+# The built-in channels a signal may feed, with the unit and decimal places the ADU expects for each (from
+# ECUmaster's own streams; None = the channel carries no decimal places attribute).
+ECU_CHANNELS = {
+    "ecu.rpm": ("rpm", None), "ecu.speed": ("km/h", 1), "ecu.gear": ("", None), "ecu.tps": ("%", 1),
+    "ecu.clt": ("°C", 1), "ecu.iat": ("°C", 1), "ecu.oilTemp": ("°C", 1), "ecu.ambientAirTemp": ("°C", 1),
+    "ecu.gearboxOilTemp": ("°C", 1), "ecu.battery": ("V", 2), "ecu.ignAngle": ("°BTDC", 1),
+    "ecu.lambda1": ("lambda", 3), "ecu.lambda2": ("lambda", 3), "ecu.lambda1Trgt": ("lambda", 3),
+    "ecu.fuelPress": ("bar", 2), "ecu.injPW": ("ms", 2), "ecu.flags4.MIL": ("", None), "ecu.flags5.ACClutch": ("", None),
+}
+# (ToyotaLens unit, ADU unit) -> multiply the physical value by, when a signal feeds a built-in channel.
+UNIT_CONVERT = {("kPa", "bar"): 0.01, ("us", "ms"): 0.001, ("degC", "°C"): 1.0, ("deg", "°BTDC"): 1.0,
+                ("", "lambda"): 1.0}
+CANX_MAX = 32767  # the largest multiplier / divider in ECUmaster's own streams
+
+
+def canx_scaling(factor, offset, unit, override):
+    """The ADU's integer scaling for a signal: shown value = (raw * multiplier / divider + offset) / 10^decimals.
+    Returns (multiplier, divider, offset, decimals or None, unit)."""
+    if override:
+        if override not in ECU_CHANNELS:
+            fail("unknown ADU channel %r; add it to ECU_CHANNELS" % override)
+        to_unit, decimals = ECU_CHANNELS[override]
+        k = 1.0 if unit == to_unit or to_unit == "" else UNIT_CONVERT.get((unit, to_unit))
+        if k is None:
+            fail("no conversion from unit %r to %r for %s" % (unit, to_unit, override))
+        factor, offset, unit = factor * k, offset * k, to_unit
+    else:
+        factor, offset, unit = dbc_scaling(factor, offset, unit)
+        # enough decimal places to show one raw step, at most three
+        decimals = 0 if factor >= 1 else min(3, int(math.ceil(-math.log10(factor) - 1e-9)))
+    scale = 10 ** (decimals or 0)
+    for den in (CANX_MAX, 10000, 1000, 100, 10, 1):
+        fr = Fraction(factor * scale).limit_denominator(den)
+        if fr.numerator <= CANX_MAX:
+            break
+    return fr.numerator, fr.denominator, int(round(offset * scale)), decimals, unit
+
+
+def canx_field(start_bit, bits, signed, big_endian):
+    """CANX type, byteOffset, bitCount, bitPosition for a signal; fails if the ADU cannot read the field."""
+    if big_endian:
+        if bits != 16 or start_bit % 8 != 7:
+            fail("CANX: big-endian field at bit %d width %d is not a whole 16-bit word" % (start_bit, bits))
+        return ("s16-be" if signed else "u16-be"), start_bit // 8, None, None
+    byte, pos = start_bit // 8, start_bit % 8
+    if pos + bits <= 8:
+        return ("s8" if signed else "u8"), byte, (bits if bits < 8 else None), (pos if bits < 8 else None)
+    if pos == 0 and bits <= 16:
+        return ("s16-le" if signed else "u16-le"), byte, (bits if bits < 16 else None), (0 if bits < 16 else None)
+    fail("CANX: field at bit %d width %d is not a byte, a bit field in a byte or a 16-bit word" % (start_bit, bits))
+
+
+def canx_mobs(frames):
+    """Groups frames into message objects: the ADU receives 1, 2, 4 or 8 consecutive ids per object."""
+    groups = {}
+    for fr in frames:
+        groups.setdefault((fr["extended"], fr["idInt"] >> 3), []).append(fr)
+    mobs = []
+    for (ext, _), frs in sorted(groups.items()):
+        frs.sort(key=lambda f: f["idInt"])
+        for width in (1, 2, 4, 8):
+            base = frs[0]["idInt"] & ~(width - 1)
+            if all(base <= f["idInt"] < base + width for f in frs):
+                break
+        mobs.append((base, ext, width, frs))
+    return mobs
+
+
+def write_canx(path, frames, broadcast, title):
+    """One CANX stream for one bus; returns (channels, channels feeding a built-in ADU channel)."""
+    def attr(key, value):
+        return "" if value is None else ' %s="%s"' % (key, escape(str(value), {'"': "&quot;"}))
+
+    def channel(name, start_bit, bits, signed, big_endian, factor, offset, unit, override):
+        kind, byte, bit_count, bit_pos = canx_field(start_bit, bits, signed, big_endian)
+        mult, div, off, decimals, unit = canx_scaling(factor, offset, unit, override)
+        lo, hi = (-(2 ** (bits - 1)), 2 ** (bits - 1) - 1) if signed else (0, 2 ** bits - 1)
+        scale = 10 ** (decimals or 0)
+        vmin, vmax = sorted(((lo * mult / div + off) / scale, (hi * mult / div + off) / scale))
+        return ("      <channel" + attr("id", name) + attr("type", kind) + attr("byteOffset", byte)
+                + attr("bitCount", bit_count) + attr("bitPosition", bit_pos) + attr("unit", unit)
+                + attr("min", "%g" % vmin) + attr("max", "%g" % vmax)
+                + attr("multiplier", mult if mult != 1 else None) + attr("divider", div if div != 1 else None)
+                + attr("offset", off if off else None) + attr("decimalPlaces", decimals) + attr("override", override) + "/>")
+
+    out = ['<?xml version="1.0" encoding="UTF-8"?>', "<CANbuseXport>",
+           "  <!-- %s (generated by tools/generate.py from tools/gateway_frames.json; do not edit) -->" % title]
+    overrides, count = {}, 0
+    for base, ext, width, frs in canx_mobs(list(frames) + list(broadcast)):
+        out.append('  <mob id="m_%X" canbusID="%X" ext="%d" width="%d">' % (base, base, 1 if ext else 0, width))
+        for fr in frs:
+            freq = "" if fr.get("broadcast") else attr("frequency", int(round(1000.0 / fr["interval"])))
+            out.append('    <frame offset="%d" id="%s"%s>' % (fr["idInt"] - base, fr["name"], freq))
+            for s in fr["resolved"]:
+                if fr.get("broadcast"):
+                    name = dbc_signal_name(s)
+                    line = channel(name, s["startBit"], s["bits"], s["signed"], s["bigEndian"], s["scaleFactor"],
+                                   s["offset"], s["unit"], s.get("adu"))
+                else:
+                    p = s["param"]
+                    factor, offset, unit = dbc_factor_offset(s)
+                    signed = p["signed"] if s["passRaw"] else s.get("signed", False)
+                    name = s["name"]
+                    line = channel(name, s["startBit"], s["bits"], signed, False, factor, offset, unit, s.get("adu"))
+                if s.get("adu"):
+                    if s["adu"] in overrides:
+                        fail("%s: %s and %s both feed %s" % (os.path.basename(path), overrides[s["adu"]], name, s["adu"]))
+                    overrides[s["adu"]] = name
+                out.append(line)
+                count += 1
+            out.append("    </frame>")
+        out.append("  </mob>")
+    out.append("</CANbuseXport>")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(out) + "\n")
+    return count, len(overrides)
+
+
 def write_markdown(path, frames):
     """docs/adu-frames.md: the ADU frames and their signals, for people (the DBC is for machines)."""
     out = ["# ADU frames (generated by tools/generate.py from tools/gateway_frames.json; do not edit)", "",
            "29-bit ids, sent on the GT86 bus and on the IS F bus. Every signal is little-endian and pass-through:",
            "physical = raw x factor + offset, with ToyotaLens's scaling. Source = ToyotaLens module, Mode 21 block and",
-           "byte position. At most 8 signals per frame (ECUmaster per-frame limit).", ""]
+           "byte position. At most 8 signals per frame (ECUmaster per-frame limit). '-> ADU ecu.x' marks a signal that",
+           "feeds one of the ADU's built-in channels (the CANX override).", ""]
     for fr in frames:
         if fr.get("gt86"):
             continue
@@ -372,7 +506,7 @@ def write_markdown(path, frames):
                 states = " (" + ", ".join("%s=%s" % (k, v) for k, v in sorted(p["states"].items(), key=lambda kv: int(kv[0]))[:4]) + (", ..." if len(p["states"]) > 4 else "") + ")"
             out.append("| %s | %s | %s | %s | %s | %s %s: %s, 21 %s byte %d%s |" % (
                 sg["name"], where, ("%g" % factor), ("%g" % offset), unit, p["module"], p["uniqueId"], p["name"],
-                p["parameterAddress"].upper(), p["bytePosition"], states))
+                p["parameterAddress"].upper(), p["bytePosition"], states + (" -> ADU " + sg["adu"] if sg.get("adu") else "")))
         out.append("")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(out))
@@ -423,10 +557,15 @@ def main():
     write_dbc(os.path.join(ROOT, "isf-bus.dbc"), [fr for fr in frames if fr["isf"]], broadcast,
               "IS F bus: the modules' broadcast frames the gateway decodes and the ADU frames it repeats there",
               "ISF GATEWAY ADU")
+    gt86 = write_canx(os.path.join(ROOT, "gt86-bus.canx"), frames, [], "GT86 bus: what the GT86-ISF gateway sends")
+    isf = write_canx(os.path.join(ROOT, "isf-bus.canx"), [fr for fr in frames if fr["isf"]], broadcast,
+                     "IS F bus: the modules' broadcast frames the gateway decodes and the ADU frames it repeats there")
     write_markdown(os.path.join(ROOT, "docs", "adu-frames.md"), frames)
     print("generated: %d frames, %d signals, %d parameter definitions, %d broadcast signals" % (
         len(frames), sum(len(f["resolved"]) for f in frames), len([p for p in used if p["module"] != "isf"]),
         sum(len(f["resolved"]) for f in broadcast)))
+    print("CANX: gt86-bus %d channels (%d feed built-in ADU channels), isf-bus %d channels (%d feed built-in)" % (
+        gt86 + isf))
 
 
 if __name__ == "__main__":

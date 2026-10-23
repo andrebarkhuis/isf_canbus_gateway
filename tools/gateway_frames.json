@@ -4,6 +4,7 @@
       "plus ToyotaLens's data/{engine,ect,abs}.json, into src/uds/uds_definitions.cpp, src/translator_table.cpp",
       "and gt86-bus.dbc / isf-bus.dbc. Edit this file, run the generator, never edit the generated files.",
     "DBC signal names get the frame's first name token as a prefix (ENG_, TRANS_, ABS_, GT86_, ISF_), so the ADU channels are unique across frames and sort by source module; 'name' here is the bare signal name.",
+    "'adu' on a signal names the built-in ADU channel it feeds (ecu.clt, ecu.rpm, ...): the CANX files carry it as the channel's override, so the ADU's stock pages and warnings use the gateway's value. At most one signal per file per built-in channel.",
       "",
       "Every signal is little-endian; startBit is the bit position of its least significant bit (byte*8 + bit).",
       "A signal without 'factor' is pass-through: the ECU's raw value goes into the frame unchanged, its width",
@@ -46,14 +47,14 @@
       "id": "0x0B4", "name": "ISF_ABS_Speed", "module": "abs", "rate": "63 Hz", "length": 8,
       "comment": "Toyota vehicle speed, bytes 5-6 big-endian, 0.01 km/h per bit (TOYOTA_LEXUS.dbc SPEED 47|16@0+); byte 7 checksum",
       "signals": [
-        {"uniqueId": "isf.0B4.VehicleSpeed", "name": "Vehicle Speed (ABS broadcast)", "startBit": 47, "bits": 16, "order": "big", "factor": 0.01, "offset": 0, "unit": "km/h"}
+        {"uniqueId": "isf.0B4.VehicleSpeed", "name": "Vehicle Speed (ABS broadcast)", "startBit": 47, "bits": 16, "order": "big", "factor": 0.01, "offset": 0, "unit": "km/h", "adu": "ecu.speed"}
       ]
     },
     {
       "id": "0x2C4", "name": "ISF_Engine_RPM", "module": "engine", "rate": "30 Hz", "length": 8,
       "comment": "Toyota engine rpm, bytes 0-1 big-endian signed, 0.78125 rpm per bit (TOYOTA_LEXUS.dbc ENGINE_RPM_2 RPM 7|16@0-)",
       "signals": [
-        {"uniqueId": "isf.2C4.EngineRPM", "name": "Engine Speed (ECU broadcast)", "startBit": 7, "bits": 16, "order": "big", "signed": true, "factor": 0.78125, "offset": 0, "unit": "rpm"}
+        {"uniqueId": "isf.2C4.EngineRPM", "name": "Engine Speed (ECU broadcast)", "startBit": 7, "bits": 16, "order": "big", "signed": true, "factor": 0.78125, "offset": 0, "unit": "rpm", "adu": "ecu.rpm"}
       ]
     }
   ],
@@ -65,7 +66,7 @@
     {
       "id": "0xD1", "name": "GT86_VehicleSpeed", "gt86": true, "interval": 100, "defaults": "00 00 13 00 00 00 00 00", "comment": "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data; default is the real car at rest (00 00 13 00), foot off the brake",
       "signals": [
-        {"module": "isf", "uniqueId": "isf.0B4.VehicleSpeed", "name": "VehicleSpeed", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"}
+        {"module": "isf", "uniqueId": "isf.0B4.VehicleSpeed", "name": "VehicleSpeed", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h", "adu": "ecu.speed"}
       ]
     },
     {
@@ -89,7 +90,7 @@
     {
       "id": "0x141", "name": "GT86_EngineData2", "gt86": true, "interval": 50, "defaults": "00 00 00 00 00 80 A7 00", "comment": "Engine rpm in bits 32-45 (bytes 4-5, 14 bits, 1 rpm per bit); bits 46-47 kept from the default",
       "signals": [
-        {"module": "isf", "uniqueId": "isf.2C4.EngineRPM", "name": "EngineRPM", "startBit": 32, "bits": 14, "factor": 1, "offset": 0, "unit": "rpm"}
+        {"module": "isf", "uniqueId": "isf.2C4.EngineRPM", "name": "EngineRPM", "startBit": 32, "bits": 14, "factor": 1, "offset": 0, "unit": "rpm", "adu": "ecu.rpm"}
       ]
     },
     {
@@ -133,10 +134,10 @@
     {
       "id": "0x1F0005E1", "extended": true, "isf": true, "name": "ENG_Temperatures", "interval": 100, "comment": "From engine 21 01, engine 21 51, engine 21 05",
       "signals": [
-        {"module": "engine", "uniqueId": "pl8Tao3_P", "name": "Coolant", "startBit": 0},
-        {"module": "engine", "uniqueId": "PINbBSGZE", "name": "IntakeAir", "startBit": 8},
-        {"module": "engine", "uniqueId": "ycETY1A_7", "name": "EngineOil", "startBit": 16},
-        {"module": "engine", "uniqueId": "G5xcpu12b", "name": "Ambient", "startBit": 24},
+        {"module": "engine", "uniqueId": "pl8Tao3_P", "name": "Coolant", "startBit": 0, "adu": "ecu.clt"},
+        {"module": "engine", "uniqueId": "PINbBSGZE", "name": "IntakeAir", "startBit": 8, "adu": "ecu.iat"},
+        {"module": "engine", "uniqueId": "ycETY1A_7", "name": "EngineOil", "startBit": 16, "adu": "ecu.oilTemp"},
+        {"module": "engine", "uniqueId": "G5xcpu12b", "name": "Ambient", "startBit": 24, "adu": "ecu.ambientAirTemp"},
         {"module": "engine", "uniqueId": "f9zM6QYVt", "name": "CatalystB1S1", "startBit": 32},
         {"module": "engine", "uniqueId": "ZfHpLqF7i", "name": "CatalystB2S1", "startBit": 48}
       ]
@@ -144,7 +145,7 @@
     {
       "id": "0x1F0005E2", "extended": true, "isf": true, "name": "ENG_Throttle_Pedal", "interval": 100, "comment": "From engine 21 01, engine 21 41",
       "signals": [
-        {"module": "engine", "uniqueId": "BHZoJoMeQ", "name": "ThrottlePosition", "startBit": 0},
+        {"module": "engine", "uniqueId": "BHZoJoMeQ", "name": "ThrottlePosition", "startBit": 0, "adu": "ecu.tps"},
         {"module": "engine", "uniqueId": "TaciUJ0rZ", "name": "AcceleratorPosition", "startBit": 8},
         {"module": "engine", "uniqueId": "_XFhPTGTA", "name": "ThrottleMotorDuty", "startBit": 24},
         {"module": "engine", "uniqueId": "g6UVgirBY", "name": "AccelSensor1", "startBit": 32},
@@ -169,9 +170,9 @@
     {
       "id": "0x1F0005E4", "extended": true, "isf": true, "name": "ENG_AirFuel", "interval": 100, "comment": "From engine 21 04",
       "signals": [
-        {"module": "engine", "uniqueId": "GRKiFVo3F", "name": "TargetAFR", "startBit": 0},
-        {"module": "engine", "uniqueId": "nbybVhTSr", "name": "Lambda_B1S1", "startBit": 16},
-        {"module": "engine", "uniqueId": "9W9bkJShz", "name": "Lambda_B2S1", "startBit": 32},
+        {"module": "engine", "uniqueId": "GRKiFVo3F", "name": "TargetAFR", "startBit": 0, "adu": "ecu.lambda1Trgt"},
+        {"module": "engine", "uniqueId": "nbybVhTSr", "name": "Lambda_B1S1", "startBit": 16, "adu": "ecu.lambda1"},
+        {"module": "engine", "uniqueId": "9W9bkJShz", "name": "Lambda_B2S1", "startBit": 32, "adu": "ecu.lambda2"},
         {"module": "engine", "uniqueId": "z98HX74lV", "name": "AFS_Voltage_B1S1", "startBit": 48}
       ]
     },
@@ -188,8 +189,8 @@
     {
       "id": "0x1F0005E6", "extended": true, "isf": true, "name": "ENG_Fuel_Delivery", "interval": 100, "comment": "From engine 21 05, engine 21 3C, engine 21 03, engine 21 39",
       "signals": [
-        {"module": "engine", "uniqueId": "v5skr-i2E", "name": "FuelPressure", "startBit": 0},
-        {"module": "engine", "uniqueId": "ItoRxih8j", "name": "InjectorPulse", "startBit": 16},
+        {"module": "engine", "uniqueId": "v5skr-i2E", "name": "FuelPressure", "startBit": 0, "adu": "ecu.fuelPress"},
+        {"module": "engine", "uniqueId": "ItoRxih8j", "name": "InjectorPulse", "startBit": 16, "adu": "ecu.injPW"},
         {"module": "engine", "uniqueId": "h0_AFRofF", "name": "InjectionVolume", "startBit": 32},
         {"module": "engine", "uniqueId": "W13lW2Nk9", "name": "EvapPurge", "startBit": 48},
         {"module": "engine", "uniqueId": "Pw2b2fXZa", "name": "FuelPumpSpeedControl", "startBit": 56},
@@ -199,7 +200,7 @@
     {
       "id": "0x1F0005E7", "extended": true, "isf": true, "name": "ENG_Ignition_Knock", "interval": 100, "comment": "From engine 21 03, engine 21 37, engine 21 45",
       "signals": [
-        {"module": "engine", "uniqueId": "6fCXjj-K0", "name": "IgnitionAdvance", "startBit": 0},
+        {"module": "engine", "uniqueId": "6fCXjj-K0", "name": "IgnitionAdvance", "startBit": 0, "adu": "ecu.ignAngle"},
         {"module": "engine", "uniqueId": "ZCvnPvIxk", "name": "KnockCorrectLearn", "startBit": 8},
         {"module": "engine", "uniqueId": "vB3dxJsmB", "name": "KnockFeedback", "startBit": 24},
         {"module": "engine", "uniqueId": "4z6yzKThG", "name": "MisfireRPM", "startBit": 40},
@@ -241,11 +242,11 @@
     {
       "id": "0x1F0005EB", "extended": true, "isf": true, "name": "ENG_Electrical", "interval": 100, "comment": "From engine 21 01, engine 21 41, engine 21 39, engine 21 25",
       "signals": [
-        {"module": "engine", "uniqueId": "ku4nFD9dK", "name": "BatteryVoltage", "startBit": 0},
+        {"module": "engine", "uniqueId": "ku4nFD9dK", "name": "BatteryVoltage", "startBit": 0, "adu": "ecu.battery"},
         {"module": "engine", "uniqueId": "acgFf0-WC", "name": "BM_Voltage", "startBit": 16},
         {"module": "engine", "uniqueId": "zFcUhVFQh", "name": "ThrottleMotorCurrent", "startBit": 32},
         {"module": "engine", "uniqueId": "gGP8X_1Qs", "name": "ElectricFan", "startBit": 40},
-        {"module": "engine", "uniqueId": "myuWtv8rB", "name": "ACClutchRelay", "startBit": 41},
+        {"module": "engine", "uniqueId": "myuWtv8rB", "name": "ACClutchRelay", "startBit": 41, "adu": "ecu.flags5.ACClutch"},
         {"module": "engine", "uniqueId": "MUn-rKGfW", "name": "StarterRelay", "startBit": 42},
         {"module": "engine", "uniqueId": "JlCNHHMbp", "name": "ACCRelay", "startBit": 43},
         {"module": "engine", "uniqueId": "us-c_BqAg", "name": "ElectricalLoad1", "startBit": 44}
@@ -306,7 +307,7 @@
     {
       "id": "0x1F0005F0", "extended": true, "isf": true, "name": "ENG_Status", "interval": 100, "comment": "From engine 21 06, engine 21 25, engine 21 37, engine 21 51",
       "signals": [
-        {"module": "engine", "uniqueId": "Bbj0Pmhyr", "name": "MIL", "startBit": 0},
+        {"module": "engine", "uniqueId": "Bbj0Pmhyr", "name": "MIL", "startBit": 0, "adu": "ecu.flags4.MIL"},
         {"module": "engine", "uniqueId": "WCJGSumpU", "name": "EmissionDTCCount", "startBit": 1},
         {"module": "engine", "uniqueId": "QrVBqDKae", "name": "OilPressureSwitch", "startBit": 8},
         {"module": "engine", "uniqueId": "gAu-DN8VC", "name": "FuelCutCondition", "startBit": 9},
@@ -319,7 +320,7 @@
     {
       "id": "0x1F0005F1", "extended": true, "isf": true, "name": "TRANS_Temp_Speeds", "interval": 100, "comment": "From ect 21 82, ect 21 81, ect 21 22",
       "signals": [
-        {"module": "ect", "uniqueId": "EJAh4TNHA", "name": "ATOilTemperature", "startBit": 0},
+        {"module": "ect", "uniqueId": "EJAh4TNHA", "name": "ATOilTemperature", "startBit": 0, "adu": "ecu.gearboxOilTemp"},
         {"module": "ect", "uniqueId": "SpqvpeR8J", "name": "NT_Speed", "startBit": 16},
         {"module": "ect", "uniqueId": "SJZ7oPa40", "name": "NC3_Speed", "startBit": 24},
         {"module": "ect", "uniqueId": "iMojAwB1A", "name": "SP2_Speed", "startBit": 32},
@@ -329,7 +330,7 @@
     {
       "id": "0x1F0005F2", "extended": true, "isf": true, "name": "TRANS_Shift_Solenoids", "interval": 100, "comment": "From ect 21 85",
       "signals": [
-        {"module": "ect", "uniqueId": "uVqogLzei", "name": "ShiftStatus", "startBit": 0},
+        {"module": "ect", "uniqueId": "uVqogLzei", "name": "ShiftStatus", "startBit": 0, "adu": "ecu.gear"},
         {"module": "ect", "uniqueId": "xNDFWfWrx", "name": "LockUp", "startBit": 8},
         {"module": "ect", "uniqueId": "NCfYZpryP", "name": "SLT", "startBit": 9},
         {"module": "ect", "uniqueId": "ktUrcNJB2", "name": "SLU", "startBit": 10},

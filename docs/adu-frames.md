@@ -2,7 +2,8 @@
 
 29-bit ids, sent on the GT86 bus and on the IS F bus. Every signal is little-endian and pass-through:
 physical = raw x factor + offset, with ToyotaLens's scaling. Source = ToyotaLens module, Mode 21 block and
-byte position. At most 8 signals per frame (ECUmaster per-frame limit).
+byte position. At most 8 signals per frame (ECUmaster per-frame limit). '-> ADU ecu.x' marks a signal that
+feeds one of the ADU's built-in channels (the CANX override).
 
 ## ENG_Speed_Load  (0x1F0005E0, every 100 ms)
 
@@ -18,10 +19,10 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ENG_Coolant | byte 0 | 1 | -40 | degC | engine pl8Tao3_P: Coolant Temp, 21 01 byte 9 |
-| ENG_IntakeAir | byte 1 | 1 | -40 | degC | engine PINbBSGZE: Intake Air, 21 01 byte 6 |
-| ENG_EngineOil | byte 2 | 1 | -40 | degC | engine ycETY1A_7: Engine Oil Temperature, 21 51 byte 9 |
-| ENG_Ambient | byte 3 | 1 | -40 | degC | engine G5xcpu12b: Ambient Temp for A/C, 21 51 byte 11 |
+| ENG_Coolant | byte 0 | 1 | -40 | degC | engine pl8Tao3_P: Coolant Temp, 21 01 byte 9 -> ADU ecu.clt |
+| ENG_IntakeAir | byte 1 | 1 | -40 | degC | engine PINbBSGZE: Intake Air, 21 01 byte 6 -> ADU ecu.iat |
+| ENG_EngineOil | byte 2 | 1 | -40 | degC | engine ycETY1A_7: Engine Oil Temperature, 21 51 byte 9 -> ADU ecu.oilTemp |
+| ENG_Ambient | byte 3 | 1 | -40 | degC | engine G5xcpu12b: Ambient Temp for A/C, 21 51 byte 11 -> ADU ecu.ambientAirTemp |
 | ENG_CatalystB1S1 | bytes 4-5 | 0.1 | -40 | degC | engine f9zM6QYVt: Catalyst Temp B1S1, 21 05 byte 6 |
 | ENG_CatalystB2S1 | bytes 6-7 | 0.1 | -40 | degC | engine ZfHpLqF7i: Catalyst Temp B2S1, 21 05 byte 8 |
 
@@ -29,7 +30,7 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ENG_ThrottlePosition | byte 0 | 0.392157 | 0 | % | engine BHZoJoMeQ: Throttle Sensor Position, 21 01 byte 15 |
+| ENG_ThrottlePosition | byte 0 | 0.392157 | 0 | % | engine BHZoJoMeQ: Throttle Sensor Position, 21 01 byte 15 -> ADU ecu.tps |
 | ENG_AcceleratorPosition | bytes 1-2 | 0.00610352 | 0 | % | engine TaciUJ0rZ: Accelerator Position, 21 41 byte 5 |
 | ENG_ThrottleMotorDuty | byte 3 | 0.392157 | 0 | % | engine _XFhPTGTA: Throttle Motor DUTY, 21 01 byte 20 |
 | ENG_AccelSensor1 | byte 4 | 0.392157 | 0 | % | engine g6UVgirBY: Accel Sens. No.1 Volt %, 21 01 byte 18 |
@@ -54,9 +55,9 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ENG_TargetAFR | bytes 0-1 | 3.05e-05 | 0 |  | engine GRKiFVo3F: Target Air-Fuel Ratio, 21 04 byte 0 |
-| ENG_Lambda_B1S1 | bytes 2-3 | 3.05e-05 | 0 |  | engine nbybVhTSr: AF Lambda B1S1, 21 04 byte 2 |
-| ENG_Lambda_B2S1 | bytes 4-5 | 3.05e-05 | 0 |  | engine 9W9bkJShz: AF Lambda B2S1, 21 04 byte 6 |
+| ENG_TargetAFR | bytes 0-1 | 3.05e-05 | 0 |  | engine GRKiFVo3F: Target Air-Fuel Ratio, 21 04 byte 0 -> ADU ecu.lambda1Trgt |
+| ENG_Lambda_B1S1 | bytes 2-3 | 3.05e-05 | 0 |  | engine nbybVhTSr: AF Lambda B1S1, 21 04 byte 2 -> ADU ecu.lambda1 |
+| ENG_Lambda_B2S1 | bytes 4-5 | 3.05e-05 | 0 |  | engine 9W9bkJShz: AF Lambda B2S1, 21 04 byte 6 -> ADU ecu.lambda2 |
 | ENG_AFS_Voltage_B1S1 | bytes 6-7 | 0.000122 | 0 | V | engine z98HX74lV: AFS Voltage B1S1, 21 04 byte 4 |
 
 ## ENG_AirFuel_Sensors  (0x1F0005E5, every 100 ms)
@@ -73,8 +74,8 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ENG_FuelPressure | bytes 0-1 | 10 | 0 | kPa | engine v5skr-i2E: Fuel Press, 21 05 byte 0 |
-| ENG_InjectorPulse | bytes 2-3 | 1 | 0 | us | engine ItoRxih8j: Injector (Port), 21 3C byte 4 |
+| ENG_FuelPressure | bytes 0-1 | 10 | 0 | kPa | engine v5skr-i2E: Fuel Press, 21 05 byte 0 -> ADU ecu.fuelPress |
+| ENG_InjectorPulse | bytes 2-3 | 1 | 0 | us | engine ItoRxih8j: Injector (Port), 21 3C byte 4 -> ADU ecu.injPW |
 | ENG_InjectionVolume | bytes 4-5 | 3.125e-05 | 0 | ml | engine h0_AFRofF: Injection Volum (Cylinder1), 21 3C byte 0 |
 | ENG_EvapPurge | byte 6 | 0.392157 | 0 | % | engine W13lW2Nk9: EVAP (Purge) VSV, 21 03 byte 8 |
 | ENG_FuelPumpSpeedControl | byte 7 bit 0 | 1 | 0 |  | engine Pw2b2fXZa: Fuel Pump Speed Control, 21 39 byte 0 (0=OFF, 1=ON) |
@@ -84,7 +85,7 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ENG_IgnitionAdvance | byte 0 | 0.5 | -64 | deg | engine 6fCXjj-K0: IGN Advance, 21 03 byte 6 |
+| ENG_IgnitionAdvance | byte 0 | 0.5 | -64 | deg | engine 6fCXjj-K0: IGN Advance, 21 03 byte 6 -> ADU ecu.ignAngle |
 | ENG_KnockCorrectLearn | bytes 1-2 | 0.03125 | -1024 | deg | engine ZCvnPvIxk: Knock Correct Learn Value, 21 37 byte 8 |
 | ENG_KnockFeedback | bytes 3-4 | 0.03125 | -1024 | deg | engine vB3dxJsmB: Knock Feedback Value, 21 37 byte 10 |
 | ENG_MisfireRPM | byte 5 | 25 | 0 | rpm | engine 4z6yzKThG: Misfire RPM, 21 45 byte 1 |
@@ -126,11 +127,11 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ENG_BatteryVoltage | bytes 0-1 | 0.001 | 0 | V | engine ku4nFD9dK: Battery Voltage, 21 01 byte 26 |
+| ENG_BatteryVoltage | bytes 0-1 | 0.001 | 0 | V | engine ku4nFD9dK: Battery Voltage, 21 01 byte 26 -> ADU ecu.battery |
 | ENG_BM_Voltage | bytes 2-3 | 0.0012207 | 0 | V | engine acgFf0-WC: +BM Voltage, 21 41 byte 7 |
 | ENG_ThrottleMotorCurrent | byte 4 | 0.078125 | 0 | A | engine zFcUhVFQh: Throttle Motor Current, 21 41 byte 17 |
 | ENG_ElectricFan | byte 5 bit 0 | 1 | 0 |  | engine gGP8X_1Qs: Electric Fan Motor, 21 39 byte 4 (0=OFF, 1=ON) |
-| ENG_ACClutchRelay | byte 5 bit 1 | 1 | 0 |  | engine myuWtv8rB: A/C Magnetic Clutch Relay, 21 39 byte 1 (0=OFF, 1=ON) |
+| ENG_ACClutchRelay | byte 5 bit 1 | 1 | 0 |  | engine myuWtv8rB: A/C Magnetic Clutch Relay, 21 39 byte 1 (0=OFF, 1=ON) -> ADU ecu.flags5.ACClutch |
 | ENG_StarterRelay | byte 5 bit 2 | 1 | 0 |  | engine MUn-rKGfW: Starter Relay, 21 39 byte 5 (0=OFF, 1=ON) |
 | ENG_ACCRelay | byte 5 bit 3 | 1 | 0 |  | engine JlCNHHMbp: ACC Relay, 21 39 byte 5 (0=OFF, 1=ON) |
 | ENG_ElectricalLoad1 | byte 5 bit 4 | 1 | 0 |  | engine us-c_BqAg: Electrical Load Signal 1, 21 25 byte 3 (0=OFF, 1=ON) |
@@ -191,7 +192,7 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ENG_MIL | byte 0 bit 0 | 1 | 0 |  | engine Bbj0Pmhyr: MIL, 21 06 byte 0 (0=OFF, 1=ON) |
+| ENG_MIL | byte 0 bit 0 | 1 | 0 |  | engine Bbj0Pmhyr: MIL, 21 06 byte 0 (0=OFF, 1=ON) -> ADU ecu.flags4.MIL |
 | ENG_EmissionDTCCount | byte 0 bit 1-7 | 1 | 0 |  | engine WCJGSumpU: Number of Emission DTC, 21 06 byte 0 |
 | ENG_OilPressureSwitch | byte 1 bit 0 | 1 | 0 |  | engine QrVBqDKae: Engine Oil Pressure SW, 21 25 byte 0 (0=OFF, 1=ON) |
 | ENG_FuelCutCondition | byte 1 bit 1 | 1 | 0 |  | engine gAu-DN8VC: Fuel Cut Condition, 21 37 byte 21 (0=OFF, 1=ON) |
@@ -204,7 +205,7 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| TRANS_ATOilTemperature | bytes 0-1 | 0.00390625 | -40 | degC | ect EJAh4TNHA: A/T Oil Temperature 1, 21 82 byte 0 |
+| TRANS_ATOilTemperature | bytes 0-1 | 0.00390625 | -40 | degC | ect EJAh4TNHA: A/T Oil Temperature 1, 21 82 byte 0 -> ADU ecu.gearboxOilTemp |
 | TRANS_NT_Speed | byte 2 | 50 | 0 | rpm | ect SpqvpeR8J: SPD (NT), 21 81 byte 0 |
 | TRANS_NC3_Speed | byte 3 | 50 | 0 | rpm | ect SJZ7oPa40: SPD (NC3), 21 81 byte 12 |
 | TRANS_SP2_Speed | byte 4 | 1 | 0 | km/h | ect iMojAwB1A: SPD (SP2), 21 81 byte 21 |
@@ -214,7 +215,7 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| TRANS_ShiftStatus | byte 0 | 1 | 0 |  | ect uVqogLzei: Shift Status, 21 85 byte 0 (1=1st, 2=2nd, 3=3rd, 4=4th, ...) |
+| TRANS_ShiftStatus | byte 0 | 1 | 0 |  | ect uVqogLzei: Shift Status, 21 85 byte 0 (1=1st, 2=2nd, 3=3rd, 4=4th, ...) -> ADU ecu.gear |
 | TRANS_LockUp | byte 1 bit 0 | 1 | 0 |  | ect xNDFWfWrx: Lock Up, 21 85 byte 1 (0=OFF, 1=ON) |
 | TRANS_SLT | byte 1 bit 1 | 1 | 0 |  | ect NCfYZpryP: SLT Solenoid Status, 21 85 byte 2 (0=OFF, 1=ON) |
 | TRANS_SLU | byte 1 bit 2 | 1 | 0 |  | ect ktUrcNJB2: SLU Solenoid Status, 21 85 byte 2 (0=OFF, 1=ON) |
