@@ -190,7 +190,35 @@ class Project:
         self.text = self.text[:s] + "".join(out) + self.text[e:]
         return hits
 
+    def known_channels(self):
+        """Every name a channel reference can resolve to: inputs, functions, numbers, analog/digital inputs, timers,
+        switches, tables, enumerations and the built-ins (anything with a dot, zero, one, a number)."""
+        names = set(BUILTIN_CHANNELS)
+        for arr in ("canbusInputs", "functions", "numbers", "analogInputs", "digitalInputs", "timers",
+                    "momentarySwitches", "tables", "enumerations"):
+            try:
+                names |= set(self.item_names(arr))
+            except Exception:
+                pass
+        return names
+
+    def unknown(self, name):
+        if not name or name in self._known or "." in name or re.fullmatch(r"-?\d+", name):
+            return False
+        return True
+
+    def program_report(self):
+        self._known = self.known_channels()
+        lines = []
+        for arr, is_number in (("numbers", True), ("functions", False)):
+            for _, _, t in self.items(arr):
+                dp = item_var(t, "decimalPlaces")
+                extra = " (%s dp)" % dp if is_number and dp not in (None, "0") else ""
+                lines.append("  %-28s = %s%s" % (item_var(t, "name"), describe_ops(program_ops(t), is_number, self.unknown), extra))
+        return "\n".join(lines)
+
     def page_report(self):
+        self._known = self.known_channels()
         lines = []
         for s, e, t in self.items("dashboardPages"):
             lines.append("PAGE %s" % item_var(t, "name"))
@@ -202,12 +230,82 @@ class Project:
                 if kind == "eUIText" and text and not chan:
                     pending = text
                 elif kind == "eUIText" and chan:
-                    lines.append("   %-26s -> %s (%s dp)" % (text or pending or "?", chan, item_var(block, "decimalPlaces")))
+                    lines.append("   %-26s -> %s%s (%s dp)" % (text or pending or "?", chan, "?" if self.unknown(chan) else "", item_var(block, "decimalPlaces")))
                     pending = None
                 extra = [x for x in ((vis if vis not in (None, "", "one") else None), col) if x]
                 if extra and not chan:
                     lines.append("   %-26s %s %s" % (text or kind, kind, " ".join(extra)))
         return "\n".join(lines)
+
+
+# -- functions and numbers (eFunctionOperation programs) ---------------------------------------------------------
+# Logic operation codes: the client's string table (ADU.exe keeps the names in this order) checked against the
+# project's own functions (Is True = 1, f_Revlimiter "ecu.rpm > 6600" = 7, Flash = 12).
+FUNCTION_OPS = {1: "is true", 2: "is false", 3: "=", 4: "!=", 5: "<", 6: "<=", 7: ">", 8: ">=", 9: "and", 10: "or",
+                11: "xor", 12: "flash", 13: "pulse", 14: "toggle", 15: "set-reset", 16: "hysteresis", 17: "changed"}
+# Number operation codes: 65 (channel or constant) is the only one seen in a project; the others follow the
+# manual's list from there and are UNVERIFIED.
+NUMBER_OPS = {65: "value", 66: "constant", 67: "choose", 68: "/", 69: "mod", 70: "+", 71: "-", 72: "min", 73: "max",
+              74: "clamp", 75: "lookup2", 76: "lookup3", 77: "lookup4"}
+# flags: bit0 = operation in use, bit1 = last of its branch (functions: OR follows, numbers: + follows), bit2 = last.
+FLAG_USED, FLAG_BRANCH_END, FLAG_LAST = 1, 2, 4
+BUILTIN_CHANNELS = ("zero", "one")
+
+
+def program_ops(item_text):
+    """The operations of a function/number item as dicts of its variables."""
+    m = re.search(r"<program[^>]*>(.*?)</program>", item_text, re.S)
+    if not m:
+        return []
+    return [dict(re.findall(r'id="(\w+)" value="([^"]*)"', op.group(1)))
+            for op in re.finditer(r"<item>(.*?)</item>", m.group(1), re.S)]
+
+
+def describe_ops(ops, is_number, unknown):
+    """One readable line for a program: branches of ANDed operations joined by OR (functions), or products joined
+    by + (numbers). unknown(name) -> True marks a channel nothing defines."""
+    def ch(name):
+        return name + ("?" if name and unknown(name) else "")
+    groups, cur = [], []
+    for d in ops:
+        t, flags = int(d.get("type", 0)), int(d.get("flags", 0))
+        c1, c2, c3 = ch(d.get("channel1", "")), ch(d.get("channel2", "")), ch(d.get("channel3", ""))
+        const = d.get("const1", "0")
+        t1, t2 = int(d.get("time1", 0)) / 100.0, int(d.get("time2", 0)) / 100.0
+        if is_number and t >= 64:
+            name = NUMBER_OPS.get(t, "op%d" % t)
+            if t == 65: s = c1
+            elif t == 66: s = const
+            elif t == 67: s = "(%s ? %s : %s)" % (c1, c2, c3)
+            elif t in (68, 69): s = "%s %s" % (name, c1)
+            elif t in (70, 71): s = "(%s %s %s)" % (c1, name, c2)
+            elif t in (72, 73, 74): s = "%s(%s)" % (name, ", ".join(x for x in (c1, c2, c3) if x))
+            else: s = "%s(%s, %s, %s, const %s)" % (name, c1, c2, c3, const)
+            mods = [m for m in (d.get("multiplier1"), d.get("multiplier2"), d.get("multiplier3")) if m not in (None, "0", "1")]
+            if mods:
+                s += "{modifier %s}" % ",".join(mods)
+        else:
+            name = FUNCTION_OPS.get(t, "op%d" % t)
+            if t in (1, 2): s = "%s %s" % (c1, name)
+            elif 3 <= t <= 8: s = "%s %s %s" % (c1, name, const)
+            elif t in (9, 10, 11): s = "%s %s %s" % (c1, name, c2)
+            elif t == 12: s = "flash(%s, on %g s, off %g s)" % (c1, t1, t2)
+            elif t == 15: s = "set-reset(set %s, reset %s)" % (c1, c2)
+            else: s = "%s(%s, const %s, t %g/%g s)" % (name, ", ".join(x for x in (c1, c2, c3) if x), const, t1, t2)
+            if t <= 11 and (t1 or t2):
+                s += " [delay true %g s, false %g s]" % (t1, t2)
+        if not flags & FLAG_USED:
+            s = "(not in use: %s)" % s
+        cur.append(s)
+        if flags & (FLAG_BRANCH_END | FLAG_LAST):
+            groups.append(cur)
+            cur = []
+    if cur:
+        groups.append(cur)
+    if is_number:
+        return " + ".join(" * ".join(g) for g in groups)
+    parts = [" AND ".join(g) for g in groups]
+    return " OR ".join("(%s)" % x if len(parts) > 1 and len(g) > 1 else x for x, g in zip(parts, groups))
 
 
 def item_var(text, vid):
@@ -369,8 +467,10 @@ def info(p):
         ov = item_var(t, "overrideChannel")
         print("  %-28s mob %s+%s byte %s bits %s%s" % (item_var(t, "name"), item_var(t, "mobIndex"), item_var(t, "mobOffset"),
               item_var(t, "byteOffset"), item_var(t, "bitCount"), " -> " + ov if ov else ""))
-    for arr in ("analogInputs", "digitalInputs", "numbers", "functions", "enumerations"):
+    for arr in ("analogInputs", "digitalInputs", "enumerations"):
         print("%s: %s" % (arr, p.item_names(arr)))
+    print("numbers and functions (a trailing ? marks a channel nothing in the project defines):")
+    print(p.program_report())
     print(p.page_report())
 
 

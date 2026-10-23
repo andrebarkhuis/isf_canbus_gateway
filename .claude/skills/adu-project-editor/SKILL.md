@@ -108,6 +108,26 @@ value item by that label on the given page and sets `variableChannel` and option
 channel-typed fields on items: `visibleChannel` (0 hides), `colorChannel` (lamps), `activateChannel` on a page.
 `replace-channel` rewrites every reference to a channel name in the whole project (pages, functions, numbers).
 
+## Functions and numbers
+
+Both are `<item>`s with a `<program>` of `eFunctionOperation` items (type, flags, channel1-3, const1, time1/2 in
+1/100 s, edgeFlags, multiplier1-3). `info` prints each one decoded, e.g. `f_Revlimiter = ecu.rpm > 6600`,
+`n_DTC_Count = ABS_DTCCount + TRANS_DTCCount + ENG_EmissionDTCCount`. A function is true when one branch is
+true; a branch is true when all its operations are. A number is a sum of products.
+
+| flags bit | meaning |
+|---|---|
+| 1 | operation in use (placeholders made outside the client have 0 here and `zero` channels) |
+| 2 | last operation of its branch / product (OR or + follows) |
+| 4 | last operation of the program |
+
+Logic operation codes (from the client's string table, confirmed against this project): 1 is true, 2 is false,
+3 =, 4 !=, 5 <, 6 <=, 7 >, 8 >=, 9 and, 10 or, 11 xor, 12 flash, 13 pulse, 14 toggle, 15 set-reset latch,
+16 hysteresis, 17 changed. `const1` is in the channel's raw units (ecu.clt > 1100 is 110.0 degC). Number codes:
+65 = channel or constant (the only one seen); 66 constant, 67 choose, 68 divide, 69 modulo, 70 add, 71 subtract,
+72 min, 73 max, 74 clamp, 75-77 lookup2-4 are the manual's order and UNVERIFIED, as are the multiplier codes
+(x1/x10/x100/x1000/raw). A single-operation function written by the client has flags 7 and edgeFlags 1.
+
 ## Checks before handing over
 
 - `info` on the result: no duplicate channel names, inputs <= 100, every page reference resolves to an
