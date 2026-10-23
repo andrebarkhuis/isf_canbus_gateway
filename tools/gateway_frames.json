@@ -341,7 +341,7 @@
       ]
     },
     {
-      "id": "0x1F0005F3", "extended": true, "isf": true, "name": "TRANS_Shift_Status", "interval": 100, "comment": "From ect 21 85, ect 21 83",
+      "id": "0x1F0005F3", "extended": true, "isf": true, "name": "TRANS_Shift_Status", "interval": 100, "comment": "From ect 21 85, ect 21 83, ect 21 06",
       "signals": [
         {"module": "ect", "uniqueId": "YxfYDQ7uJ", "name": "SLS", "startBit": 0},
         {"module": "ect", "uniqueId": "WLIDn7NaU", "name": "SLC", "startBit": 1},
@@ -349,7 +349,8 @@
         {"module": "ect", "uniqueId": "Fg7GsLOd5", "name": "ShiftControlMode", "startBit": 3},
         {"module": "ect", "uniqueId": "Yj5UsMWsV", "name": "UpShiftIndication", "startBit": 4},
         {"module": "ect", "uniqueId": "N-VrAXF3I", "name": "DownShiftIndication", "startBit": 5},
-        {"module": "ect", "uniqueId": "AxTmJGDw6", "name": "TorqueConvTempRaiseHist", "startBit": 6}
+        {"module": "ect", "uniqueId": "AxTmJGDw6", "name": "TorqueConvTempRaiseHist", "startBit": 6},
+        {"module": "ect", "uniqueId": "dmjRB4T4f", "name": "DTCCount", "startBit": 8}
       ]
     },
     {
@@ -458,7 +459,7 @@
       ]
     },
     {
-      "id": "0x1F0005FD", "extended": true, "isf": true, "name": "ABS_Warning_Lights", "interval": 100, "comment": "From abs 21 3D",
+      "id": "0x1F0005FD", "extended": true, "isf": true, "name": "ABS_Warning_Lights", "interval": 100, "comment": "From abs 21 3D, abs 21 E1",
       "signals": [
         {"module": "abs", "uniqueId": "iKKscx9z6", "name": "ABS_Light", "startBit": 0},
         {"module": "abs", "uniqueId": "kh-t-W3s1", "name": "Brake_Light", "startBit": 1},
@@ -467,7 +468,8 @@
         {"module": "abs", "uniqueId": "gM7ne9lsy", "name": "TirePressure_Light", "startBit": 4},
         {"module": "abs", "uniqueId": "Rj8AM5OSN", "name": "VSC_Light", "startBit": 5},
         {"module": "abs", "uniqueId": "FpxpVVtjq", "name": "AutoLSD_Light", "startBit": 6},
-        {"module": "abs", "uniqueId": "-wBkniK8T", "name": "A_TRAC_Light", "startBit": 7}
+        {"module": "abs", "uniqueId": "-wBkniK8T", "name": "A_TRAC_Light", "startBit": 7},
+        {"module": "abs", "uniqueId": "PE8WGsNgx", "name": "DTCCount", "startBit": 8}
       ]
     },
     {

@@ -218,6 +218,7 @@ BO_ 2667578867 TRANS_Shift_Status: 8 GATEWAY
  SG_ TRANS_UpShiftIndication : 4|1@1+ (1,0) [0|1] "" ADU
  SG_ TRANS_DownShiftIndication : 5|1@1+ (1,0) [0|1] "" ADU
  SG_ TRANS_TorqueConvTempRaiseHist : 6|1@1+ (1,0) [0|1] "" ADU
+ SG_ TRANS_DTCCount : 8|7@1+ (1,0) [0|127] "" ADU
 
 BO_ 2667578868 TRANS_Sensor_Voltages: 8 GATEWAY
  SG_ TRANS_NT_Voltage : 0|16@1+ (7.62939453125e-05,0) [0|4.99992] "V" ADU
@@ -306,6 +307,7 @@ BO_ 2667578877 ABS_Warning_Lights: 8 GATEWAY
  SG_ ABS_VSC_Light : 5|1@1+ (1,0) [0|1] "" ADU
  SG_ ABS_AutoLSD_Light : 6|1@1+ (1,0) [0|1] "" ADU
  SG_ ABS_A_TRAC_Light : 7|1@1+ (1,0) [0|1] "" ADU
+ SG_ ABS_DTCCount : 8|8@1+ (1,0) [0|255] "" ADU
 
 BO_ 2667578878 ABS_Solenoids: 8 GATEWAY
  SG_ ABS_Solenoid_SFRH : 0|1@1+ (1,0) [0|1] "" ADU
@@ -390,7 +392,7 @@ CM_ BO_ 2667578863 "From engine 21 25";
 CM_ BO_ 2667578864 "From engine 21 06, engine 21 25, engine 21 37, engine 21 51";
 CM_ BO_ 2667578865 "From ect 21 82, ect 21 81, ect 21 22";
 CM_ BO_ 2667578866 "From ect 21 85";
-CM_ BO_ 2667578867 "From ect 21 85, ect 21 83";
+CM_ BO_ 2667578867 "From ect 21 85, ect 21 83, ect 21 06";
 CM_ BO_ 2667578868 "From ect 21 81";
 CM_ BO_ 2667578869 "From abs 21 03, abs 21 21";
 CM_ BO_ 2667578870 "From abs 21 42, abs 21 03";
@@ -400,7 +402,7 @@ CM_ BO_ 2667578873 "From abs 21 04, abs 21 1F, abs 21 5F";
 CM_ BO_ 2667578874 "From abs 21 5A";
 CM_ BO_ 2667578875 "From abs 21 5F";
 CM_ BO_ 2667578876 "From abs 21 1D, abs 21 1F";
-CM_ BO_ 2667578877 "From abs 21 3D";
+CM_ BO_ 2667578877 "From abs 21 3D, abs 21 E1";
 CM_ BO_ 2667578878 "From abs 21 3F";
 CM_ BO_ 2667578879 "From abs 21 3A";
 CM_ BO_ 2667578880 "From abs 21 BE";

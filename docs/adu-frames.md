@@ -235,6 +235,7 @@ feeds one of the ADU's built-in channels (the CANX override).
 | TRANS_UpShiftIndication | byte 0 bit 4 | 1 | 0 |  | ect Yj5UsMWsV: MT Up Shift Indication, 21 83 byte 0 (0=OFF, 1=ON) |
 | TRANS_DownShiftIndication | byte 0 bit 5 | 1 | 0 |  | ect N-VrAXF3I: MT Down Shift Indication, 21 83 byte 0 (0=OFF, 1=ON) |
 | TRANS_TorqueConvTempRaiseHist | byte 0 bit 6 | 1 | 0 |  | ect AxTmJGDw6: Torque Converter Temperature Raise History, 21 83 byte 0 (0=OFF, 1=ON) |
+| TRANS_DTCCount | byte 1 bit 0-6 | 1 | 0 |  | ect dmjRB4T4f: Number of Emission DTC, 21 06 byte 0 |
 
 ## TRANS_Sensor_Voltages  (0x1F0005F4, every 100 ms)
 
@@ -353,6 +354,7 @@ feeds one of the ADU's built-in channels (the CANX override).
 | ABS_VSC_Light | byte 0 bit 5 | 1 | 0 |  | abs Rj8AM5OSN: VSC Warning Light, 21 3D byte 0 (0=OFF, 1=ON) |
 | ABS_AutoLSD_Light | byte 0 bit 6 | 1 | 0 |  | abs FpxpVVtjq: Auto LSD Indicator Light, 21 3D byte 2 (0=OFF, 1=ON) |
 | ABS_A_TRAC_Light | byte 0 bit 7 | 1 | 0 |  | abs -wBkniK8T: A-TRAC Indicator Light, 21 3D byte 2 (0=OFF, 1=ON) |
+| ABS_DTCCount | byte 1 | 1 | 0 |  | abs PE8WGsNgx: Number of DTC, 21 E1 byte 0 |
 
 ## ABS_Solenoids  (0x1F0005FE, every 100 ms)
 
