@@ -278,6 +278,10 @@ def import_canx(p, canx_path, bus, group, select=None, only_overrides=False, nam
                 if unit not in UNIT_CODES:
                     unknown_units.add(unit)
                 q, u = UNIT_CODES.get(unit, (0, 0))
+                for field in ("multiplier", "divider", "offset"):
+                    if not -32768 <= int(ch.get(field, "1")) <= 32767:
+                        fail("channel %s: %s %s does not fit the ADU's 16-bit field (fewer decimal places needed)"
+                             % (ch.get("id"), field, ch.get(field)))
                 override = ch.get("override") or ""
                 name = "." if (override and names == "dot") else ch.get("id")
                 p.append_item("canbusInputs", make_item(INPUT_VARS, INPUT_TYPES, {
@@ -318,6 +322,9 @@ def remove_mob(p, name):
         elif idx > k:
             p.text = p.text[:s] + set_item_var(t, "mobIndex", str(idx - 1)) + p.text[e:]
     p.remove_item("canbusMobs", name)
+    # the object's own channels (m_x.timeout) may be logged too
+    for ch in re.findall(r'<channel id="(%s\.[^"]*)"' % re.escape(name), p.text):
+        p.logged_remove(ch)
 
 
 def info(p):

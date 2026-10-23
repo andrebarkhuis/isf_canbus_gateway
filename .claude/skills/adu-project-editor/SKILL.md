@@ -69,7 +69,7 @@ by **1-based position** in the `groups` array (`groupId`; 0 = none).
 | byteOffset, bitCount, bitPosition | position in the frame |
 | dataFormat | 0 U8, 1 S8, 2 U16, 3 S16, 4 U64, 5 S64 |
 | dataEndian | 0 little, 1 big |
-| multiplier, divider, offset, decimalPlaces | shown = (raw * multiplier / divider + offset) / 10^decimalPlaces; s16 fields |
+| multiplier, divider, offset, decimalPlaces | shown = (raw * multiplier / divider + offset) / 10^decimalPlaces; the three are s16 (-32768..32767): the client clamps anything larger ("Value -102400 for field 'offset' is out of range"), so a big offset needs fewer decimal places |
 | overrideChannel | the built-in channel this input feeds (`ecu.clt`, `ecu.rpm`, `ecu.flags4.MIL`...), or empty |
 | holdPrevious, defaultValue, timeoutValue | behaviour on timeout |
 | quantity, unit | client-only unit codes, see below |
@@ -108,6 +108,8 @@ channel-typed fields on items: `visibleChannel` (0 hides), `colorChannel` (lamps
 
 - `info` on the result: no duplicate channel names, inputs <= 100, every page reference resolves to an
   existing input, built-in channel, function, number or analog input.
+- Removing a message object must also drop its own logged channels (`<name>.timeout` in `loggedChannels`), or
+  the client reports "Channel 'm_x.timeout' not found. Skipped." on load; `remove-mob` does this.
 - The old project may read the same frames itself (e.g. raw IS F 0x2C4 into `ecu.rpm`); one source per
   built-in channel, so remove the old `.` input or message object first.
 - Tell the user what was changed, what still points at a channel that has no source, and that the client is

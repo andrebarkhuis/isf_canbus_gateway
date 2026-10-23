@@ -391,6 +391,11 @@ def canx_scaling(factor, offset, unit, override):
         factor, offset, unit = dbc_scaling(factor, offset, unit)
         # enough decimal places to show one raw step, at most three
         decimals = 0 if factor >= 1 else min(3, int(math.ceil(-math.log10(factor) - 1e-9)))
+    # the ADU stores multiplier, divider and offset in 16-bit fields: fewer decimals if the offset would not fit
+    while decimals and not -32768 <= round(offset * 10 ** decimals) <= CANX_MAX:
+        decimals -= 1
+    if not -32768 <= round(offset * 10 ** (decimals or 0)) <= CANX_MAX:
+        fail("CANX: offset %g does not fit the ADU's 16-bit field" % offset)
     scale = 10 ** (decimals or 0)
     for den in (CANX_MAX, 10000, 1000, 100, 10, 1):
         fr = Fraction(factor * scale).limit_denominator(den)

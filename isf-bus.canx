@@ -62,8 +62,8 @@
     </frame>
     <frame offset="5" id="ENG_AirFuel_Sensors" frequency="10">
       <channel id="ENG_AFS_Voltage_B2S1" type="u16-le" byteOffset="0" unit="V" min="0" max="7.99527" multiplier="61" divider="500" decimalPlaces="3"/>
-      <channel id="ENG_AFS_Current_B1S1" type="u16-le" byteOffset="2" unit="mA" min="-128" max="127.996" multiplier="125" divider="32" offset="-128000" decimalPlaces="3"/>
-      <channel id="ENG_AFS_Current_B2S1" type="u16-le" byteOffset="4" unit="mA" min="-128" max="127.996" multiplier="125" divider="32" offset="-128000" decimalPlaces="3"/>
+      <channel id="ENG_AFS_Current_B1S1" type="u16-le" byteOffset="2" unit="mA" min="-128" max="127.996" multiplier="25" divider="64" offset="-12800" decimalPlaces="2"/>
+      <channel id="ENG_AFS_Current_B2S1" type="u16-le" byteOffset="4" unit="mA" min="-128" max="127.996" multiplier="25" divider="64" offset="-12800" decimalPlaces="2"/>
       <channel id="ENG_O2S_B1S2" type="u8" byteOffset="6" unit="V" min="0" max="1.275" multiplier="5" decimalPlaces="3"/>
       <channel id="ENG_O2S_B2S2" type="u8" byteOffset="7" unit="V" min="0" max="1.275" multiplier="5" decimalPlaces="3"/>
     </frame>
@@ -77,8 +77,8 @@
     </frame>
     <frame offset="7" id="ENG_Ignition_Knock" frequency="10">
       <channel id="ENG_IgnitionAdvance" type="u8" byteOffset="0" unit="°BTDC" min="-64" max="63.5" multiplier="5" offset="-640" decimalPlaces="1" override="ecu.ignAngle"/>
-      <channel id="ENG_KnockCorrectLearn" type="u16-le" byteOffset="1" unit="°" min="-1024" max="1023.97" multiplier="25" divider="8" offset="-102400" decimalPlaces="2"/>
-      <channel id="ENG_KnockFeedback" type="u16-le" byteOffset="3" unit="°" min="-1024" max="1023.97" multiplier="25" divider="8" offset="-102400" decimalPlaces="2"/>
+      <channel id="ENG_KnockCorrectLearn" type="u16-le" byteOffset="1" unit="°" min="-1024" max="1023.97" multiplier="5" divider="16" offset="-10240" decimalPlaces="1"/>
+      <channel id="ENG_KnockFeedback" type="u16-le" byteOffset="3" unit="°" min="-1024" max="1023.97" multiplier="5" divider="16" offset="-10240" decimalPlaces="1"/>
       <channel id="ENG_MisfireRPM" type="u8" byteOffset="5" unit="rpm" min="0" max="6375" multiplier="25" decimalPlaces="0"/>
       <channel id="ENG_MisfireLoad" type="u8" byteOffset="6" unit="" min="0" max="3.98438" multiplier="25" divider="16" decimalPlaces="2"/>
       <channel id="ENG_AllCylindersMisfireCount" type="u8" byteOffset="7" unit="" min="0" max="255" decimalPlaces="0"/>
@@ -104,7 +104,7 @@
     <frame offset="2" id="ENG_Idle_Control" frequency="10">
       <channel id="ENG_ISC_Flow" type="u16-le" byteOffset="0" unit="" min="0" max="79.9988" multiplier="625" divider="512" decimalPlaces="3"/>
       <channel id="ENG_ISC_Position" type="u16-le" byteOffset="2" unit="°" min="0" max="499.992" multiplier="15625" divider="2048" decimalPlaces="3"/>
-      <channel id="ENG_ISC_Learning" type="u16-le" byteOffset="4" unit="" min="-40" max="39.9988" multiplier="625" divider="512" offset="-40000" decimalPlaces="3"/>
+      <channel id="ENG_ISC_Learning" type="u16-le" byteOffset="4" unit="" min="-40" max="39.9988" multiplier="125" divider="1024" offset="-4000" decimalPlaces="2"/>
       <channel id="ENG_MinimumEngineSpeed" type="u16-le" byteOffset="6" unit="rpm" min="0" max="51199.2" multiplier="125" divider="16" decimalPlaces="1"/>
     </frame>
     <frame offset="3" id="ENG_Electrical" frequency="10">
