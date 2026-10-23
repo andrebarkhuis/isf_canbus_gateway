@@ -48,6 +48,7 @@ Every frame sent or received on the IS F bus is written to the serial log in can
 
 ```text
 isf_canbus_gateway/
+├── CLAUDE.md                    working rules: port ToyotaLens, keep the Mode 21 path, plans before edits
 ├── platformio.ini, sdkconfig.defaults, partitions.csv, CMakeLists.txt   PlatformIO + ESP-IDF project
 ├── src/
 │   ├── main.cpp                 app_main: the two tasks and the queue between them
@@ -69,7 +70,8 @@ isf_canbus_gateway/
 ├── gt86-bus.canx                GENERATED: the GT86 bus as an ECUmaster CANX stream (what the ADU imports)
 ├── isf-bus.canx                 GENERATED: the IS F bus as an ECUmaster CANX stream
 ├── test/host/                   self-test on a host compiler (ToyotaLens's vectors), run in Docker
-└── docs/                        output frames, port map, reference material
+├── Ecumaster/                   the ADU project (.adu, edited only in the ADU client) and the ADU and PMU manuals
+└── docs/                        output frames, port map, the ADU and its project, reference material
 ```
 
 ## Build, flash, test
@@ -102,4 +104,7 @@ and the module's support bitmap lists it. Timers: P2 700 ms for the probe, 2000 
 - `C:\projects\ToyotaLens` — the reference implementation; `docs/techstream-J2534-protocol.md` is the
   specification (cited as §n in the code), `docs/requirements.md` the device requirements.
 - `C:\projects\gt86-isf-swap\logs\GT86` — captures of the GT86 bus the output frames were taken from.
+- `docs/adu-project.md` — the ECUmaster ADU: wiring, what it imports from the gateway, what is inside a
+  project file, load warnings and their causes. The manuals are `Ecumaster/adu_manual_en.pdf` and
+  `Ecumaster/PMU_Manual.pdf`.
 - `docs/Decoding Techstream DTC canbus messages.md` — notes on IS F DTC frames (not used by the gateway).

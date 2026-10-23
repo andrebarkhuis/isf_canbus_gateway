@@ -145,7 +145,8 @@ the layout itself is `tools/gateway_frames.json`.
    broadcasts in `isf-bus.canx`).
 2. Run `python tools/generate.py`. It rejects overlaps, unknown ids and signals that do not fit.
 3. Run `bash test/host/run.sh`, then `.venv\Scripts\pio run`.
-4. Import the new `gt86-bus.canx` / `isf-bus.canx` into the ADU, and load the DBC files into SavvyCAN.
+4. Import the new `gt86-bus.canx` / `isf-bus.canx` into the ADU (the owner does this in the ADU client; what the
+   ADU demands of the files is in `docs/adu-project.md`), and load the DBC files into SavvyCAN.
 
 Adding a parameter from a block that is not yet polled makes the gateway poll that block; keep an eye on the cycle
 time (about 100 ms per request, fast blocks every cycle, one slow block per cycle).
