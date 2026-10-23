@@ -37,7 +37,7 @@ python tools/generate.py
 
 Reads `tools/gateway_frames.json` and `C:\projects\ToyotaLens\data\{engine,ect,abs}.json` (path in the JSON,
 override with `--toyotalens <dir>`), and writes `src/uds/uds_definitions.cpp`, `src/translator_table.cpp` and
-`gateway.dbc`. The generator refuses overlapping signals, unknown uniqueIds and signals that do not fit a frame.
+`gt86-bus.dbc` and `isf-bus.dbc`. The generator refuses overlapping signals, unknown uniqueIds and signals that do not fit a frame.
 
 ## Host self-test
 

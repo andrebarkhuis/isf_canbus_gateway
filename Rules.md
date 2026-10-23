@@ -10,7 +10,7 @@ human) must follow when working on this code-base.
 |---|---|---|
 | 1 | `C:\projects\ToyotaLens` (`docs/techstream-J2534-protocol.md`, `docs/requirements.md`, `src/ToyotaLens`) | The ISF side (ISO-TP, Mode 21 session, bitmaps, data maps, decoding) is a port of ToyotaLens. Copy it; do not redesign it. When behaviour is in doubt, open the ToyotaLens file named in `docs/toyotalens-port.md` and make the port match. |
 | 2 | `C:\projects\ToyotaLens\data\{engine,ect,abs}.json` | The only source of parameter definitions. They enter this repository through `tools/generate.py`; never hand-edit `src/uds/uds_definitions.cpp`. |
-| 3 | `tools/gateway_frames.json` and `docs/output-frames.md` | The specification of the frames the gateway puts on the GT86 bus. Edit the JSON, run the generator; never hand-edit `src/translator_table.cpp` or `gateway.dbc`. |
+| 3 | `tools/gateway_frames.json` and `docs/output-frames.md` | The specification of the frames the gateway puts on the GT86 bus. Edit the JSON, run the generator; never hand-edit `src/translator_table.cpp` or `gt86-bus.dbc` / `isf-bus.dbc`. |
 | 4 | `Readme.md` | Overview and the module / block table. |
 
 ## 2. Code Style

@@ -2,8 +2,10 @@
 
 What the gateway puts on CAN 2 (the GT86 chassis bus, which also carries the ECUmaster ADU), where the layouts
 came from, and how to change them. The machine-readable form of this document is `tools/gateway_frames.json`;
-`tools/generate.py` turns it into `src/translator_table.cpp`, `src/uds/uds_definitions.cpp` and `gateway.dbc`.
-Load `gateway.dbc` into the ADU configuration and into SavvyCAN.
+`tools/generate.py` turns it into `src/translator_table.cpp`, `src/uds/uds_definitions.cpp` and two DBC files, one
+per bus: `gt86-bus.dbc` (everything the gateway sends on the GT86 bus) and `isf-bus.dbc` (the IS F modules'
+broadcast frames the gateway decodes, §2.1, plus the ADU frames it repeats on that bus). Load the file of the bus
+the ADU sits on into its configuration, and both into SavvyCAN.
 
 ## 1. What is on the GT86 bus already
 
@@ -24,7 +26,7 @@ A two-minute drive capture of the GT86 bus (`gt86-isf-swap/logs/GT86/GVRET_20230
 Gateway-specific frames use **29-bit ids from 0x1F0005E0 upward** (CAN 2.0B extended frames). A 29-bit id can
 never collide with the 11-bit ids of the GT86 modules or of the IS F modules, and the top 11 bits (0x7C0) lose
 every arbitration against them, so the gateway's frames never delay a module's. The ids count up from 0x1F0005E0. Both the ECUmaster ADU and PMU accept 29-bit ids (CAN 2.0 A/B
-in their specifications); tick the extended-id option when creating the message objects, or import `gateway.dbc`,
+in their specifications); tick the extended-id option when creating the message objects, or import the bus's DBC file,
 which carries the extended flag.
 
 The same eight frames are also sent on the **IS F bus** by the ISF task, at the same 100 ms interval, so an ADU
@@ -130,7 +132,7 @@ the layout itself is `tools/gateway_frames.json`.
    The uniqueIds are in ToyotaLens's `data/{engine,ect,abs}.json` (and in its `favorites/basics.txt`).
 2. Run `python tools/generate.py`. It rejects overlaps, unknown ids and signals that do not fit.
 3. Run `bash test/host/run.sh`, then `.venv\Scripts\pio run`.
-4. Load the new `gateway.dbc` into the ADU and SavvyCAN.
+4. Load the new `gt86-bus.dbc` / `isf-bus.dbc` into the ADU and SavvyCAN.
 
 Adding a parameter from a block that is not yet polled makes the gateway poll that block; keep an eye on the cycle
 time (about 100 ms per request, fast blocks every cycle, one slow block per cycle).

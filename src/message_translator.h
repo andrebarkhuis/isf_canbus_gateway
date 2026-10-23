@@ -8,7 +8,7 @@
 
 // ---------------------------------------------------------------------------------------------------------
 // Decoded ISF parameters -> frames on the GT86 / ADU bus. The output frames and the signals in them are one
-// table, generated from tools/gateway_frames.json into translator_table.h together with gateway.dbc, so the
+// table, generated from tools/gateway_frames.json into translator_table.h together with the two DBC files, so the
 // code and the DBC cannot disagree. Every signal is little-endian (Intel, DBC "@1"): start bit = the bit
 // position of its least significant bit, bit 0 = byte 0 bit 0.
 //

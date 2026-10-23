@@ -2,7 +2,7 @@
   "_comment": [
       "The frames the gateway puts on the GT86 / ADU bus and the signals in them. tools/generate.py turns this,",
       "plus ToyotaLens's data/{engine,ect,abs}.json, into src/uds/uds_definitions.cpp, src/translator_table.cpp",
-      "and gateway.dbc. Edit this file, run the generator, never edit the generated files.",
+      "and gt86-bus.dbc / isf-bus.dbc. Edit this file, run the generator, never edit the generated files.",
       "",
       "Every signal is little-endian; startBit is the bit position of its least significant bit (byte*8 + bit).",
       "A signal without 'factor' is pass-through: the ECU's raw value goes into the frame unchanged, its width",

@@ -38,7 +38,7 @@ When a behaviour is in question, compare the two files side by side and make the
   (requirement R4.4).
 - `src/message_translator.*` and `src/translator_table.cpp`: decoded values into output frames.
 - `src/services/gt86_service.*`, `src/mcp_can/`: the second bus.
-- `tools/gateway_frames.json`, `tools/generate.py`, `gateway.dbc`: the output-frame specification
+- `tools/gateway_frames.json`, `tools/generate.py`, `gt86-bus.dbc`, `isf-bus.dbc`: the output-frame specification
   (`docs/output-frames.md`).
 
 ## Deliberate differences
