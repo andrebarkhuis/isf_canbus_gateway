@@ -92,8 +92,12 @@ Import selectively (`--channels`, `--channels-file`, `--only-overrides`) and rem
 `import-canx` reads an ECUmaster CANX stream (`<mob canbusID ext width><frame offset><channel id type
 byteOffset bitCount bitPosition unit multiplier divider offset decimalPlaces override/>`), which is what the
 GT86-ISF gateway generates (`tools/generate.py` -> `gt86-bus.canx`, `isf-bus.canx`). One message object per
-CANX mob that has a selected channel, named `m_<hex id>` (`m_x...` for 29-bit), one input per channel; channels
-whose names already exist in the project are skipped. Override channels are named `.` by default (`--names
+CANX mob that has a selected channel, **named as the CANX names it** (the gateway names an object after our
+frame when it holds one frame, `m_ENG_Status`, and after the source prefixes and id range when it holds several,
+`m_ENG_TRANS_ABS_5F0_5F7`); never invent a name of your own. An object on the same bus that already receives
+the id takes the new inputs instead of a second object being added, so a later import of more channels from the
+same frame just works. One input per channel; channels whose names already exist in the project are skipped.
+`rename-mob` renames an object and its `.timeout` channel references. Override channels are named `.` by default (`--names
 keep` keeps the CANX id as the name as well; unverified in the client).
 
 ## Pages

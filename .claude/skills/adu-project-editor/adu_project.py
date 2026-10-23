@@ -237,7 +237,7 @@ def import_canx(p, canx_path, bus, group, select=None, only_overrides=False, nam
     bus_code = CANIF[bus]
     existing_mobs = p.item_names("canbusMobs")
     existing_inputs = p.item_names("canbusInputs")
-    unknown_units, added_mobs, added_inputs, skipped = set(), [], [], []
+    unknown_units, added_mobs, reused_mobs, added_inputs, skipped = set(), [], [], [], []
     for mob in root.findall("mob"):
         can_id = int(mob.get("canbusID"), 16)
         ext = mob.get("ext") == "1"
@@ -259,15 +259,26 @@ def import_canx(p, canx_path, bus, group, select=None, only_overrides=False, nam
                 frames.append((int(fr.get("offset", "0")), chans))
         if not frames:
             continue
-        mob_name = "m_%s%X" % ("x" if ext else "", can_id)
-        if mob_name in existing_mobs:
-            fail("message object %s already exists; remove it first (remove-mob)" % mob_name)
-        mob_index = len(p.item_names("canbusMobs"))
-        p.append_item("canbusMobs", make_item(MOB_VARS, MOB_TYPES, {
-            "name": mob_name, "groupId": group_id, "canbusID": can_id | (EXT_FLAG if ext else 0),
-            "canifChannel": bus_code, "type": 0, "width": WIDTH[width], "timeout": 100, "isExpanded": 0,
-            "muxStartValue": 0, "muxEndian": 1, "muxBitCount": 8, "muxBitPosition": 56}))
-        added_mobs.append(mob_name)
+        mob_name = mob.get("id") or "m_%s%X" % ("x" if ext else "", can_id)
+        canbus_id = can_id | (EXT_FLAG if ext else 0)
+        # an object on this bus that already receives the id takes the new inputs, whatever it is called
+        existing = [i for i, (_, _, t) in enumerate(p.items("canbusMobs"))
+                    if int(item_var(t, "canbusID") or 0) == canbus_id and (item_var(t, "canifChannel") or "0") == str(bus_code)]
+        if existing:
+            mob_index = existing[0]
+            have = p.item_names("canbusMobs")[mob_index]
+            if int(item_var(p.items("canbusMobs")[mob_index][2], "width") or 0) != WIDTH[width]:
+                fail("message object %s receives id %X with a different width; remove it first (remove-mob)" % (have, can_id))
+            reused_mobs.append(have)
+        else:
+            if mob_name in existing_mobs:
+                fail("message object %s already exists with another id; remove or rename it first" % mob_name)
+            mob_index = len(p.item_names("canbusMobs"))
+            p.append_item("canbusMobs", make_item(MOB_VARS, MOB_TYPES, {
+                "name": mob_name, "groupId": group_id, "canbusID": canbus_id,
+                "canifChannel": bus_code, "type": 0, "width": WIDTH[width], "timeout": 100, "isExpanded": 0,
+                "muxStartValue": 0, "muxEndian": 1, "muxBitCount": 8, "muxBitPosition": 56}))
+            added_mobs.append(mob_name)
         for offset, chans in frames:
             for ch in chans:
                 kind = ch.get("type")
@@ -298,12 +309,28 @@ def import_canx(p, canx_path, bus, group, select=None, only_overrides=False, nam
                 added_inputs.append("%s%s" % (ch.get("id"), " -> " + override if override else ""))
     total = len(p.item_names("canbusInputs"))
     print("added %d message objects: %s" % (len(added_mobs), " ".join(added_mobs)))
+    if reused_mobs:
+        print("inputs added to existing message objects: " + " ".join(sorted(set(reused_mobs))))
     print("added %d CAN inputs:\n  " % len(added_inputs) + "\n  ".join(added_inputs))
     if skipped:
         print("already in the project, skipped: " + " ".join(skipped))
     if unknown_units:
         print("WARNING: no client code for unit(s) %s; those inputs got no unit, set it in the client" % sorted(unknown_units))
     print("CAN inputs in the project now: %d (ADU limit %d)%s" % (total, CAN_INPUT_LIMIT, " OVER THE LIMIT" if total > CAN_INPUT_LIMIT else ""))
+
+
+def rename_mob(p, old, new):
+    """Renames a message object; its own channels (old.timeout) follow it wherever they are referenced."""
+    names = p.item_names("canbusMobs")
+    if old not in names:
+        fail("no message object %s" % old)
+    if new in names:
+        fail("message object %s already exists" % new)
+    for s, e, t in p.items("canbusMobs"):
+        if item_var(t, "name") == old:
+            p.text = p.text[:s] + set_item_var(t, "name", new) + p.text[e:]
+            break
+    p.text = re.sub(r'(value|id)="%s(\.[A-Za-z0-9_]+)"' % re.escape(old), lambda m: '%s="%s%s"' % (m.group(1), new, m.group(2)), p.text)
 
 
 def remove_mob(p, name):
@@ -365,6 +392,8 @@ def main():
     s.add_argument("--to", dest="new", required=True); s.add_argument("--out", required=True)
     s = sub.add_parser("remove-input"); s.add_argument("adu"); s.add_argument("--name", required=True); s.add_argument("--out", required=True)
     s = sub.add_parser("remove-mob"); s.add_argument("adu"); s.add_argument("--name", required=True); s.add_argument("--out", required=True)
+    s = sub.add_parser("rename-mob"); s.add_argument("adu"); s.add_argument("--from", dest="old", required=True)
+    s.add_argument("--to", dest="new", required=True); s.add_argument("--out", required=True)
     a = ap.parse_args()
 
     if a.cmd == "extract":
@@ -409,6 +438,9 @@ def main():
     elif a.cmd == "remove-mob":
         remove_mob(p, a.name)
         print("removed message object", a.name, "and its inputs")
+    elif a.cmd == "rename-mob":
+        rename_mob(p, a.old, a.new)
+        print("renamed message object", a.old, "->", a.new)
     p.save(a.out)
     print("written", a.out)
 
