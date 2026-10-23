@@ -8,425 +8,425 @@ byte position. At most 8 signals per frame (ECUmaster per-frame limit).
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| EngineSpeed | bytes 0-1 | 0.25 | 0 | rpm | engine vxpyKZ0Zo: Engine Speed, 21 01 byte 10 |
-| VehicleSpeed | byte 2 | 1 | 0 | km/h | engine cLlSvC_7u: Vehicle Speed, 21 01 byte 12 |
-| CalculateLoad | byte 3 | 0.392157 | 0 | % | engine GlSGt-9T7: Calculate Load, 21 01 byte 0 |
-| MAF | bytes 4-5 | 0.01 | 0 | g/s | engine 9BvEGq0dD: MAF, 21 01 byte 3 |
-| EngineRunTime | bytes 6-7 | 1 | 0 | s | engine AiyhbZOEd: Engine Run Time, 21 01 byte 13 |
+| ENG_EngineSpeed | bytes 0-1 | 0.25 | 0 | rpm | engine vxpyKZ0Zo: Engine Speed, 21 01 byte 10 |
+| ENG_VehicleSpeed | byte 2 | 1 | 0 | km/h | engine cLlSvC_7u: Vehicle Speed, 21 01 byte 12 |
+| ENG_CalculateLoad | byte 3 | 0.392157 | 0 | % | engine GlSGt-9T7: Calculate Load, 21 01 byte 0 |
+| ENG_MAF | bytes 4-5 | 0.01 | 0 | g/s | engine 9BvEGq0dD: MAF, 21 01 byte 3 |
+| ENG_EngineRunTime | bytes 6-7 | 1 | 0 | s | engine AiyhbZOEd: Engine Run Time, 21 01 byte 13 |
 
 ## ENG_Temperatures  (0x1F0005E1, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| Coolant | byte 0 | 1 | -40 | degC | engine pl8Tao3_P: Coolant Temp, 21 01 byte 9 |
-| IntakeAir | byte 1 | 1 | -40 | degC | engine PINbBSGZE: Intake Air, 21 01 byte 6 |
-| EngineOil | byte 2 | 1 | -40 | degC | engine ycETY1A_7: Engine Oil Temperature, 21 51 byte 9 |
-| Ambient | byte 3 | 1 | -40 | degC | engine G5xcpu12b: Ambient Temp for A/C, 21 51 byte 11 |
-| CatalystB1S1 | bytes 4-5 | 0.1 | -40 | degC | engine f9zM6QYVt: Catalyst Temp B1S1, 21 05 byte 6 |
-| CatalystB2S1 | bytes 6-7 | 0.1 | -40 | degC | engine ZfHpLqF7i: Catalyst Temp B2S1, 21 05 byte 8 |
+| ENG_Coolant | byte 0 | 1 | -40 | degC | engine pl8Tao3_P: Coolant Temp, 21 01 byte 9 |
+| ENG_IntakeAir | byte 1 | 1 | -40 | degC | engine PINbBSGZE: Intake Air, 21 01 byte 6 |
+| ENG_EngineOil | byte 2 | 1 | -40 | degC | engine ycETY1A_7: Engine Oil Temperature, 21 51 byte 9 |
+| ENG_Ambient | byte 3 | 1 | -40 | degC | engine G5xcpu12b: Ambient Temp for A/C, 21 51 byte 11 |
+| ENG_CatalystB1S1 | bytes 4-5 | 0.1 | -40 | degC | engine f9zM6QYVt: Catalyst Temp B1S1, 21 05 byte 6 |
+| ENG_CatalystB2S1 | bytes 6-7 | 0.1 | -40 | degC | engine ZfHpLqF7i: Catalyst Temp B2S1, 21 05 byte 8 |
 
 ## ENG_Throttle_Pedal  (0x1F0005E2, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ThrottlePosition | byte 0 | 0.392157 | 0 | % | engine BHZoJoMeQ: Throttle Sensor Position, 21 01 byte 15 |
-| AcceleratorPosition | bytes 1-2 | 0.00610352 | 0 | % | engine TaciUJ0rZ: Accelerator Position, 21 41 byte 5 |
-| ThrottleMotorDuty | byte 3 | 0.392157 | 0 | % | engine _XFhPTGTA: Throttle Motor DUTY, 21 01 byte 20 |
-| AccelSensor1 | byte 4 | 0.392157 | 0 | % | engine g6UVgirBY: Accel Sens. No.1 Volt %, 21 01 byte 18 |
-| AccelSensor2 | byte 5 | 0.392157 | 0 | % | engine g0qILoMhC: Accel Sens. No.2 Volt %, 21 01 byte 19 |
-| ThrottleSensor1 | byte 6 | 0.392157 | 0 | % | engine 0UJZdJfBS: Throttle Sensor Volt %, 21 01 byte 16 |
-| ThrottleSensor2 | byte 7 | 0.392157 | 0 | % | engine Q3h4Ar_Lc: Throttle Sensor #2 Volt %, 21 01 byte 17 |
+| ENG_ThrottlePosition | byte 0 | 0.392157 | 0 | % | engine BHZoJoMeQ: Throttle Sensor Position, 21 01 byte 15 |
+| ENG_AcceleratorPosition | bytes 1-2 | 0.00610352 | 0 | % | engine TaciUJ0rZ: Accelerator Position, 21 41 byte 5 |
+| ENG_ThrottleMotorDuty | byte 3 | 0.392157 | 0 | % | engine _XFhPTGTA: Throttle Motor DUTY, 21 01 byte 20 |
+| ENG_AccelSensor1 | byte 4 | 0.392157 | 0 | % | engine g6UVgirBY: Accel Sens. No.1 Volt %, 21 01 byte 18 |
+| ENG_AccelSensor2 | byte 5 | 0.392157 | 0 | % | engine g0qILoMhC: Accel Sens. No.2 Volt %, 21 01 byte 19 |
+| ENG_ThrottleSensor1 | byte 6 | 0.392157 | 0 | % | engine 0UJZdJfBS: Throttle Sensor Volt %, 21 01 byte 16 |
+| ENG_ThrottleSensor2 | byte 7 | 0.392157 | 0 | % | engine Q3h4Ar_Lc: Throttle Sensor #2 Volt %, 21 01 byte 17 |
 
 ## ENG_Fuel_Trims  (0x1F0005E3, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| FuelSystemStatus1 | byte 0 | 1 | 0 |  | engine ijUXiEDm2: Fuel System Status #1, 21 03 byte 0 (0=Unused, 1=OL, 2=CL, 4=OLDrive, ...) |
-| FuelSystemStatus2 | byte 1 | 1 | 0 |  | engine p8BWeiQ3c: Fuel System Status #2, 21 03 byte 1 (0=Unused, 1=OL, 2=CL, 4=OLDrive, ...) |
-| ShortFT_B1 | byte 2 | 0.78125 | -100 | % | engine bs6JnDePY: Short FT B1S1, 21 03 byte 2 |
-| LongFT_B1 | byte 3 | 0.78125 | -100 | % | engine mLBlTPAk2: Long FT B1S1, 21 03 byte 3 |
-| ShortFT_B2 | byte 4 | 0.78125 | -100 | % | engine 09gGwIG0l: Short FT B2S1, 21 03 byte 4 |
-| LongFT_B2 | byte 5 | 0.78125 | -100 | % | engine CCWC9-jW7: Long FT B2S1, 21 03 byte 5 |
-| TotalFT_B1 | byte 6 | 0.00390625 | -0.5 |  | engine oMp1BahA1: Total FT #1, 21 3C byte 6 |
-| TotalFT_B2 | byte 7 | 0.00390625 | -0.5 |  | engine FopEh_oF8: Total FT #2, 21 3C byte 7 |
+| ENG_FuelSystemStatus1 | byte 0 | 1 | 0 |  | engine ijUXiEDm2: Fuel System Status #1, 21 03 byte 0 (0=Unused, 1=OL, 2=CL, 4=OLDrive, ...) |
+| ENG_FuelSystemStatus2 | byte 1 | 1 | 0 |  | engine p8BWeiQ3c: Fuel System Status #2, 21 03 byte 1 (0=Unused, 1=OL, 2=CL, 4=OLDrive, ...) |
+| ENG_ShortFT_B1 | byte 2 | 0.78125 | -100 | % | engine bs6JnDePY: Short FT B1S1, 21 03 byte 2 |
+| ENG_LongFT_B1 | byte 3 | 0.78125 | -100 | % | engine mLBlTPAk2: Long FT B1S1, 21 03 byte 3 |
+| ENG_ShortFT_B2 | byte 4 | 0.78125 | -100 | % | engine 09gGwIG0l: Short FT B2S1, 21 03 byte 4 |
+| ENG_LongFT_B2 | byte 5 | 0.78125 | -100 | % | engine CCWC9-jW7: Long FT B2S1, 21 03 byte 5 |
+| ENG_TotalFT_B1 | byte 6 | 0.00390625 | -0.5 |  | engine oMp1BahA1: Total FT #1, 21 3C byte 6 |
+| ENG_TotalFT_B2 | byte 7 | 0.00390625 | -0.5 |  | engine FopEh_oF8: Total FT #2, 21 3C byte 7 |
 
 ## ENG_AirFuel  (0x1F0005E4, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| TargetAFR | bytes 0-1 | 3.05e-05 | 0 |  | engine GRKiFVo3F: Target Air-Fuel Ratio, 21 04 byte 0 |
-| Lambda_B1S1 | bytes 2-3 | 3.05e-05 | 0 |  | engine nbybVhTSr: AF Lambda B1S1, 21 04 byte 2 |
-| Lambda_B2S1 | bytes 4-5 | 3.05e-05 | 0 |  | engine 9W9bkJShz: AF Lambda B2S1, 21 04 byte 6 |
-| AFS_Voltage_B1S1 | bytes 6-7 | 0.000122 | 0 | V | engine z98HX74lV: AFS Voltage B1S1, 21 04 byte 4 |
+| ENG_TargetAFR | bytes 0-1 | 3.05e-05 | 0 |  | engine GRKiFVo3F: Target Air-Fuel Ratio, 21 04 byte 0 |
+| ENG_Lambda_B1S1 | bytes 2-3 | 3.05e-05 | 0 |  | engine nbybVhTSr: AF Lambda B1S1, 21 04 byte 2 |
+| ENG_Lambda_B2S1 | bytes 4-5 | 3.05e-05 | 0 |  | engine 9W9bkJShz: AF Lambda B2S1, 21 04 byte 6 |
+| ENG_AFS_Voltage_B1S1 | bytes 6-7 | 0.000122 | 0 | V | engine z98HX74lV: AFS Voltage B1S1, 21 04 byte 4 |
 
 ## ENG_AirFuel_Sensors  (0x1F0005E5, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| AFS_Voltage_B2S1 | bytes 0-1 | 0.000122 | 0 | V | engine Q2Ikz0Rzx: AFS Voltage B2S1, 21 04 byte 8 |
-| AFS_Current_B1S1 | bytes 2-3 | 0.00390625 | -128 | mA | engine NqnCAC5WC: AFS Current B1S1, 21 04 byte 12 |
-| AFS_Current_B2S1 | bytes 4-5 | 0.00390625 | -128 | mA | engine CKwjqTtOL: AFS Current B2S1, 21 04 byte 16 |
-| O2S_B1S2 | byte 6 | 0.005 | 0 | V | engine geQjIz4fl: O2S B1S2, 21 04 byte 20 |
-| O2S_B2S2 | byte 7 | 0.005 | 0 | V | engine BlC94S2ue: O2S B2S2, 21 04 byte 24 |
+| ENG_AFS_Voltage_B2S1 | bytes 0-1 | 0.000122 | 0 | V | engine Q2Ikz0Rzx: AFS Voltage B2S1, 21 04 byte 8 |
+| ENG_AFS_Current_B1S1 | bytes 2-3 | 0.00390625 | -128 | mA | engine NqnCAC5WC: AFS Current B1S1, 21 04 byte 12 |
+| ENG_AFS_Current_B2S1 | bytes 4-5 | 0.00390625 | -128 | mA | engine CKwjqTtOL: AFS Current B2S1, 21 04 byte 16 |
+| ENG_O2S_B1S2 | byte 6 | 0.005 | 0 | V | engine geQjIz4fl: O2S B1S2, 21 04 byte 20 |
+| ENG_O2S_B2S2 | byte 7 | 0.005 | 0 | V | engine BlC94S2ue: O2S B2S2, 21 04 byte 24 |
 
 ## ENG_Fuel_Delivery  (0x1F0005E6, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| FuelPressure | bytes 0-1 | 10 | 0 | kPa | engine v5skr-i2E: Fuel Press, 21 05 byte 0 |
-| InjectorPulse | bytes 2-3 | 1 | 0 | us | engine ItoRxih8j: Injector (Port), 21 3C byte 4 |
-| InjectionVolume | bytes 4-5 | 3.125e-05 | 0 | ml | engine h0_AFRofF: Injection Volum (Cylinder1), 21 3C byte 0 |
-| EvapPurge | byte 6 | 0.392157 | 0 | % | engine W13lW2Nk9: EVAP (Purge) VSV, 21 03 byte 8 |
-| FuelPumpSpeedControl | byte 7 bit 0 | 1 | 0 |  | engine Pw2b2fXZa: Fuel Pump Speed Control, 21 39 byte 0 (0=OFF, 1=ON) |
-| IntankFuelPump | byte 7 bit 1 | 1 | 0 |  | engine k18F2cGAw: Intank Fuel Pump, 21 39 byte 5 (0=OFF, 1=ON) |
+| ENG_FuelPressure | bytes 0-1 | 10 | 0 | kPa | engine v5skr-i2E: Fuel Press, 21 05 byte 0 |
+| ENG_InjectorPulse | bytes 2-3 | 1 | 0 | us | engine ItoRxih8j: Injector (Port), 21 3C byte 4 |
+| ENG_InjectionVolume | bytes 4-5 | 3.125e-05 | 0 | ml | engine h0_AFRofF: Injection Volum (Cylinder1), 21 3C byte 0 |
+| ENG_EvapPurge | byte 6 | 0.392157 | 0 | % | engine W13lW2Nk9: EVAP (Purge) VSV, 21 03 byte 8 |
+| ENG_FuelPumpSpeedControl | byte 7 bit 0 | 1 | 0 |  | engine Pw2b2fXZa: Fuel Pump Speed Control, 21 39 byte 0 (0=OFF, 1=ON) |
+| ENG_IntankFuelPump | byte 7 bit 1 | 1 | 0 |  | engine k18F2cGAw: Intank Fuel Pump, 21 39 byte 5 (0=OFF, 1=ON) |
 
 ## ENG_Ignition_Knock  (0x1F0005E7, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| IgnitionAdvance | byte 0 | 0.5 | -64 | deg | engine 6fCXjj-K0: IGN Advance, 21 03 byte 6 |
-| KnockCorrectLearn | bytes 1-2 | 0.03125 | -1024 | deg | engine ZCvnPvIxk: Knock Correct Learn Value, 21 37 byte 8 |
-| KnockFeedback | bytes 3-4 | 0.03125 | -1024 | deg | engine vB3dxJsmB: Knock Feedback Value, 21 37 byte 10 |
-| MisfireRPM | byte 5 | 25 | 0 | rpm | engine 4z6yzKThG: Misfire RPM, 21 45 byte 1 |
-| MisfireLoad | byte 6 | 0.015625 | 0 | g/rev | engine wR_cKb8N4: Misfire Load, 21 45 byte 2 |
-| AllCylindersMisfireCount | byte 7 | 1 | 0 |  | engine wX7mIDbK8: All Cylinders Misfire Count, 21 45 byte 17 |
+| ENG_IgnitionAdvance | byte 0 | 0.5 | -64 | deg | engine 6fCXjj-K0: IGN Advance, 21 03 byte 6 |
+| ENG_KnockCorrectLearn | bytes 1-2 | 0.03125 | -1024 | deg | engine ZCvnPvIxk: Knock Correct Learn Value, 21 37 byte 8 |
+| ENG_KnockFeedback | bytes 3-4 | 0.03125 | -1024 | deg | engine vB3dxJsmB: Knock Feedback Value, 21 37 byte 10 |
+| ENG_MisfireRPM | byte 5 | 25 | 0 | rpm | engine 4z6yzKThG: Misfire RPM, 21 45 byte 1 |
+| ENG_MisfireLoad | byte 6 | 0.015625 | 0 | g/rev | engine wR_cKb8N4: Misfire Load, 21 45 byte 2 |
+| ENG_AllCylindersMisfireCount | byte 7 | 1 | 0 |  | engine wX7mIDbK8: All Cylinders Misfire Count, 21 45 byte 17 |
 
 ## ENG_Misfire_Cylinders  (0x1F0005E8, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| Misfire_Cyl1 | byte 0 | 1 | 0 |  | engine icFqfmmtO: Cylinder #1 Misfire Count, 21 45 byte 5 |
-| Misfire_Cyl2 | byte 1 | 1 | 0 |  | engine _uBwEI7dY: Cylinder #2 Misfire Count, 21 45 byte 6 |
-| Misfire_Cyl3 | byte 2 | 1 | 0 |  | engine TyEd4O_0d: Cylinder #3 Misfire Count, 21 45 byte 7 |
-| Misfire_Cyl4 | byte 3 | 1 | 0 |  | engine 2wWfaTUvi: Cylinder #4 Misfire Count, 21 45 byte 8 |
-| Misfire_Cyl5 | byte 4 | 1 | 0 |  | engine 2-EEl1rdf: Cylinder #5 Misfire Count, 21 45 byte 9 |
-| Misfire_Cyl6 | byte 5 | 1 | 0 |  | engine PY7XbcvrQ: Cylinder #6 Misfire Count, 21 45 byte 10 |
-| Misfire_Cyl7 | byte 6 | 1 | 0 |  | engine _CHX--9Ea: Cylinder #7 Misfire Count, 21 45 byte 11 |
-| Misfire_Cyl8 | byte 7 | 1 | 0 |  | engine DcU_wZAm4: Cylinder #8 Misfire Count, 21 45 byte 12 |
+| ENG_Misfire_Cyl1 | byte 0 | 1 | 0 |  | engine icFqfmmtO: Cylinder #1 Misfire Count, 21 45 byte 5 |
+| ENG_Misfire_Cyl2 | byte 1 | 1 | 0 |  | engine _uBwEI7dY: Cylinder #2 Misfire Count, 21 45 byte 6 |
+| ENG_Misfire_Cyl3 | byte 2 | 1 | 0 |  | engine TyEd4O_0d: Cylinder #3 Misfire Count, 21 45 byte 7 |
+| ENG_Misfire_Cyl4 | byte 3 | 1 | 0 |  | engine 2wWfaTUvi: Cylinder #4 Misfire Count, 21 45 byte 8 |
+| ENG_Misfire_Cyl5 | byte 4 | 1 | 0 |  | engine 2-EEl1rdf: Cylinder #5 Misfire Count, 21 45 byte 9 |
+| ENG_Misfire_Cyl6 | byte 5 | 1 | 0 |  | engine PY7XbcvrQ: Cylinder #6 Misfire Count, 21 45 byte 10 |
+| ENG_Misfire_Cyl7 | byte 6 | 1 | 0 |  | engine _CHX--9Ea: Cylinder #7 Misfire Count, 21 45 byte 11 |
+| ENG_Misfire_Cyl8 | byte 7 | 1 | 0 |  | engine DcU_wZAm4: Cylinder #8 Misfire Count, 21 45 byte 12 |
 
 ## ENG_VVT  (0x1F0005E9, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| VVT_Intake1 | bytes 0-1 | 0.00976562 | 0 | deg | engine PVBgJnk6R: VVT Change Angle #1, 21 44 byte 4 |
-| VVT_Intake2 | bytes 2-3 | 0.00976562 | 0 | deg | engine MhVd9_IhO: VVT Change Angle #2, 21 44 byte 10 |
-| VVT_Exhaust1 | bytes 4-5 | 0.00976562 | 0 | deg | engine V4Lyw8pmo: VVT Ex Chg Angle #1, 21 44 byte 16 |
-| VVT_Exhaust2 | bytes 6-7 | 0.00976562 | 0 | deg | engine FQiI0jDXi: VVT Ex Chg Angle #2, 21 44 byte 22 |
+| ENG_VVT_Intake1 | bytes 0-1 | 0.00976562 | 0 | deg | engine PVBgJnk6R: VVT Change Angle #1, 21 44 byte 4 |
+| ENG_VVT_Intake2 | bytes 2-3 | 0.00976562 | 0 | deg | engine MhVd9_IhO: VVT Change Angle #2, 21 44 byte 10 |
+| ENG_VVT_Exhaust1 | bytes 4-5 | 0.00976562 | 0 | deg | engine V4Lyw8pmo: VVT Ex Chg Angle #1, 21 44 byte 16 |
+| ENG_VVT_Exhaust2 | bytes 6-7 | 0.00976562 | 0 | deg | engine FQiI0jDXi: VVT Ex Chg Angle #2, 21 44 byte 22 |
 
 ## ENG_Idle_Control  (0x1F0005EA, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ISC_Flow | bytes 0-1 | 0.0012207 | 0 | m3/s | engine LBxbpEeps: ISC Flow, 21 51 byte 15 |
-| ISC_Position | bytes 2-3 | 0.00762939 | 0 | deg | engine k0vPa3gX4: ISC Position, 21 51 byte 17 |
-| ISC_Learning | bytes 4-5 | 0.0012207 | -40 | m3/s | engine h8531Uoq_: ISC Learning Value, 21 51 byte 23 |
-| MinimumEngineSpeed | bytes 6-7 | 0.78125 | 0 | rpm | engine jnd76n_sz: Minimum Engine Speed, 21 52 byte 12 |
+| ENG_ISC_Flow | bytes 0-1 | 0.0012207 | 0 | m3/s | engine LBxbpEeps: ISC Flow, 21 51 byte 15 |
+| ENG_ISC_Position | bytes 2-3 | 0.00762939 | 0 | deg | engine k0vPa3gX4: ISC Position, 21 51 byte 17 |
+| ENG_ISC_Learning | bytes 4-5 | 0.0012207 | -40 | m3/s | engine h8531Uoq_: ISC Learning Value, 21 51 byte 23 |
+| ENG_MinimumEngineSpeed | bytes 6-7 | 0.78125 | 0 | rpm | engine jnd76n_sz: Minimum Engine Speed, 21 52 byte 12 |
 
 ## ENG_Electrical  (0x1F0005EB, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| BatteryVoltage | bytes 0-1 | 0.001 | 0 | V | engine ku4nFD9dK: Battery Voltage, 21 01 byte 26 |
-| BM_Voltage | bytes 2-3 | 0.0012207 | 0 | V | engine acgFf0-WC: +BM Voltage, 21 41 byte 7 |
-| ThrottleMotorCurrent | byte 4 | 0.078125 | 0 | A | engine zFcUhVFQh: Throttle Motor Current, 21 41 byte 17 |
-| ElectricFan | byte 5 bit 0 | 1 | 0 |  | engine gGP8X_1Qs: Electric Fan Motor, 21 39 byte 4 (0=OFF, 1=ON) |
-| ACClutchRelay | byte 5 bit 1 | 1 | 0 |  | engine myuWtv8rB: A/C Magnetic Clutch Relay, 21 39 byte 1 (0=OFF, 1=ON) |
-| StarterRelay | byte 5 bit 2 | 1 | 0 |  | engine MUn-rKGfW: Starter Relay, 21 39 byte 5 (0=OFF, 1=ON) |
-| ACCRelay | byte 5 bit 3 | 1 | 0 |  | engine JlCNHHMbp: ACC Relay, 21 39 byte 5 (0=OFF, 1=ON) |
-| ElectricalLoad1 | byte 5 bit 4 | 1 | 0 |  | engine us-c_BqAg: Electrical Load Signal 1, 21 25 byte 3 (0=OFF, 1=ON) |
+| ENG_BatteryVoltage | bytes 0-1 | 0.001 | 0 | V | engine ku4nFD9dK: Battery Voltage, 21 01 byte 26 |
+| ENG_BM_Voltage | bytes 2-3 | 0.0012207 | 0 | V | engine acgFf0-WC: +BM Voltage, 21 41 byte 7 |
+| ENG_ThrottleMotorCurrent | byte 4 | 0.078125 | 0 | A | engine zFcUhVFQh: Throttle Motor Current, 21 41 byte 17 |
+| ENG_ElectricFan | byte 5 bit 0 | 1 | 0 |  | engine gGP8X_1Qs: Electric Fan Motor, 21 39 byte 4 (0=OFF, 1=ON) |
+| ENG_ACClutchRelay | byte 5 bit 1 | 1 | 0 |  | engine myuWtv8rB: A/C Magnetic Clutch Relay, 21 39 byte 1 (0=OFF, 1=ON) |
+| ENG_StarterRelay | byte 5 bit 2 | 1 | 0 |  | engine MUn-rKGfW: Starter Relay, 21 39 byte 5 (0=OFF, 1=ON) |
+| ENG_ACCRelay | byte 5 bit 3 | 1 | 0 |  | engine JlCNHHMbp: ACC Relay, 21 39 byte 5 (0=OFF, 1=ON) |
+| ENG_ElectricalLoad1 | byte 5 bit 4 | 1 | 0 |  | engine us-c_BqAg: Electrical Load Signal 1, 21 25 byte 3 (0=OFF, 1=ON) |
 
 ## ENG_Shifter_Range  (0x1F0005EC, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| Shift_P | byte 0 bit 0 | 1 | 0 |  | engine YDFlWhPK7: Shift SW Status (P Range), 21 25 byte 4 (0=OFF, 1=ON) |
-| Shift_R | byte 0 bit 1 | 1 | 0 |  | engine FI1pnHXdO: Shift SW Status (R Range), 21 25 byte 4 (0=OFF, 1=ON) |
-| Shift_N | byte 0 bit 2 | 1 | 0 |  | engine YVfm-fF-0: Shift SW Status (N Range), 21 25 byte 4 (0=OFF, 1=ON) |
-| Shift_D | byte 0 bit 3 | 1 | 0 |  | engine mIfRvCOgv: Shift SW Status (D Range), 21 25 byte 4 (0=OFF, 1=ON) |
-| Shift_4 | byte 0 bit 4 | 1 | 0 |  | engine 2dlmHarbD: Shift SW Status (4 Range), 21 25 byte 4 (0=OFF, 1=ON) |
-| Shift_3 | byte 0 bit 5 | 1 | 0 |  | engine JgbVaaykW: Shift SW Status (3 Range), 21 25 byte 4 (0=OFF, 1=ON) |
-| Shift_2 | byte 0 bit 6 | 1 | 0 |  | engine h9rHlztai: Shift SW Status (2 Range), 21 25 byte 4 (0=OFF, 1=ON) |
-| Shift_L | byte 0 bit 7 | 1 | 0 |  | engine GYPNxIWSl: Shift SW Status (L Range), 21 25 byte 4 (0=OFF, 1=ON) |
+| ENG_Shift_P | byte 0 bit 0 | 1 | 0 |  | engine YDFlWhPK7: Shift SW Status (P Range), 21 25 byte 4 (0=OFF, 1=ON) |
+| ENG_Shift_R | byte 0 bit 1 | 1 | 0 |  | engine FI1pnHXdO: Shift SW Status (R Range), 21 25 byte 4 (0=OFF, 1=ON) |
+| ENG_Shift_N | byte 0 bit 2 | 1 | 0 |  | engine YVfm-fF-0: Shift SW Status (N Range), 21 25 byte 4 (0=OFF, 1=ON) |
+| ENG_Shift_D | byte 0 bit 3 | 1 | 0 |  | engine mIfRvCOgv: Shift SW Status (D Range), 21 25 byte 4 (0=OFF, 1=ON) |
+| ENG_Shift_4 | byte 0 bit 4 | 1 | 0 |  | engine 2dlmHarbD: Shift SW Status (4 Range), 21 25 byte 4 (0=OFF, 1=ON) |
+| ENG_Shift_3 | byte 0 bit 5 | 1 | 0 |  | engine JgbVaaykW: Shift SW Status (3 Range), 21 25 byte 4 (0=OFF, 1=ON) |
+| ENG_Shift_2 | byte 0 bit 6 | 1 | 0 |  | engine h9rHlztai: Shift SW Status (2 Range), 21 25 byte 4 (0=OFF, 1=ON) |
+| ENG_Shift_L | byte 0 bit 7 | 1 | 0 |  | engine GYPNxIWSl: Shift SW Status (L Range), 21 25 byte 4 (0=OFF, 1=ON) |
 
 ## ENG_Shifter_Mode  (0x1F0005ED, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| SportsMode | byte 0 bit 0 | 1 | 0 |  | engine Td2tPkgfT: Sports Mode Selection SW, 21 25 byte 5 (0=OFF, 1=ON) |
-| PaddleUp | byte 0 bit 1 | 1 | 0 |  | engine U5-yUsYEs: Sports Shift Up SW, 21 25 byte 5 (0=OFF, 1=ON) |
-| PaddleDown | byte 0 bit 2 | 1 | 0 |  | engine uGJohyqzk: Sports Shift Down SW, 21 25 byte 5 (0=OFF, 1=ON) |
-| Shift_B | byte 0 bit 3 | 1 | 0 |  | engine AEotfqn0i: Shift SW Status (B Range), 21 25 byte 5 (0=OFF, 1=ON) |
-| ReverseSwitch | byte 0 bit 4 | 1 | 0 |  | engine diGDiCcoq: Reverse Switch, 21 25 byte 5 (0=OFF, 1=ON) |
-| PatternPWR | byte 0 bit 5 | 1 | 0 |  | engine 7zTFk0ahg: Pattern Switch (PWR/M), 21 25 byte 6 (0=OFF, 1=ON) |
-| SnowSwitch | byte 0 bit 6 | 1 | 0 |  | engine q6VfXFaPA: Snow Switch Status, 21 25 byte 6 (0=OFF, 1=ON) |
-| ECOSwitch | byte 0 bit 7 | 1 | 0 |  | engine Z5ljYxjBl: ECO Switch, 21 25 byte 6 (0=OFF, 1=ON) |
+| ENG_SportsMode | byte 0 bit 0 | 1 | 0 |  | engine Td2tPkgfT: Sports Mode Selection SW, 21 25 byte 5 (0=OFF, 1=ON) |
+| ENG_PaddleUp | byte 0 bit 1 | 1 | 0 |  | engine U5-yUsYEs: Sports Shift Up SW, 21 25 byte 5 (0=OFF, 1=ON) |
+| ENG_PaddleDown | byte 0 bit 2 | 1 | 0 |  | engine uGJohyqzk: Sports Shift Down SW, 21 25 byte 5 (0=OFF, 1=ON) |
+| ENG_Shift_B | byte 0 bit 3 | 1 | 0 |  | engine AEotfqn0i: Shift SW Status (B Range), 21 25 byte 5 (0=OFF, 1=ON) |
+| ENG_ReverseSwitch | byte 0 bit 4 | 1 | 0 |  | engine diGDiCcoq: Reverse Switch, 21 25 byte 5 (0=OFF, 1=ON) |
+| ENG_PatternPWR | byte 0 bit 5 | 1 | 0 |  | engine 7zTFk0ahg: Pattern Switch (PWR/M), 21 25 byte 6 (0=OFF, 1=ON) |
+| ENG_SnowSwitch | byte 0 bit 6 | 1 | 0 |  | engine q6VfXFaPA: Snow Switch Status, 21 25 byte 6 (0=OFF, 1=ON) |
+| ENG_ECOSwitch | byte 0 bit 7 | 1 | 0 |  | engine Z5ljYxjBl: ECO Switch, 21 25 byte 6 (0=OFF, 1=ON) |
 
 ## ENG_Brake_Cruise_Switches  (0x1F0005EE, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| StopLightSwitch | byte 0 bit 0 | 1 | 0 |  | engine LaaAftzU0: Stop Light Switch, 21 25 byte 0 (0=OFF, 1=ON) |
-| BrakeSwitch | byte 0 bit 1 | 1 | 0 |  | engine hjYESNCj7: Brake Switch, 21 25 byte 8 (0=OFF, 1=ON) |
-| BrakeSwitchStatus | byte 0 bit 2 | 1 | 0 |  | engine pfEH5h1QD: Brake Switch Status, 21 25 byte 8 (0=Unable, 1=Able) |
-| CruiseMain | byte 0 bit 3 | 1 | 0 |  | engine __FHX_t6O: Cruise Main SW, 21 25 byte 11 (0=OFF, 1=ON) |
-| CruiseCancel | byte 0 bit 4 | 1 | 0 |  | engine G1GK3DGX4: Cruise Cancel Signal, 21 25 byte 10 (0=OFF, 1=ON) |
-| CruiseResAcc | byte 0 bit 5 | 1 | 0 |  | engine 1UVZqZKwY: RES/ACC Switch, 21 21 byte 10 (0=OFF, 1=ON) |
-| CruiseSetCoast | byte 0 bit 6 | 1 | 0 |  | engine BitT646tJ: SET/COAST Switch, 21 21 byte 10 (0=OFF, 1=ON) |
-| KickDown | byte 0 bit 7 | 1 | 0 |  | engine 3l0But04C: Kick Down Switch Status, 21 25 byte 8 (0=OFF, 1=ON) |
+| ENG_StopLightSwitch | byte 0 bit 0 | 1 | 0 |  | engine LaaAftzU0: Stop Light Switch, 21 25 byte 0 (0=OFF, 1=ON) |
+| ENG_BrakeSwitch | byte 0 bit 1 | 1 | 0 |  | engine hjYESNCj7: Brake Switch, 21 25 byte 8 (0=OFF, 1=ON) |
+| ENG_BrakeSwitchStatus | byte 0 bit 2 | 1 | 0 |  | engine pfEH5h1QD: Brake Switch Status, 21 25 byte 8 (0=Unable, 1=Able) |
+| ENG_CruiseMain | byte 0 bit 3 | 1 | 0 |  | engine __FHX_t6O: Cruise Main SW, 21 25 byte 11 (0=OFF, 1=ON) |
+| ENG_CruiseCancel | byte 0 bit 4 | 1 | 0 |  | engine G1GK3DGX4: Cruise Cancel Signal, 21 25 byte 10 (0=OFF, 1=ON) |
+| ENG_CruiseResAcc | byte 0 bit 5 | 1 | 0 |  | engine 1UVZqZKwY: RES/ACC Switch, 21 21 byte 10 (0=OFF, 1=ON) |
+| ENG_CruiseSetCoast | byte 0 bit 6 | 1 | 0 |  | engine BitT646tJ: SET/COAST Switch, 21 21 byte 10 (0=OFF, 1=ON) |
+| ENG_KickDown | byte 0 bit 7 | 1 | 0 |  | engine 3l0But04C: Kick Down Switch Status, 21 25 byte 8 (0=OFF, 1=ON) |
 
 ## ENG_Starter_AC_Switches  (0x1F0005EF, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| StarterSignal | byte 0 bit 0 | 1 | 0 |  | engine nciXdmoed: Starter Signal, 21 25 byte 1 (0=OFF, 1=ON) |
-| StarterControl | byte 0 bit 1 | 1 | 0 |  | engine CY1ijYdOw: Starter Control, 21 25 byte 1 (0=OFF, 1=ON) |
-| ClutchStart | byte 0 bit 2 | 1 | 0 |  | engine 4UftGpjce: Clutch Start SW, 21 25 byte 1 (0=OFF, 1=ON) |
-| IdleUp | byte 0 bit 3 | 1 | 0 |  | engine XtvJTr4CS: Idle Up SW, 21 25 byte 0 (0=OFF, 1=ON) |
-| ACSignal | byte 0 bit 4 | 1 | 0 |  | engine -zoeJoXh5: A/C Signal, 21 25 byte 11 (0=OFF, 1=ON) |
-| ACPressureNormal | byte 0 bit 5 | 1 | 0 |  | engine qRAINqEqE: A/C Pressure Normal SW, 21 25 byte 10 (0=OFF, 1=ON) |
-| ACPressureAbnormal | byte 0 bit 6 | 1 | 0 |  | engine _8uEoAJUJ: A/C Pressure Abnormal SW, 21 25 byte 10 (0=OFF, 1=ON) |
-| PowerSteeringSignal | byte 0 bit 7 | 1 | 0 |  | engine 22JXwqg7a: Power Steering Signal, 21 25 byte 0 (0=OFF, 1=ON) |
+| ENG_StarterSignal | byte 0 bit 0 | 1 | 0 |  | engine nciXdmoed: Starter Signal, 21 25 byte 1 (0=OFF, 1=ON) |
+| ENG_StarterControl | byte 0 bit 1 | 1 | 0 |  | engine CY1ijYdOw: Starter Control, 21 25 byte 1 (0=OFF, 1=ON) |
+| ENG_ClutchStart | byte 0 bit 2 | 1 | 0 |  | engine 4UftGpjce: Clutch Start SW, 21 25 byte 1 (0=OFF, 1=ON) |
+| ENG_IdleUp | byte 0 bit 3 | 1 | 0 |  | engine XtvJTr4CS: Idle Up SW, 21 25 byte 0 (0=OFF, 1=ON) |
+| ENG_ACSignal | byte 0 bit 4 | 1 | 0 |  | engine -zoeJoXh5: A/C Signal, 21 25 byte 11 (0=OFF, 1=ON) |
+| ENG_ACPressureNormal | byte 0 bit 5 | 1 | 0 |  | engine qRAINqEqE: A/C Pressure Normal SW, 21 25 byte 10 (0=OFF, 1=ON) |
+| ENG_ACPressureAbnormal | byte 0 bit 6 | 1 | 0 |  | engine _8uEoAJUJ: A/C Pressure Abnormal SW, 21 25 byte 10 (0=OFF, 1=ON) |
+| ENG_PowerSteeringSignal | byte 0 bit 7 | 1 | 0 |  | engine 22JXwqg7a: Power Steering Signal, 21 25 byte 0 (0=OFF, 1=ON) |
 
 ## ENG_Status  (0x1F0005F0, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| MIL | byte 0 bit 0 | 1 | 0 |  | engine Bbj0Pmhyr: MIL, 21 06 byte 0 (0=OFF, 1=ON) |
-| EmissionDTCCount | byte 0 bit 1-7 | 1 | 0 |  | engine WCJGSumpU: Number of Emission DTC, 21 06 byte 0 |
-| OilPressureSwitch | byte 1 bit 0 | 1 | 0 |  | engine QrVBqDKae: Engine Oil Pressure SW, 21 25 byte 0 (0=OFF, 1=ON) |
-| FuelCutCondition | byte 1 bit 1 | 1 | 0 |  | engine gAu-DN8VC: Fuel Cut Condition, 21 37 byte 21 (0=OFF, 1=ON) |
-| IdleFuelCut | byte 1 bit 2 | 1 | 0 |  | engine h-3rtqNGT: Idle Fuel Cut, 21 37 byte 21 (0=OFF, 1=ON) |
-| BrakeOverride | byte 1 bit 3 | 1 | 0 |  | engine e3pvuDRp1: Brake Override System, 21 37 byte 22 (0=OFF, 1=ON) |
-| NeutralControl | byte 1 bit 4 | 1 | 0 |  | engine BqGbQd4XC: Neutral Control, 21 51 byte 35 (0=OFF, 1=ON) |
-| ImmobiliserFuelCut | byte 1 bit 5 | 1 | 0 |  | engine jMDEYn5qc: Immobiliser Fuel Cut, 21 51 byte 36 (0=OFF, 1=ON) |
+| ENG_MIL | byte 0 bit 0 | 1 | 0 |  | engine Bbj0Pmhyr: MIL, 21 06 byte 0 (0=OFF, 1=ON) |
+| ENG_EmissionDTCCount | byte 0 bit 1-7 | 1 | 0 |  | engine WCJGSumpU: Number of Emission DTC, 21 06 byte 0 |
+| ENG_OilPressureSwitch | byte 1 bit 0 | 1 | 0 |  | engine QrVBqDKae: Engine Oil Pressure SW, 21 25 byte 0 (0=OFF, 1=ON) |
+| ENG_FuelCutCondition | byte 1 bit 1 | 1 | 0 |  | engine gAu-DN8VC: Fuel Cut Condition, 21 37 byte 21 (0=OFF, 1=ON) |
+| ENG_IdleFuelCut | byte 1 bit 2 | 1 | 0 |  | engine h-3rtqNGT: Idle Fuel Cut, 21 37 byte 21 (0=OFF, 1=ON) |
+| ENG_BrakeOverride | byte 1 bit 3 | 1 | 0 |  | engine e3pvuDRp1: Brake Override System, 21 37 byte 22 (0=OFF, 1=ON) |
+| ENG_NeutralControl | byte 1 bit 4 | 1 | 0 |  | engine BqGbQd4XC: Neutral Control, 21 51 byte 35 (0=OFF, 1=ON) |
+| ENG_ImmobiliserFuelCut | byte 1 bit 5 | 1 | 0 |  | engine jMDEYn5qc: Immobiliser Fuel Cut, 21 51 byte 36 (0=OFF, 1=ON) |
 
 ## TRANS_Temp_Speeds  (0x1F0005F1, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ATOilTemperature | bytes 0-1 | 0.00390625 | -40 | degC | ect EJAh4TNHA: A/T Oil Temperature 1, 21 82 byte 0 |
-| NT_Speed | byte 2 | 50 | 0 | rpm | ect SpqvpeR8J: SPD (NT), 21 81 byte 0 |
-| NC3_Speed | byte 3 | 50 | 0 | rpm | ect SJZ7oPa40: SPD (NC3), 21 81 byte 12 |
-| SP2_Speed | byte 4 | 1 | 0 | km/h | ect iMojAwB1A: SPD (SP2), 21 81 byte 21 |
-| EngineSpeedFromEFI | bytes 5-6 | 0.78125 | 0 | rpm | ect V6n2SPQpo: Engine Speed from EFI, 21 22 byte 0 |
+| TRANS_ATOilTemperature | bytes 0-1 | 0.00390625 | -40 | degC | ect EJAh4TNHA: A/T Oil Temperature 1, 21 82 byte 0 |
+| TRANS_NT_Speed | byte 2 | 50 | 0 | rpm | ect SpqvpeR8J: SPD (NT), 21 81 byte 0 |
+| TRANS_NC3_Speed | byte 3 | 50 | 0 | rpm | ect SJZ7oPa40: SPD (NC3), 21 81 byte 12 |
+| TRANS_SP2_Speed | byte 4 | 1 | 0 | km/h | ect iMojAwB1A: SPD (SP2), 21 81 byte 21 |
+| TRANS_EngineSpeedFromEFI | bytes 5-6 | 0.78125 | 0 | rpm | ect V6n2SPQpo: Engine Speed from EFI, 21 22 byte 0 |
 
 ## TRANS_Shift_Solenoids  (0x1F0005F2, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ShiftStatus | byte 0 | 1 | 0 |  | ect uVqogLzei: Shift Status, 21 85 byte 0 (1=1st, 2=2nd, 3=3rd, 4=4th, ...) |
-| LockUp | byte 1 bit 0 | 1 | 0 |  | ect xNDFWfWrx: Lock Up, 21 85 byte 1 (0=OFF, 1=ON) |
-| SLT | byte 1 bit 1 | 1 | 0 |  | ect NCfYZpryP: SLT Solenoid Status, 21 85 byte 2 (0=OFF, 1=ON) |
-| SLU | byte 1 bit 2 | 1 | 0 |  | ect ktUrcNJB2: SLU Solenoid Status, 21 85 byte 2 (0=OFF, 1=ON) |
-| SLN | byte 1 bit 3 | 1 | 0 |  | ect 0sho5CYXM: SLN Solenoid Status, 21 85 byte 2 (0=OFF, 1=ON) |
-| SL | byte 1 bit 4 | 1 | 0 |  | ect pfH5jGZAK: SL Solenoid Status, 21 85 byte 1 (0=OFF, 1=ON) |
-| ST | byte 1 bit 5 | 1 | 0 |  | ect 8uWsA8nEj: ST Solenoid Status, 21 85 byte 1 (0=OFF, 1=ON) |
-| SC | byte 1 bit 6 | 1 | 0 |  | ect dbNB5GR5P: Solenoid(SC), 21 85 byte 1 (0=OFF, 1=ON) |
+| TRANS_ShiftStatus | byte 0 | 1 | 0 |  | ect uVqogLzei: Shift Status, 21 85 byte 0 (1=1st, 2=2nd, 3=3rd, 4=4th, ...) |
+| TRANS_LockUp | byte 1 bit 0 | 1 | 0 |  | ect xNDFWfWrx: Lock Up, 21 85 byte 1 (0=OFF, 1=ON) |
+| TRANS_SLT | byte 1 bit 1 | 1 | 0 |  | ect NCfYZpryP: SLT Solenoid Status, 21 85 byte 2 (0=OFF, 1=ON) |
+| TRANS_SLU | byte 1 bit 2 | 1 | 0 |  | ect ktUrcNJB2: SLU Solenoid Status, 21 85 byte 2 (0=OFF, 1=ON) |
+| TRANS_SLN | byte 1 bit 3 | 1 | 0 |  | ect 0sho5CYXM: SLN Solenoid Status, 21 85 byte 2 (0=OFF, 1=ON) |
+| TRANS_SL | byte 1 bit 4 | 1 | 0 |  | ect pfH5jGZAK: SL Solenoid Status, 21 85 byte 1 (0=OFF, 1=ON) |
+| TRANS_ST | byte 1 bit 5 | 1 | 0 |  | ect 8uWsA8nEj: ST Solenoid Status, 21 85 byte 1 (0=OFF, 1=ON) |
+| TRANS_SC | byte 1 bit 6 | 1 | 0 |  | ect dbNB5GR5P: Solenoid(SC), 21 85 byte 1 (0=OFF, 1=ON) |
 
 ## TRANS_Shift_Status  (0x1F0005F3, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| SLS | byte 0 bit 0 | 1 | 0 |  | ect YxfYDQ7uJ: Solenoid (SLS), 21 85 byte 2 (0=OFF, 1=ON) |
-| SLC | byte 0 bit 1 | 1 | 0 |  | ect WLIDn7NaU: Solenoid (SLC), 21 85 byte 2 (0=OFF, 1=ON) |
-| SLP | byte 0 bit 2 | 1 | 0 |  | ect 5thzpoH_h: Solenoid(SLP), 21 85 byte 2 (0=OFF, 1=ON) |
-| ShiftControlMode | byte 0 bit 3 | 1 | 0 |  | ect Fg7GsLOd5: Shift Control Mode, 21 83 byte 0 (0=S-mode, 1=M-mode) |
-| UpShiftIndication | byte 0 bit 4 | 1 | 0 |  | ect Yj5UsMWsV: MT Up Shift Indication, 21 83 byte 0 (0=OFF, 1=ON) |
-| DownShiftIndication | byte 0 bit 5 | 1 | 0 |  | ect N-VrAXF3I: MT Down Shift Indication, 21 83 byte 0 (0=OFF, 1=ON) |
-| TorqueConverterTempRaiseHistory | byte 0 bit 6 | 1 | 0 |  | ect AxTmJGDw6: Torque Converter Temperature Raise History, 21 83 byte 0 (0=OFF, 1=ON) |
+| TRANS_SLS | byte 0 bit 0 | 1 | 0 |  | ect YxfYDQ7uJ: Solenoid (SLS), 21 85 byte 2 (0=OFF, 1=ON) |
+| TRANS_SLC | byte 0 bit 1 | 1 | 0 |  | ect WLIDn7NaU: Solenoid (SLC), 21 85 byte 2 (0=OFF, 1=ON) |
+| TRANS_SLP | byte 0 bit 2 | 1 | 0 |  | ect 5thzpoH_h: Solenoid(SLP), 21 85 byte 2 (0=OFF, 1=ON) |
+| TRANS_ShiftControlMode | byte 0 bit 3 | 1 | 0 |  | ect Fg7GsLOd5: Shift Control Mode, 21 83 byte 0 (0=S-mode, 1=M-mode) |
+| TRANS_UpShiftIndication | byte 0 bit 4 | 1 | 0 |  | ect Yj5UsMWsV: MT Up Shift Indication, 21 83 byte 0 (0=OFF, 1=ON) |
+| TRANS_DownShiftIndication | byte 0 bit 5 | 1 | 0 |  | ect N-VrAXF3I: MT Down Shift Indication, 21 83 byte 0 (0=OFF, 1=ON) |
+| TRANS_TorqueConverterTempRaiseHistory | byte 0 bit 6 | 1 | 0 |  | ect AxTmJGDw6: Torque Converter Temperature Raise History, 21 83 byte 0 (0=OFF, 1=ON) |
 
 ## TRANS_Sensor_Voltages  (0x1F0005F4, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| NT_Voltage | bytes 0-1 | 7.62939e-05 | 0 | V | ect NKb865K8G: NT Sensor Voltage, 21 81 byte 1 |
-| NC3_Voltage | bytes 2-3 | 7.62939e-05 | 0 | V | ect QY8axK3Nf: NC3 Sensor Voltage, 21 81 byte 13 |
-| SP2_Voltage | bytes 4-5 | 7.62939e-05 | 0 | V | ect 32BDW-f03: SP2 Sensor Voltage, 21 81 byte 22 |
+| TRANS_NT_Voltage | bytes 0-1 | 7.62939e-05 | 0 | V | ect NKb865K8G: NT Sensor Voltage, 21 81 byte 1 |
+| TRANS_NC3_Voltage | bytes 2-3 | 7.62939e-05 | 0 | V | ect QY8axK3Nf: NC3 Sensor Voltage, 21 81 byte 13 |
+| TRANS_SP2_Voltage | bytes 4-5 | 7.62939e-05 | 0 | V | ect 32BDW-f03: SP2 Sensor Voltage, 21 81 byte 22 |
 
 ## ABS_Wheel_Speeds  (0x1F0005F5, every 50 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| FR | byte 0 | 1.28 | 0 | km/h | abs v4xnACb-1: FR Wheel Speed, 21 03 byte 0 |
-| FL | byte 1 | 1.28 | 0 | km/h | abs -HYSOLbJn: FL Wheel Speed, 21 03 byte 1 |
-| RR | byte 2 | 1.28 | 0 | km/h | abs t1FnfghgK: RR Wheel Speed, 21 03 byte 2 |
-| RL | byte 3 | 1.28 | 0 | km/h | abs AcK0rmPvM: RL Wheel Speed, 21 03 byte 3 |
-| VehicleSpeed | byte 4 | 1.28 | 0 | km/h | abs yRGYTZgNS: Vehicle Speed, 21 21 byte 0 |
+| ABS_FR | byte 0 | 1.28 | 0 | km/h | abs v4xnACb-1: FR Wheel Speed, 21 03 byte 0 |
+| ABS_FL | byte 1 | 1.28 | 0 | km/h | abs -HYSOLbJn: FL Wheel Speed, 21 03 byte 1 |
+| ABS_RR | byte 2 | 1.28 | 0 | km/h | abs t1FnfghgK: RR Wheel Speed, 21 03 byte 2 |
+| ABS_RL | byte 3 | 1.28 | 0 | km/h | abs AcK0rmPvM: RL Wheel Speed, 21 03 byte 3 |
+| ABS_VehicleSpeed | byte 4 | 1.28 | 0 | km/h | abs yRGYTZgNS: Vehicle Speed, 21 21 byte 0 |
 
 ## ABS_Wheel_Acceleration  (0x1F0005F6, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| FR_Accel | byte 0 | 1.56906 | 0 | m/s2 | abs R-ofHq_E6: FR Wheel Acceleration, 21 42 byte 0 |
-| FL_Accel | byte 1 | 1.56906 | 0 | m/s2 | abs 8kTp8qubl: FL Wheel Acceleration, 21 42 byte 1 |
-| RR_Accel | byte 2 | 1.56906 | 0 | m/s2 | abs KCJS2t_xa: RR Wheel Acceleration, 21 42 byte 2 |
-| RL_Accel | byte 3 | 1.56906 | 0 | m/s2 | abs Y4iACr_dT: RL Wheel Acceleration, 21 42 byte 3 |
-| FR_Direction | byte 4 bit 0 | 1 | 0 |  | abs ENqaWxCqb: FR Wheel Direction, 21 03 byte 4 (0=Forward, 1=Back) |
-| FL_Direction | byte 4 bit 1 | 1 | 0 |  | abs Hhcs40e-J: FL Wheel Direction, 21 03 byte 4 (0=Forward, 1=Back) |
-| RR_Direction | byte 4 bit 2 | 1 | 0 |  | abs Ul0mHtzgx: RR Wheel Direction, 21 03 byte 4 (0=Forward, 1=Back) |
-| RL_Direction | byte 4 bit 3 | 1 | 0 |  | abs QGQ65POtp: RL Wheel Direction, 21 03 byte 4 (0=Forward, 1=Back) |
+| ABS_FR_Accel | byte 0 | 1.56906 | 0 | m/s2 | abs R-ofHq_E6: FR Wheel Acceleration, 21 42 byte 0 |
+| ABS_FL_Accel | byte 1 | 1.56906 | 0 | m/s2 | abs 8kTp8qubl: FL Wheel Acceleration, 21 42 byte 1 |
+| ABS_RR_Accel | byte 2 | 1.56906 | 0 | m/s2 | abs KCJS2t_xa: RR Wheel Acceleration, 21 42 byte 2 |
+| ABS_RL_Accel | byte 3 | 1.56906 | 0 | m/s2 | abs Y4iACr_dT: RL Wheel Acceleration, 21 42 byte 3 |
+| ABS_FR_Direction | byte 4 bit 0 | 1 | 0 |  | abs ENqaWxCqb: FR Wheel Direction, 21 03 byte 4 (0=Forward, 1=Back) |
+| ABS_FL_Direction | byte 4 bit 1 | 1 | 0 |  | abs Hhcs40e-J: FL Wheel Direction, 21 03 byte 4 (0=Forward, 1=Back) |
+| ABS_RR_Direction | byte 4 bit 2 | 1 | 0 |  | abs Ul0mHtzgx: RR Wheel Direction, 21 03 byte 4 (0=Forward, 1=Back) |
+| ABS_RL_Direction | byte 4 bit 3 | 1 | 0 |  | abs QGQ65POtp: RL Wheel Direction, 21 03 byte 4 (0=Forward, 1=Back) |
 
 ## ABS_Dynamics  (0x1F0005F7, every 50 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| LateralG | byte 0 | 0.196133 | 0 | m/s2 | abs x0YHJYGLk: Lateral G, 21 47 byte 0 |
-| LongitudinalG | byte 1 | 0.196133 | 0 | m/s2 | abs a-Lmmkodv: Forward and Rearward G, 21 47 byte 1 |
-| YawRate | byte 2 | 1 | -128 | deg/s | abs CjlWP50XW: Yaw Rate Value, 21 47 byte 2 |
-| SteeringAngle | bytes 3-4 | 0.1 | -3276.8 | deg | abs YyxAXn7Bo: Steering Angle Value, 21 47 byte 3 |
-| DecelerationSensorRaw | byte 5 | 0.14318 | -18.327 | m/s2 | abs mGjX_peX9: Deceleration Sensor, 21 05 byte 0 |
-| YawRateSensorRaw | byte 6 | 1 | -128 | deg/s | abs 8sE4a6uUA: Yaw Rate Sensor, 21 06 byte 0 |
+| ABS_LateralG | byte 0 | 0.196133 | 0 | m/s2 | abs x0YHJYGLk: Lateral G, 21 47 byte 0 |
+| ABS_LongitudinalG | byte 1 | 0.196133 | 0 | m/s2 | abs a-Lmmkodv: Forward and Rearward G, 21 47 byte 1 |
+| ABS_YawRate | byte 2 | 1 | -128 | deg/s | abs CjlWP50XW: Yaw Rate Value, 21 47 byte 2 |
+| ABS_SteeringAngle | bytes 3-4 | 0.1 | -3276.8 | deg | abs YyxAXn7Bo: Steering Angle Value, 21 47 byte 3 |
+| ABS_DecelerationSensorRaw | byte 5 | 0.14318 | -18.327 | m/s2 | abs mGjX_peX9: Deceleration Sensor, 21 05 byte 0 |
+| ABS_YawRateSensorRaw | byte 6 | 1 | -128 | deg/s | abs 8sE4a6uUA: Yaw Rate Sensor, 21 06 byte 0 |
 
 ## ABS_Engine_Gear  (0x1F0005F8, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| EngineRevolutions | bytes 0-1 | 1 | 0 | rpm | abs DbQb0AMct: Engine Revolutions, 21 05 byte 2 |
-| RealEngineTorque | bytes 2-3 | 0.03125 | 0 | Nm | abs BHWjdtIL-: Real Engine Torque, 21 05 byte 10 |
-| AcceleratorOpening | byte 4 | 0.5 | 0 | % | abs Jglou0v_s: Accelerator Opening Angle %, 21 05 byte 9 |
-| GearPosition | byte 5 bit 0-3 | 1 | 0 |  | abs jW8oylIb1: Gear Position, 21 1C byte 0 (0=Fail, 1=1st, 2=2nd, 3=3rd, ...) |
-| ShiftLeverPosition | byte 5 bit 4-7 | 1 | 0 |  | abs RSHg0tiBi: Shift Lever Position, 21 1C byte 0 (0=Fail, 1=1st, 2=2nd, 3=3rd, ...) |
-| IG1Voltage | byte 6 | 0.0784314 | 0 | V | abs J3rUuxCaI: IG1 Voltage Value, 21 0C byte 3 |
-| MotorVoltage | byte 7 | 0.0784314 | 0 | V | abs UFZO8JVEN: MT Voltage Value, 21 0C byte 11 |
+| ABS_EngineRevolutions | bytes 0-1 | 1 | 0 | rpm | abs DbQb0AMct: Engine Revolutions, 21 05 byte 2 |
+| ABS_RealEngineTorque | bytes 2-3 | 0.03125 | 0 | Nm | abs BHWjdtIL-: Real Engine Torque, 21 05 byte 10 |
+| ABS_AcceleratorOpening | byte 4 | 0.5 | 0 | % | abs Jglou0v_s: Accelerator Opening Angle %, 21 05 byte 9 |
+| ABS_GearPosition | byte 5 bit 0-3 | 1 | 0 |  | abs jW8oylIb1: Gear Position, 21 1C byte 0 (0=Fail, 1=1st, 2=2nd, 3=3rd, ...) |
+| ABS_ShiftLeverPosition | byte 5 bit 4-7 | 1 | 0 |  | abs RSHg0tiBi: Shift Lever Position, 21 1C byte 0 (0=Fail, 1=1st, 2=2nd, 3=3rd, ...) |
+| ABS_IG1Voltage | byte 6 | 0.0784314 | 0 | V | abs J3rUuxCaI: IG1 Voltage Value, 21 0C byte 3 |
+| ABS_MotorVoltage | byte 7 | 0.0784314 | 0 | V | abs UFZO8JVEN: MT Voltage Value, 21 0C byte 11 |
 
 ## ABS_Brake_Pedal  (0x1F0005F9, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| MasterCylinderSensor | byte 0 | 0.0196078 | 0 | V | abs yM3FOp0fA: Master Cylinder Sensor, 21 04 byte 0 |
-| StopLightSW | byte 1 bit 0 | 1 | 0 |  | abs UGeitSXq9: Stop Light SW, 21 1F byte 0 (0=OFF, 1=ON) |
-| ParkingBrakeSW | byte 1 bit 1 | 1 | 0 |  | abs fJtEaqyyV: Parking Brake SW, 21 1F byte 0 (0=OFF, 1=ON) |
-| BrakePedalLoadSW | byte 1 bit 2 | 1 | 0 |  | abs tWI548Zwy: Brake Pedal Load Sensing SW, 21 1F byte 0 (0=OFF, 1=ON) |
-| DecelerationSW | byte 1 bit 3-5 | 1 | 0 |  | abs ESB906d-K: Deceleration SW, 21 1F byte 0 (0=Fail, 1=Low, 2=Mid, 4=High) |
-| BrakeAssistCtrl | byte 1 bit 6 | 1 | 0 |  | abs FZM3q0Cap: BA Ctrl Status, 21 5F byte 1 (0=OFF, 1=ON) |
-| PanicBrakeAssistCtrl | byte 1 bit 7 | 1 | 0 |  | abs TNx07Rm12: PBA Ctrl Status, 21 5F byte 1 (0=OFF, 1=ON) |
+| ABS_MasterCylinderSensor | byte 0 | 0.0196078 | 0 | V | abs yM3FOp0fA: Master Cylinder Sensor, 21 04 byte 0 |
+| ABS_StopLightSW | byte 1 bit 0 | 1 | 0 |  | abs UGeitSXq9: Stop Light SW, 21 1F byte 0 (0=OFF, 1=ON) |
+| ABS_ParkingBrakeSW | byte 1 bit 1 | 1 | 0 |  | abs fJtEaqyyV: Parking Brake SW, 21 1F byte 0 (0=OFF, 1=ON) |
+| ABS_BrakePedalLoadSW | byte 1 bit 2 | 1 | 0 |  | abs tWI548Zwy: Brake Pedal Load Sensing SW, 21 1F byte 0 (0=OFF, 1=ON) |
+| ABS_DecelerationSW | byte 1 bit 3-5 | 1 | 0 |  | abs ESB906d-K: Deceleration SW, 21 1F byte 0 (0=Fail, 1=Low, 2=Mid, 4=High) |
+| ABS_BrakeAssistCtrl | byte 1 bit 6 | 1 | 0 |  | abs FZM3q0Cap: BA Ctrl Status, 21 5F byte 1 (0=OFF, 1=ON) |
+| ABS_PanicBrakeAssistCtrl | byte 1 bit 7 | 1 | 0 |  | abs TNx07Rm12: PBA Ctrl Status, 21 5F byte 1 (0=OFF, 1=ON) |
 
 ## ABS_Traction_Control  (0x1F0005FA, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| TRC_Ctrl | byte 0 bit 0 | 1 | 0 |  | abs BioD10Xaj: TRC(TRAC) Ctrl Status, 21 5A byte 0 (0=OFF, 1=ON) |
-| TRC_EngineCtrl | byte 0 bit 1 | 1 | 0 |  | abs 8cEHdXtyy: TRC(TRAC) Engine Ctrl Status, 21 5A byte 0 (0=OFF, 1=ON) |
-| TRC_BrakeCtrl | byte 0 bit 2 | 1 | 0 |  | abs -smIkMz-d: TRC(TRAC) Brake Ctrl Status, 21 5A byte 0 (0=OFF, 1=ON) |
-| TRAC_VSC_OffMode | byte 0 bit 3-4 | 1 | 0 |  | abs u4dVd8nTf: TRAC/VSC Off Mode, 21 5A byte 0 (0=Normal, 1=TRC OFF, 2=VSC Expert Mode, 3=VSC OFF) |
-| VSC_FR | byte 0 bit 5 | 1 | 0 |  | abs KCEsfxful: FR Wheel VSC Ctrl Status, 21 5A byte 1 (0=OFF, 1=ON) |
-| VSC_FL | byte 0 bit 6 | 1 | 0 |  | abs doHPlEw7e: FL Wheel VSC Ctrl Status, 21 5A byte 1 (0=OFF, 1=ON) |
-| VSC_RR | byte 0 bit 7 | 1 | 0 |  | abs lrg-aSr92: RR Wheel VSC Ctrl Status, 21 5A byte 1 (0=OFF, 1=ON) |
-| VSC_RL | byte 1 bit 0 | 1 | 0 |  | abs 1xb8Sace_: RL Wheel VSC Ctrl Status, 21 5A byte 1 (0=OFF, 1=ON) |
+| ABS_TRC_Ctrl | byte 0 bit 0 | 1 | 0 |  | abs BioD10Xaj: TRC(TRAC) Ctrl Status, 21 5A byte 0 (0=OFF, 1=ON) |
+| ABS_TRC_EngineCtrl | byte 0 bit 1 | 1 | 0 |  | abs 8cEHdXtyy: TRC(TRAC) Engine Ctrl Status, 21 5A byte 0 (0=OFF, 1=ON) |
+| ABS_TRC_BrakeCtrl | byte 0 bit 2 | 1 | 0 |  | abs -smIkMz-d: TRC(TRAC) Brake Ctrl Status, 21 5A byte 0 (0=OFF, 1=ON) |
+| ABS_TRAC_VSC_OffMode | byte 0 bit 3-4 | 1 | 0 |  | abs u4dVd8nTf: TRAC/VSC Off Mode, 21 5A byte 0 (0=Normal, 1=TRC OFF, 2=VSC Expert Mode, 3=VSC OFF) |
+| ABS_VSC_FR | byte 0 bit 5 | 1 | 0 |  | abs KCEsfxful: FR Wheel VSC Ctrl Status, 21 5A byte 1 (0=OFF, 1=ON) |
+| ABS_VSC_FL | byte 0 bit 6 | 1 | 0 |  | abs doHPlEw7e: FL Wheel VSC Ctrl Status, 21 5A byte 1 (0=OFF, 1=ON) |
+| ABS_VSC_RR | byte 0 bit 7 | 1 | 0 |  | abs lrg-aSr92: RR Wheel VSC Ctrl Status, 21 5A byte 1 (0=OFF, 1=ON) |
+| ABS_VSC_RL | byte 1 bit 0 | 1 | 0 |  | abs 1xb8Sace_: RL Wheel VSC Ctrl Status, 21 5A byte 1 (0=OFF, 1=ON) |
 
 ## ABS_Brake_Control  (0x1F0005FB, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ABS_FR | byte 0 bit 0 | 1 | 0 |  | abs 9NNrtrd4i: FR Wheel ABS Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
-| ABS_FL | byte 0 bit 1 | 1 | 0 |  | abs yajwN879t: FL Wheel ABS Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
-| ABS_RR | byte 0 bit 2 | 1 | 0 |  | abs FyfwxEcPN: RR Wheel ABS Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
-| ABS_RL | byte 0 bit 3 | 1 | 0 |  | abs fEq8RXSPK: RL Wheel ABS Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
-| EBD_FR | byte 0 bit 4 | 1 | 0 |  | abs ic_kYrW4C: FR Wheel EBD Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
-| EBD_FL | byte 0 bit 5 | 1 | 0 |  | abs fE9uO2Yv_: FL Wheel EBD Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
-| EBD_RR | byte 0 bit 6 | 1 | 0 |  | abs HubfTRTQ9: RR Wheel EBD Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
-| EBD_RL | byte 0 bit 7 | 1 | 0 |  | abs 3s2GpON2F: RL Wheel EBD Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
+| ABS_ABS_FR | byte 0 bit 0 | 1 | 0 |  | abs 9NNrtrd4i: FR Wheel ABS Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
+| ABS_ABS_FL | byte 0 bit 1 | 1 | 0 |  | abs yajwN879t: FL Wheel ABS Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
+| ABS_ABS_RR | byte 0 bit 2 | 1 | 0 |  | abs FyfwxEcPN: RR Wheel ABS Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
+| ABS_ABS_RL | byte 0 bit 3 | 1 | 0 |  | abs fEq8RXSPK: RL Wheel ABS Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
+| ABS_EBD_FR | byte 0 bit 4 | 1 | 0 |  | abs ic_kYrW4C: FR Wheel EBD Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
+| ABS_EBD_FL | byte 0 bit 5 | 1 | 0 |  | abs fE9uO2Yv_: FL Wheel EBD Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
+| ABS_EBD_RR | byte 0 bit 6 | 1 | 0 |  | abs HubfTRTQ9: RR Wheel EBD Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
+| ABS_EBD_RL | byte 0 bit 7 | 1 | 0 |  | abs 3s2GpON2F: RL Wheel EBD Ctrl Status, 21 5F byte 0 (0=OFF, 1=ON) |
 
 ## ABS_Driver_Switches  (0x1F0005FC, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| TRC_VSC_OffSwitch | byte 0 bit 0 | 1 | 0 |  | abs y4JcQxMDm: TRC(TRAC)/VSC OFF SW, 21 1D byte 0 (0=OFF, 1=ON) |
-| ReservoirWarning | byte 0 bit 1 | 1 | 0 |  | abs HJqSSz3Au: Reservoir Warning SW, 21 1D byte 0 (0=OFF, 1=ON) |
-| MainIdle | byte 0 bit 2 | 1 | 0 |  | abs CwG0r8w3m: Main Idle SW, 21 1D byte 0 (0=OFF, 1=ON) |
-| AutoLSD | byte 0 bit 3 | 1 | 0 |  | abs 1_XUmWvtc: Auto LSD Switch, 21 1D byte 0 (0=OFF, 1=ON) |
-| A_TRC | byte 0 bit 4 | 1 | 0 |  | abs g7LElUIT2: A-TRC(TRAC) Switch, 21 1D byte 0 (0=OFF, 1=ON) |
-| DownhillAssist | byte 0 bit 5 | 1 | 0 |  | abs gBxkD6qg3: Downhill Assist Control SW, 21 1D byte 0 (0=OFF, 1=ON) |
-| PreCrashBrakeOff | byte 0 bit 6 | 1 | 0 |  | abs sLTLIXnGo: Pre Crash Brake OFF Switch, 21 1D byte 0 (0=OFF, 1=ON) |
-| FourWD | byte 0 bit 7 | 1 | 0 |  | abs C4Jxyks-4: 4WD SW, 21 1F byte 0 (0=OFF, 1=ON) |
+| ABS_TRC_VSC_OffSwitch | byte 0 bit 0 | 1 | 0 |  | abs y4JcQxMDm: TRC(TRAC)/VSC OFF SW, 21 1D byte 0 (0=OFF, 1=ON) |
+| ABS_ReservoirWarning | byte 0 bit 1 | 1 | 0 |  | abs HJqSSz3Au: Reservoir Warning SW, 21 1D byte 0 (0=OFF, 1=ON) |
+| ABS_MainIdle | byte 0 bit 2 | 1 | 0 |  | abs CwG0r8w3m: Main Idle SW, 21 1D byte 0 (0=OFF, 1=ON) |
+| ABS_AutoLSD | byte 0 bit 3 | 1 | 0 |  | abs 1_XUmWvtc: Auto LSD Switch, 21 1D byte 0 (0=OFF, 1=ON) |
+| ABS_A_TRC | byte 0 bit 4 | 1 | 0 |  | abs g7LElUIT2: A-TRC(TRAC) Switch, 21 1D byte 0 (0=OFF, 1=ON) |
+| ABS_DownhillAssist | byte 0 bit 5 | 1 | 0 |  | abs gBxkD6qg3: Downhill Assist Control SW, 21 1D byte 0 (0=OFF, 1=ON) |
+| ABS_PreCrashBrakeOff | byte 0 bit 6 | 1 | 0 |  | abs sLTLIXnGo: Pre Crash Brake OFF Switch, 21 1D byte 0 (0=OFF, 1=ON) |
+| ABS_FourWD | byte 0 bit 7 | 1 | 0 |  | abs C4Jxyks-4: 4WD SW, 21 1F byte 0 (0=OFF, 1=ON) |
 
 ## ABS_Warning_Lights  (0x1F0005FD, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| ABS_Light | byte 0 bit 0 | 1 | 0 |  | abs iKKscx9z6: ABS Warning Light, 21 3D byte 0 (0=OFF, 1=ON) |
-| Brake_Light | byte 0 bit 1 | 1 | 0 |  | abs kh-t-W3s1: Brake Warning Light, 21 3D byte 0 (0=OFF, 1=ON) |
-| Slip_Light | byte 0 bit 2 | 1 | 0 |  | abs R-zWQlYfM: Slip Indicator Light, 21 3D byte 0 (0=OFF, 1=ON) |
-| Buzzer | byte 0 bit 3 | 1 | 0 |  | abs EucI2n7FQ: Buzzer, 21 3D byte 0 (0=OFF, 1=ON) |
-| TirePressure_Light | byte 0 bit 4 | 1 | 0 |  | abs gM7ne9lsy: Tire Pressure Light, 21 3D byte 0 (0=OFF, 1=ON) |
-| VSC_Light | byte 0 bit 5 | 1 | 0 |  | abs Rj8AM5OSN: VSC Warning Light, 21 3D byte 0 (0=OFF, 1=ON) |
-| AutoLSD_Light | byte 0 bit 6 | 1 | 0 |  | abs FpxpVVtjq: Auto LSD Indicator Light, 21 3D byte 2 (0=OFF, 1=ON) |
-| A_TRAC_Light | byte 0 bit 7 | 1 | 0 |  | abs -wBkniK8T: A-TRAC Indicator Light, 21 3D byte 2 (0=OFF, 1=ON) |
+| ABS_ABS_Light | byte 0 bit 0 | 1 | 0 |  | abs iKKscx9z6: ABS Warning Light, 21 3D byte 0 (0=OFF, 1=ON) |
+| ABS_Brake_Light | byte 0 bit 1 | 1 | 0 |  | abs kh-t-W3s1: Brake Warning Light, 21 3D byte 0 (0=OFF, 1=ON) |
+| ABS_Slip_Light | byte 0 bit 2 | 1 | 0 |  | abs R-zWQlYfM: Slip Indicator Light, 21 3D byte 0 (0=OFF, 1=ON) |
+| ABS_Buzzer | byte 0 bit 3 | 1 | 0 |  | abs EucI2n7FQ: Buzzer, 21 3D byte 0 (0=OFF, 1=ON) |
+| ABS_TirePressure_Light | byte 0 bit 4 | 1 | 0 |  | abs gM7ne9lsy: Tire Pressure Light, 21 3D byte 0 (0=OFF, 1=ON) |
+| ABS_VSC_Light | byte 0 bit 5 | 1 | 0 |  | abs Rj8AM5OSN: VSC Warning Light, 21 3D byte 0 (0=OFF, 1=ON) |
+| ABS_AutoLSD_Light | byte 0 bit 6 | 1 | 0 |  | abs FpxpVVtjq: Auto LSD Indicator Light, 21 3D byte 2 (0=OFF, 1=ON) |
+| ABS_A_TRAC_Light | byte 0 bit 7 | 1 | 0 |  | abs -wBkniK8T: A-TRAC Indicator Light, 21 3D byte 2 (0=OFF, 1=ON) |
 
 ## ABS_Solenoids  (0x1F0005FE, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| Solenoid_SFRH | byte 0 bit 0 | 1 | 0 |  | abs 63ajCakue: ABS Solenoid (SFRH), 21 3F byte 1 (0=OFF, 1=ON) |
-| Solenoid_SFRR | byte 0 bit 1 | 1 | 0 |  | abs QhM9WQqjT: ABS Solenoid (SFRR), 21 3F byte 1 (0=OFF, 1=ON) |
-| Solenoid_SFLH | byte 0 bit 2 | 1 | 0 |  | abs FifAukE0G: ABS Solenoid (SFLH), 21 3F byte 1 (0=OFF, 1=ON) |
-| Solenoid_SFLR | byte 0 bit 3 | 1 | 0 |  | abs U4sp2wPDp: ABS Solenoid (SFLR), 21 3F byte 1 (0=OFF, 1=ON) |
-| Solenoid_SRRH | byte 0 bit 4 | 1 | 0 |  | abs SU8B4ytHW: ABS Solenoid (SRRH), 21 3F byte 1 (0=OFF, 1=ON) |
-| Solenoid_SRRR | byte 0 bit 5 | 1 | 0 |  | abs _b9CLFcGT: ABS Solenoid (SRRR), 21 3F byte 1 (0=OFF, 1=ON) |
-| Solenoid_SRLH | byte 0 bit 6 | 1 | 0 |  | abs Uw3yti4vi: ABS Solenoid (SRLH), 21 3F byte 1 (0=OFF, 1=ON) |
-| Solenoid_SRLR | byte 0 bit 7 | 1 | 0 |  | abs ZoKBy7ul5: ABS Solenoid (SRLR), 21 3F byte 1 (0=OFF, 1=ON) |
+| ABS_Solenoid_SFRH | byte 0 bit 0 | 1 | 0 |  | abs 63ajCakue: ABS Solenoid (SFRH), 21 3F byte 1 (0=OFF, 1=ON) |
+| ABS_Solenoid_SFRR | byte 0 bit 1 | 1 | 0 |  | abs QhM9WQqjT: ABS Solenoid (SFRR), 21 3F byte 1 (0=OFF, 1=ON) |
+| ABS_Solenoid_SFLH | byte 0 bit 2 | 1 | 0 |  | abs FifAukE0G: ABS Solenoid (SFLH), 21 3F byte 1 (0=OFF, 1=ON) |
+| ABS_Solenoid_SFLR | byte 0 bit 3 | 1 | 0 |  | abs U4sp2wPDp: ABS Solenoid (SFLR), 21 3F byte 1 (0=OFF, 1=ON) |
+| ABS_Solenoid_SRRH | byte 0 bit 4 | 1 | 0 |  | abs SU8B4ytHW: ABS Solenoid (SRRH), 21 3F byte 1 (0=OFF, 1=ON) |
+| ABS_Solenoid_SRRR | byte 0 bit 5 | 1 | 0 |  | abs _b9CLFcGT: ABS Solenoid (SRRR), 21 3F byte 1 (0=OFF, 1=ON) |
+| ABS_Solenoid_SRLH | byte 0 bit 6 | 1 | 0 |  | abs Uw3yti4vi: ABS Solenoid (SRLH), 21 3F byte 1 (0=OFF, 1=ON) |
+| ABS_Solenoid_SRLR | byte 0 bit 7 | 1 | 0 |  | abs ZoKBy7ul5: ABS Solenoid (SRLR), 21 3F byte 1 (0=OFF, 1=ON) |
 
 ## ABS_TRC_Solenoids  (0x1F0005FF, every 100 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| Solenoid_SPFL | byte 0 bit 0 | 1 | 0 |  | abs c2sNAS_MZ: TR(A)C/VSC Solenoid (SPFL), 21 3A byte 0 (0=OFF, 1=ON) |
-| Solenoid_SPFR | byte 0 bit 1 | 1 | 0 |  | abs 2mMgn5tcv: TR(A)C/VSC Solenoid (SPFR), 21 3A byte 0 (0=OFF, 1=ON) |
-| Solenoid_SM2 | byte 0 bit 2 | 1 | 0 |  | abs Dp45Y3lOT: TR(A)C/VSC Solenoid (SM2), 21 3A byte 0 (0=OFF, 1=ON) |
-| Solenoid_SM1 | byte 0 bit 3 | 1 | 0 |  | abs mvySNrvV-: TR(A)C/VSC Solenoid (SM1), 21 3A byte 0 (0=OFF, 1=ON) |
-| Solenoid_SRM2 | byte 0 bit 4 | 1 | 0 |  | abs jSupDUS0c: TR(A)C/VSC Solenoid (SRM2), 21 3A byte 0 (0=OFF, 1=ON) |
-| Solenoid_SRM1 | byte 0 bit 5 | 1 | 0 |  | abs BTXQfW_Zb: TR(A)C/VSC Solenoid (SRM1), 21 3A byte 0 (0=OFF, 1=ON) |
-| Solenoid_SRC2 | byte 0 bit 6 | 1 | 0 |  | abs RZrLbtz2M: TR(A)C/VSC Solenoid (SRC2), 21 3A byte 0 (0=OFF, 1=ON) |
-| Solenoid_SRC1 | byte 0 bit 7 | 1 | 0 |  | abs TqQv1OuGQ: TR(A)C/VSC Solenoid (SRC1), 21 3A byte 0 (0=OFF, 1=ON) |
+| ABS_Solenoid_SPFL | byte 0 bit 0 | 1 | 0 |  | abs c2sNAS_MZ: TR(A)C/VSC Solenoid (SPFL), 21 3A byte 0 (0=OFF, 1=ON) |
+| ABS_Solenoid_SPFR | byte 0 bit 1 | 1 | 0 |  | abs 2mMgn5tcv: TR(A)C/VSC Solenoid (SPFR), 21 3A byte 0 (0=OFF, 1=ON) |
+| ABS_Solenoid_SM2 | byte 0 bit 2 | 1 | 0 |  | abs Dp45Y3lOT: TR(A)C/VSC Solenoid (SM2), 21 3A byte 0 (0=OFF, 1=ON) |
+| ABS_Solenoid_SM1 | byte 0 bit 3 | 1 | 0 |  | abs mvySNrvV-: TR(A)C/VSC Solenoid (SM1), 21 3A byte 0 (0=OFF, 1=ON) |
+| ABS_Solenoid_SRM2 | byte 0 bit 4 | 1 | 0 |  | abs jSupDUS0c: TR(A)C/VSC Solenoid (SRM2), 21 3A byte 0 (0=OFF, 1=ON) |
+| ABS_Solenoid_SRM1 | byte 0 bit 5 | 1 | 0 |  | abs BTXQfW_Zb: TR(A)C/VSC Solenoid (SRM1), 21 3A byte 0 (0=OFF, 1=ON) |
+| ABS_Solenoid_SRC2 | byte 0 bit 6 | 1 | 0 |  | abs RZrLbtz2M: TR(A)C/VSC Solenoid (SRC2), 21 3A byte 0 (0=OFF, 1=ON) |
+| ABS_Solenoid_SRC1 | byte 0 bit 7 | 1 | 0 |  | abs TqQv1OuGQ: TR(A)C/VSC Solenoid (SRC1), 21 3A byte 0 (0=OFF, 1=ON) |
 
 ## ABS_Faults_Sensors  (0x1F000600, every 500 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| FR_SpeedOpen | byte 0 bit 0 | 1 | 0 |  | abs q6rbuDSSz: FR Speed Open, 21 BE byte 0 (0=Normal, 1=Error) |
-| FL_SpeedOpen | byte 0 bit 1 | 1 | 0 |  | abs P0DfS8DlD: FL Speed Open, 21 BE byte 0 (0=Normal, 1=Error) |
-| RR_SpeedOpen | byte 0 bit 2 | 1 | 0 |  | abs vxPqnDSUg: RR Speed Open, 21 BE byte 0 (0=Normal, 1=Error) |
-| RL_SpeedOpen | byte 0 bit 3 | 1 | 0 |  | abs nJ4bOCcMq: RL Speed Open, 21 BE byte 0 (0=Normal, 1=Error) |
-| EFI_CommOpen | byte 0 bit 4 | 1 | 0 |  | abs HZNTusZoD: EFI Communication Open, 21 BE byte 0 (0=Normal, 1=Error) |
-| YawRateOpen | byte 0 bit 5 | 1 | 0 |  | abs wBvBOZ0bG: Yaw Rate Open, 21 BE byte 0 (0=Normal, 1=Error) |
-| DecelerationOpen | byte 0 bit 6 | 1 | 0 |  | abs mERKT2QAy: Deceleration Open, 21 BE byte 0 (0=Normal, 1=Error) |
-| SteeringOpen | byte 0 bit 7 | 1 | 0 |  | abs anW4cAp14: Steering Open, 21 BE byte 0 (0=Normal, 1=Error) |
+| ABS_FR_SpeedOpen | byte 0 bit 0 | 1 | 0 |  | abs q6rbuDSSz: FR Speed Open, 21 BE byte 0 (0=Normal, 1=Error) |
+| ABS_FL_SpeedOpen | byte 0 bit 1 | 1 | 0 |  | abs P0DfS8DlD: FL Speed Open, 21 BE byte 0 (0=Normal, 1=Error) |
+| ABS_RR_SpeedOpen | byte 0 bit 2 | 1 | 0 |  | abs vxPqnDSUg: RR Speed Open, 21 BE byte 0 (0=Normal, 1=Error) |
+| ABS_RL_SpeedOpen | byte 0 bit 3 | 1 | 0 |  | abs nJ4bOCcMq: RL Speed Open, 21 BE byte 0 (0=Normal, 1=Error) |
+| ABS_EFI_CommOpen | byte 0 bit 4 | 1 | 0 |  | abs HZNTusZoD: EFI Communication Open, 21 BE byte 0 (0=Normal, 1=Error) |
+| ABS_YawRateOpen | byte 0 bit 5 | 1 | 0 |  | abs wBvBOZ0bG: Yaw Rate Open, 21 BE byte 0 (0=Normal, 1=Error) |
+| ABS_DecelerationOpen | byte 0 bit 6 | 1 | 0 |  | abs mERKT2QAy: Deceleration Open, 21 BE byte 0 (0=Normal, 1=Error) |
+| ABS_SteeringOpen | byte 0 bit 7 | 1 | 0 |  | abs anW4cAp14: Steering Open, 21 BE byte 0 (0=Normal, 1=Error) |
 
 ## ABS_Faults_Hydraulic  (0x1F000601, every 500 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| MasterCylinderOpen | byte 0 bit 0 | 1 | 0 |  | abs Gi9oyeUEH: Master Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
-| MasterCylinder2Open | byte 0 bit 1 | 1 | 0 |  | abs SOyXZOpAQ: Master Cylinder2 Open, 21 BE byte 1 (0=Normal, 1=Error) |
-| StrokeOpen | byte 0 bit 2 | 1 | 0 |  | abs S0ka5gkVM: Stroke Open, 21 BE byte 1 (0=Normal, 1=Error) |
-| Stroke2Open | byte 0 bit 3 | 1 | 0 |  | abs W-e5oKjRf: Stroke2 Open, 21 BE byte 1 (0=Normal, 1=Error) |
-| FR_WheelCylinderOpen | byte 0 bit 4 | 1 | 0 |  | abs M9d-28qy1: FR Wheel Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
-| FL_WheelCylinderOpen | byte 0 bit 5 | 1 | 0 |  | abs btOKNU-n9: FL Wheel Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
-| RR_WheelCylinderOpen | byte 0 bit 6 | 1 | 0 |  | abs bp8JJCP3W: RR Wheel Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
-| RL_WheelCylinderOpen | byte 0 bit 7 | 1 | 0 |  | abs PNxnJTKzf: RL Wheel Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
+| ABS_MasterCylinderOpen | byte 0 bit 0 | 1 | 0 |  | abs Gi9oyeUEH: Master Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
+| ABS_MasterCylinder2Open | byte 0 bit 1 | 1 | 0 |  | abs SOyXZOpAQ: Master Cylinder2 Open, 21 BE byte 1 (0=Normal, 1=Error) |
+| ABS_StrokeOpen | byte 0 bit 2 | 1 | 0 |  | abs S0ka5gkVM: Stroke Open, 21 BE byte 1 (0=Normal, 1=Error) |
+| ABS_Stroke2Open | byte 0 bit 3 | 1 | 0 |  | abs W-e5oKjRf: Stroke2 Open, 21 BE byte 1 (0=Normal, 1=Error) |
+| ABS_FR_WheelCylinderOpen | byte 0 bit 4 | 1 | 0 |  | abs M9d-28qy1: FR Wheel Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
+| ABS_FL_WheelCylinderOpen | byte 0 bit 5 | 1 | 0 |  | abs btOKNU-n9: FL Wheel Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
+| ABS_RR_WheelCylinderOpen | byte 0 bit 6 | 1 | 0 |  | abs bp8JJCP3W: RR Wheel Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
+| ABS_RL_WheelCylinderOpen | byte 0 bit 7 | 1 | 0 |  | abs PNxnJTKzf: RL Wheel Cylinder Open, 21 BE byte 1 (0=Normal, 1=Error) |
 
 ## ABS_Faults_Power  (0x1F000602, every 500 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| AccumulatorOpen | byte 0 bit 0 | 1 | 0 |  | abs 8AFbO7sJI: Accumulator Open, 21 BE byte 2 (0=Normal, 1=Error) |
-| HV_CommOpen | byte 0 bit 1 | 1 | 0 |  | abs 9C-6FoZAy: HV Communication Open, 21 BE byte 2 (0=Normal, 1=Error) |
-| IG_VoltageDecreased | byte 0 bit 2 | 1 | 0 |  | abs fECRw-SVj: IG Voltage Value Decreased, 21 BE byte 2 (0=Normal, 1=Error) |
-| IG_VoltageIncreased | byte 0 bit 3 | 1 | 0 |  | abs 25--YeENa: IG Voltage Value Increased, 21 BE byte 2 (0=Normal, 1=Error) |
-| FR_SpeedVoltageOpen | byte 0 bit 4 | 1 | 0 |  | abs QJBKJz9fM: FR Speed Sensor Voltage Open, 21 BE byte 2 (0=Normal, 1=Error) |
-| FL_SpeedVoltageOpen | byte 0 bit 5 | 1 | 0 |  | abs ZnfoOUltP: FL Speed Sensor Voltage Open, 21 BE byte 2 (0=Normal, 1=Error) |
-| RR_SpeedVoltageOpen | byte 0 bit 6 | 1 | 0 |  | abs WSe8UBLFD: RR Speed Sensor Voltage Open, 21 BE byte 2 (0=Normal, 1=Error) |
-| RL_SpeedVoltageOpen | byte 0 bit 7 | 1 | 0 |  | abs qdadXvOFf: RL Speed Sensor Voltage Open, 21 BE byte 2 (0=Normal, 1=Error) |
+| ABS_AccumulatorOpen | byte 0 bit 0 | 1 | 0 |  | abs 8AFbO7sJI: Accumulator Open, 21 BE byte 2 (0=Normal, 1=Error) |
+| ABS_HV_CommOpen | byte 0 bit 1 | 1 | 0 |  | abs 9C-6FoZAy: HV Communication Open, 21 BE byte 2 (0=Normal, 1=Error) |
+| ABS_IG_VoltageDecreased | byte 0 bit 2 | 1 | 0 |  | abs fECRw-SVj: IG Voltage Value Decreased, 21 BE byte 2 (0=Normal, 1=Error) |
+| ABS_IG_VoltageIncreased | byte 0 bit 3 | 1 | 0 |  | abs 25--YeENa: IG Voltage Value Increased, 21 BE byte 2 (0=Normal, 1=Error) |
+| ABS_FR_SpeedVoltageOpen | byte 0 bit 4 | 1 | 0 |  | abs QJBKJz9fM: FR Speed Sensor Voltage Open, 21 BE byte 2 (0=Normal, 1=Error) |
+| ABS_FL_SpeedVoltageOpen | byte 0 bit 5 | 1 | 0 |  | abs ZnfoOUltP: FL Speed Sensor Voltage Open, 21 BE byte 2 (0=Normal, 1=Error) |
+| ABS_RR_SpeedVoltageOpen | byte 0 bit 6 | 1 | 0 |  | abs WSe8UBLFD: RR Speed Sensor Voltage Open, 21 BE byte 2 (0=Normal, 1=Error) |
+| ABS_RL_SpeedVoltageOpen | byte 0 bit 7 | 1 | 0 |  | abs qdadXvOFf: RL Speed Sensor Voltage Open, 21 BE byte 2 (0=Normal, 1=Error) |
 
 ## ABS_Faults_Misc  (0x1F000603, every 500 ms)
 
 | Signal | Bits | Factor | Offset | Unit | Source |
 |---|---|---|---|---|---|
-| MC_SensorNoise | byte 0 bit 0 | 1 | 0 |  | abs UU99vWm_L: M/C Pressure Sensor Noise, 21 BE byte 3 (0=Normal, 1=Error) |
-| BrakePedalSwitchOpen | byte 0 bit 1 | 1 | 0 |  | abs qm3cSyYND: Brake Pedal Switch Open, 21 BE byte 3 (0=Normal, 1=Error) |
-| YawRateVoltageOpen | byte 0 bit 2 | 1 | 0 |  | abs wxlDmYelo: Yaw Rate Sensor Voltage Open, 21 BE byte 3 (0=Normal, 1=Error) |
-| EFI_CommInvalid | byte 0 bit 3 | 1 | 0 |  | abs hKgGQ-wi3: EFI Communication Invalid, 21 BE byte 3 (0=Normal, 1=Error) |
-| VerticalGOpen | byte 0 bit 4 | 1 | 0 |  | abs _-hMNLK8f: Vertical Acceleration Sensor Open, 21 BE byte 3 (0=Normal, 1=Error) |
-| BodyECU_CommOpen | byte 0 bit 5 | 1 | 0 |  | abs x4QnBHPd5: Body ECU Communication Open, 21 BE byte 3 (0=Normal, 1=Error) |
-| MC_SensorSupplyOpen | byte 0 bit 6 | 1 | 0 |  | abs YJ_LzWheF: Master Cylinder Pressure Sensor Power Supply Open, 21 BE byte 3 (0=Normal, 1=Error) |
-| SolenoidSupplyOpen | byte 0 bit 7 | 1 | 0 |  | abs LG-3ey2e2: Solenoid Power Supply Open, 21 BE byte 3 (0=Normal, 1=Error) |
+| ABS_MC_SensorNoise | byte 0 bit 0 | 1 | 0 |  | abs UU99vWm_L: M/C Pressure Sensor Noise, 21 BE byte 3 (0=Normal, 1=Error) |
+| ABS_BrakePedalSwitchOpen | byte 0 bit 1 | 1 | 0 |  | abs qm3cSyYND: Brake Pedal Switch Open, 21 BE byte 3 (0=Normal, 1=Error) |
+| ABS_YawRateVoltageOpen | byte 0 bit 2 | 1 | 0 |  | abs wxlDmYelo: Yaw Rate Sensor Voltage Open, 21 BE byte 3 (0=Normal, 1=Error) |
+| ABS_EFI_CommInvalid | byte 0 bit 3 | 1 | 0 |  | abs hKgGQ-wi3: EFI Communication Invalid, 21 BE byte 3 (0=Normal, 1=Error) |
+| ABS_VerticalGOpen | byte 0 bit 4 | 1 | 0 |  | abs _-hMNLK8f: Vertical Acceleration Sensor Open, 21 BE byte 3 (0=Normal, 1=Error) |
+| ABS_BodyECU_CommOpen | byte 0 bit 5 | 1 | 0 |  | abs x4QnBHPd5: Body ECU Communication Open, 21 BE byte 3 (0=Normal, 1=Error) |
+| ABS_MC_SensorSupplyOpen | byte 0 bit 6 | 1 | 0 |  | abs YJ_LzWheF: Master Cylinder Pressure Sensor Power Supply Open, 21 BE byte 3 (0=Normal, 1=Error) |
+| ABS_SolenoidSupplyOpen | byte 0 bit 7 | 1 | 0 |  | abs LG-3ey2e2: Solenoid Power Supply Open, 21 BE byte 3 (0=Normal, 1=Error) |

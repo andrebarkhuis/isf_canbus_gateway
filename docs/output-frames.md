@@ -130,6 +130,9 @@ the layout itself is `tools/gateway_frames.json`.
      packets need, or
    - a block byte: `{"blockByte": {"module": "engine", "parameterAddress": "25", "bytePosition": 4}, "frameByte": 2}`.
    The uniqueIds are in ToyotaLens's `data/{engine,ect,abs}.json` (and in its `favorites/basics.txt`).
+   `name` is the bare signal name; the generator prefixes it with the frame's first name token (`ENG_`, `TRANS_`,
+   `ABS_`, `GT86_`, `ISF_`), so `EngineSpeed` in `ENG_Speed_Load` becomes the channel `ENG_EngineSpeed`. The ADU
+   needs channel names to be unique across the whole project, and the prefix sorts them by source module.
 2. Run `python tools/generate.py`. It rejects overlaps, unknown ids and signals that do not fit.
 3. Run `bash test/host/run.sh`, then `.venv\Scripts\pio run`.
 4. Load the new `gt86-bus.dbc` / `isf-bus.dbc` into the ADU and SavvyCAN.

@@ -119,6 +119,12 @@ def signal_name(text):
     return s
 
 
+def channel_name(frame_name, text):
+    """A DBC signal name = the frame's first name token + the signal: ENG_EngineSpeed, ISF_WheelSpeedFL, GT86_Speed.
+    The token names the source module, so the ADU channels are unique across all frames and sort by module."""
+    return signal_name(frame_name.split("_")[0] + "_" + text)
+
+
 def raw_bits(p):
     """Field width in bits after the mask and bit offset are applied (what the decoder leaves in `raw`)."""
     mask = int(p["mask"], 16)
@@ -144,7 +150,7 @@ def expand_signals(frame, params):
                 if key in seen:
                     continue  # ToyotaLens carries duplicate rows for some fields (two uniqueIds, one byte)
                 seen.add(key)
-                out.append({"param": p, "name": signal_name(p["name"]), "startBit": frame_byte * 8 + p["bitOffset"],
+                out.append({"param": p, "name": channel_name(frame["name"], p["name"]), "startBit": frame_byte * 8 + p["bitOffset"],
                             "bits": raw_bits(p), "passRaw": True})
             continue
         uid = s["uniqueId"]
@@ -153,7 +159,7 @@ def expand_signals(frame, params):
         p = params[uid]
         if p["module"] != s["module"]:
             fail("frame %s: %s is a %s parameter, not %s" % (frame["id"], uid, p["module"], s["module"]))
-        name = s.get("name") or signal_name(p["name"])
+        name = channel_name(frame["name"], s.get("name") or p["name"])
         if "factor" in s:
             if "bits" not in s:
                 fail("frame %s signal %s: a converted signal needs 'bits'" % (frame["id"], name))
@@ -257,8 +263,8 @@ def write_translator_table(path, frames, broadcast):
 
 
 def dbc_signal_name(p):
-    """A broadcast signal's DBC name: the last segment of its uniqueId (isf.0B4.VehicleSpeed -> VehicleSpeed)."""
-    return signal_name(p["uniqueId"].split(".")[-1])
+    """A broadcast signal's DBC name: frame token + the last segment of its uniqueId (isf.0B4.VehicleSpeed -> ISF_VehicleSpeed)."""
+    return channel_name(p["frameName"], p["uniqueId"].split(".")[-1])
 
 
 def write_dbc(path, frames, broadcast, title, nodes):
