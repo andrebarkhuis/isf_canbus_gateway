@@ -231,6 +231,16 @@ public:
 
     /// Frames seen on other ids (other modules' traffic, our own echo) and dropped by the software filter.
     uint32_t otherFrames = 0;
+
+    /// A tap on those other frames: the IS F modules' broadcasts (wheel speeds, rpm, ...) arrive while a request
+    /// is in flight and before one, when the receive buffer is cleared; with a tap set they are handed over
+    /// instead of dropped. Not part of ToyotaLens, whose transport sees no broadcasts it cares about.
+    typedef void (*FrameTap)(void *context, uint32_t id, const uint8_t *data, uint8_t len);
+    void setTap(FrameTap tap, void *context)
+    {
+        tap_ = tap;
+        tapContext_ = context;
+    }
     /// Replies abandoned on a sequence error or a missing consecutive frame.
     int abandoned = 0;
 
@@ -242,7 +252,11 @@ private:
     static bool isResponsePending(const uint8_t *payload, size_t length);
     static void pauseSince(uint64_t sinceUs, int microseconds);
 
+    void other(uint32_t id, const uint8_t *data, uint8_t len);
+
     TwaiWrapper *can_;
+    FrameTap tap_ = nullptr;
+    void *tapContext_ = nullptr;
     uint32_t txId_ = 0;
     uint32_t rxId_ = 0;
     Message_t reassembler_;

@@ -45,12 +45,12 @@ the rates seen in the drive capture.
 | Id | Name | Default bytes | Interval | Translated signals |
 |---|---|---|---|---|
 | 0x0D0 | GT86_GSensor | `00 00 01 00 00 00 00 00` | 100 ms | none (wheel straight, no G) |
-| 0x0D1 | GT86_VehicleSpeed | `00 00 13 00 00 00 00 00` | 100 ms | VehicleSpeed: bytes 0–1, 0.0565 km/h per bit, from engine `21 01` pos 12 |
+| 0x0D1 | GT86_VehicleSpeed | `00 00 13 00 00 00 00 00` | 100 ms | VehicleSpeed: bytes 0–1, 0.0565 km/h per bit, from the ABS broadcast 0x0B4 (§2.1) |
 | 0x0D2 | GT86_Unknown_D2 | `00 00 FF FF 00 00 00 00` | 100 ms | none |
 | 0x0D3 | GT86_LightStatus | `00 06 C0 0F 00 00 32 00` | 100 ms | none |
-| 0x0D4 | GT86_WheelSpeeds | `00 00 00 00 00 00 00 00` | 40 ms | FL, FR, RL, RR: 16 bits each, 0.0565 km/h per bit, from ABS `21 03` |
+| 0x0D4 | GT86_WheelSpeeds | `00 00 00 00 00 00 00 00` | 40 ms | FL, FR, RL, RR: 16 bits each, 0.0565 km/h per bit, from the ABS broadcasts 0x0B0 / 0x0B2 (§2.1) |
 | 0x140 | GT86_EngineData1 | `00 05 00 43 00 00 00 01` | 50 ms | none (bytes 2–3 did not follow engine speed in the capture) |
-| 0x141 | GT86_EngineData2 | `00 00 00 00 00 80 A7 00` | 50 ms | EngineRPM: bits 32–45, 1 rpm per bit, from engine `21 01` pos 10; bits 46–47 kept |
+| 0x141 | GT86_EngineData2 | `00 00 00 00 00 80 A7 00` | 50 ms | EngineRPM: bits 32–45, 1 rpm per bit, from the engine broadcast 0x2C4 (§2.1); bits 46–47 kept |
 | 0x142 | GT86_EngineMisc | `00 00 00 00 00 00 00 00` | 10 ms | none |
 | 0x144 | GT86_BrakeData1 | `C0 00 58 02 01 A4 A0 00` | 50 ms | none |
 | 0x360 | GT86_Temperatures | `00 00 84 50 00 00 11 00` | 50 ms | byte 2 oil temperature, byte 3 coolant temperature, both +40, from engine `21 51` pos 9 and `21 01` pos 9 |
@@ -72,10 +72,40 @@ How the layouts were verified against the drive capture:
   0x140 bytes 2–3 stay at one value for the whole drive, so they are not engine speed.
 - 0x360 bytes 2 and 3 minus 40 climb from 20/52 °C to 52/84 °C as the engine warms.
 
-Every frame a decoded block writes into is handed to the GT86 bus task on every poll of that block, whether or
-not its bytes changed, so a constant value (engine off, rpm 0) keeps being refreshed. A translated frame falls
-back to its default bytes only when no refresh has arrived for 5 s (`Gt86Service::TranslationHoldMs`), i.e. when
-the ECU has stopped answering.
+Every frame a decoded block or broadcast writes into is handed to the GT86 bus task each time, whether or not
+its bytes changed, so a constant value (engine off, rpm 0) keeps being refreshed. A translated frame falls back
+to its default bytes only when no refresh has arrived for 5 s (`Gt86Service::TranslationHoldMs`), i.e. when the
+IS F has gone quiet.
+
+### 2.1 Motion signals come from the IS F broadcasts, not from polling
+
+Speed, wheel speeds and rpm must not lag. Polled over Mode 21 they were 60 to 180 ms old on the GT86 bus (each
+fast block every 56 ms, 10 to 27 ms per request, then the frame's own send slot). The IS F ABS and ECU broadcast
+the same values on their own, with no request, and the gateway decodes them the moment they arrive, so the value
+is at most one GT86 send slot old:
+
+| IS F frame | Rate | Signals (DBC bit numbering, big-endian) | Scaling | Feeds |
+|---|---|---|---|---|
+| 0x0B0 | 63 Hz | FR 7\|16, FL 23\|16 | 0.01 km/h per bit | 0x0D4 bytes 0–3 |
+| 0x0B2 | 63 Hz | RR 7\|16, RL 23\|16 | 0.01 km/h per bit | 0x0D4 bytes 4–7 |
+| 0x0B4 | 63 Hz | speed 47\|16 (bytes 5–6) | 0.01 km/h per bit | 0x0D1 bytes 0–1 |
+| 0x2C4 | 30 Hz | rpm 7\|16 signed (bytes 0–1) | 0.78125 rpm per bit | 0x141 bits 32–45 |
+
+The layouts are Toyota's (TOYOTA_LEXUS.dbc `SPEED`, `ENGINE_RPM_2`, the 0xAA wheel-speed order) and were checked
+against `gt86-isf-swap/logs/ISF_SPEED_RPM_driving.csv`: 0x0B4 reads 0 to 165.6 km/h over that drive, 0x2C4 670 to
+6830 rpm, and the wheel speeds agree with 0x0B4 within 0.4 km/h with no offset (newer Toyotas subtract 67.67).
+They are the `broadcast` section of `tools/gateway_frames.json`; their signals are parameters of module `isf`,
+referenced by an output frame like any Mode 21 parameter. The frames reach `IsfService::onFrame` from the receive
+queue between requests and, during a request, through the ISO-TP channel's tap.
+
+This is an addition, not a replacement. The Mode 21 path is unchanged: the fast blocks (engine `21 01`, ABS
+`21 03` and `21 47`) are still read every cycle and every ADU frame keeps its Mode 21 source, because that is
+the ECU's own view of its values with exactly known mappings, used for diagnostics and analysis, and it is the
+reference against which the broadcast decode is checked (ADU `ENG_Speed_Load` rpm and speed next to GT86 0x141
+and 0x0D1 must agree).
+
+0x0D0 (steering angle, yaw, G) could come from 0x025 / 0x024 the same way once a GT86 capture confirms the GT86
+scaling of that frame.
 
 ## 3. ADU frames (29-bit ids from 0x1F0005E0)
 

@@ -211,7 +211,21 @@ size_t IsoTp::request(const uint8_t *payload, size_t payloadLength, uint32_t tim
         LOG_ERROR("ISF bus not open");
         return 0;
     }
-    can_->drain();
+    if (tap_ == nullptr)
+    {
+        can_->drain();
+    }
+    else
+    {
+        // Clear the receive buffer like drain(), but hand every frame already there to the tap.
+        uint32_t id;
+        uint8_t data[IsoTpFraming::FrameLength];
+        uint8_t len;
+        for (int i = 0; i < 256 && can_->tryReceive(id, data, len, 0); i++)
+        {
+            other(id, data, len);
+        }
+    }
     if (!sendMessage(payload, payloadLength))
     {
         return 0;
@@ -310,7 +324,7 @@ bool IsoTp::waitForFlowControl(FlowControl &fc)
         }
         if (id != rxId_)
         {
-            otherFrames++;
+            other(id, data, len);
             continue;
         }
         if (len >= FlowControl::Length && IsoTpFraming::pciType(data[0]) == IsoTpFraming::FlowControl)
@@ -373,7 +387,7 @@ size_t IsoTp::receiveReply(uint32_t timeoutMs, uint8_t *reply, size_t replyCapac
         }
         if (id != rxId_)
         {
-            otherFrames++; // software filter: other modules, our own echo
+            other(id, data, len); // software filter: other modules, our own echo
             continue;
         }
         if (len == 0 || IsoTpFraming::pciType(data[0]) == IsoTpFraming::FlowControl)
@@ -425,6 +439,15 @@ size_t IsoTp::receiveReply(uint32_t timeoutMs, uint8_t *reply, size_t replyCapac
         {
             deadline = nowMs() + crTimeoutMs;
         }
+    }
+}
+
+void IsoTp::other(uint32_t id, const uint8_t *data, uint8_t len)
+{
+    otherFrames++;
+    if (tap_ != nullptr)
+    {
+        tap_(tapContext_, id, data, len);
     }
 }
 

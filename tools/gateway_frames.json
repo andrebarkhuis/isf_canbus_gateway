@@ -16,7 +16,45 @@
       "coolant temperature minus 40). Intervals are the rates seen in the drive capture.",
       "",
       "ADU frames: 0x5E0-0x5E7, the only band empty on the GT86 bus (its traffic spans 0x018-0x4DD, 0x63B,",
-      "0x6E1-0x6E2 and the 0x7xx diagnostic ids)."
+      "0x6E1-0x6E2 and the 0x7xx diagnostic ids).",
+      "",
+      "'broadcast': frames the IS F modules send on their own (no request). Their signals are parameters of",
+      "module 'isf' that an output frame references by uniqueId like a Mode 21 parameter, and they are decoded",
+      "the moment the frame arrives, so the GT86 motion frames do not wait for a poll. startBit follows the DBC",
+      "convention ('order' big = Motorola @0, start bit is the MSB; little = Intel @1, start bit is the LSB),",
+      "so a line can be copied from a Toyota DBC. Scaling checked against gt86-isf-swap/logs/ISF_SPEED_RPM_driving.csv."
+  ],
+  "broadcast": [
+    {
+      "id": "0x0B0", "name": "ISF_ABS_FrontWheelSpeeds", "module": "abs", "rate": "63 Hz", "length": 6,
+      "comment": "Toyota ABS front wheel speeds, FR then FL, 0.01 km/h per bit (TOYOTA_LEXUS.dbc 0xAA order; no offset on this generation)",
+      "signals": [
+        {"uniqueId": "isf.0B0.WheelSpeedFR", "name": "FR Wheel Speed (ABS broadcast)", "startBit": 7, "bits": 16, "order": "big", "factor": 0.01, "offset": 0, "unit": "km/h"},
+        {"uniqueId": "isf.0B0.WheelSpeedFL", "name": "FL Wheel Speed (ABS broadcast)", "startBit": 23, "bits": 16, "order": "big", "factor": 0.01, "offset": 0, "unit": "km/h"}
+      ]
+    },
+    {
+      "id": "0x0B2", "name": "ISF_ABS_RearWheelSpeeds", "module": "abs", "rate": "63 Hz", "length": 6,
+      "comment": "Toyota ABS rear wheel speeds, RR then RL, 0.01 km/h per bit",
+      "signals": [
+        {"uniqueId": "isf.0B2.WheelSpeedRR", "name": "RR Wheel Speed (ABS broadcast)", "startBit": 7, "bits": 16, "order": "big", "factor": 0.01, "offset": 0, "unit": "km/h"},
+        {"uniqueId": "isf.0B2.WheelSpeedRL", "name": "RL Wheel Speed (ABS broadcast)", "startBit": 23, "bits": 16, "order": "big", "factor": 0.01, "offset": 0, "unit": "km/h"}
+      ]
+    },
+    {
+      "id": "0x0B4", "name": "ISF_ABS_Speed", "module": "abs", "rate": "63 Hz", "length": 8,
+      "comment": "Toyota vehicle speed, bytes 5-6 big-endian, 0.01 km/h per bit (TOYOTA_LEXUS.dbc SPEED 47|16@0+); byte 7 checksum",
+      "signals": [
+        {"uniqueId": "isf.0B4.VehicleSpeed", "name": "Vehicle Speed (ABS broadcast)", "startBit": 47, "bits": 16, "order": "big", "factor": 0.01, "offset": 0, "unit": "km/h"}
+      ]
+    },
+    {
+      "id": "0x2C4", "name": "ISF_Engine_RPM", "module": "engine", "rate": "30 Hz", "length": 8,
+      "comment": "Toyota engine rpm, bytes 0-1 big-endian signed, 0.78125 rpm per bit (TOYOTA_LEXUS.dbc ENGINE_RPM_2 RPM 7|16@0-)",
+      "signals": [
+        {"uniqueId": "isf.2C4.EngineRPM", "name": "Engine Speed (ECU broadcast)", "startBit": 7, "bits": 16, "order": "big", "signed": true, "factor": 0.78125, "offset": 0, "unit": "rpm"}
+      ]
+    }
   ],
   "toyotaLensData": "../../ToyotaLens/data",
   "frames": [
@@ -26,7 +64,7 @@
     {
       "id": "0xD1", "name": "GT86_VehicleSpeed", "gt86": true, "interval": 100, "defaults": "00 00 13 00 00 00 00 00", "comment": "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data; default is the real car at rest (00 00 13 00), foot off the brake",
       "signals": [
-        {"module": "engine", "uniqueId": "cLlSvC_7u", "name": "VehicleSpeed", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"}
+        {"module": "isf", "uniqueId": "isf.0B4.VehicleSpeed", "name": "VehicleSpeed", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"}
       ]
     },
     {
@@ -38,10 +76,10 @@
     {
       "id": "0xD4", "name": "GT86_WheelSpeeds", "gt86": true, "interval": 40, "defaults": "00 00 00 00 00 00 00 00", "comment": "Four wheel speeds, 16 bits each, 0.0565 km/h per bit",
       "signals": [
-        {"module": "abs", "uniqueId": "-HYSOLbJn", "name": "WheelSpeedFL", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
-        {"module": "abs", "uniqueId": "v4xnACb-1", "name": "WheelSpeedFR", "startBit": 16, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
-        {"module": "abs", "uniqueId": "AcK0rmPvM", "name": "WheelSpeedRL", "startBit": 32, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
-        {"module": "abs", "uniqueId": "t1FnfghgK", "name": "WheelSpeedRR", "startBit": 48, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"}
+        {"module": "isf", "uniqueId": "isf.0B0.WheelSpeedFL", "name": "WheelSpeedFL", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
+        {"module": "isf", "uniqueId": "isf.0B0.WheelSpeedFR", "name": "WheelSpeedFR", "startBit": 16, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
+        {"module": "isf", "uniqueId": "isf.0B2.WheelSpeedRL", "name": "WheelSpeedRL", "startBit": 32, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"},
+        {"module": "isf", "uniqueId": "isf.0B2.WheelSpeedRR", "name": "WheelSpeedRR", "startBit": 48, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"}
       ]
     },
     {
@@ -50,7 +88,7 @@
     {
       "id": "0x141", "name": "GT86_EngineData2", "gt86": true, "interval": 50, "defaults": "00 00 00 00 00 80 A7 00", "comment": "Engine rpm in bits 32-45 (bytes 4-5, 14 bits, 1 rpm per bit); bits 46-47 kept from the default",
       "signals": [
-        {"module": "engine", "uniqueId": "vxpyKZ0Zo", "name": "EngineRPM", "startBit": 32, "bits": 14, "factor": 1, "offset": 0, "unit": "rpm"}
+        {"module": "isf", "uniqueId": "isf.2C4.EngineRPM", "name": "EngineRPM", "startBit": 32, "bits": 14, "factor": 1, "offset": 0, "unit": "rpm"}
       ]
     },
     {

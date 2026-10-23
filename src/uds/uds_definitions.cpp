@@ -4,14 +4,10 @@
 #include "uds/uds_mapper.h"
 
 const UdsDefinition UDS_DEFINITIONS[] = {
-    {"cLlSvC_7u", "Vehicle Speed", 0x7E0, 0x01, 12, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.0, 0.0, 42, DataType::Numeric},
-    {"-HYSOLbJn", "FL Wheel Speed", 0x7B0, 0x03, 1, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.28, 0.0, 42, DataType::Numeric},
-    {"v4xnACb-1", "FR Wheel Speed", 0x7B0, 0x03, 0, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.28, 0.0, 42, DataType::Numeric},
-    {"AcK0rmPvM", "RL Wheel Speed", 0x7B0, 0x03, 3, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.28, 0.0, 42, DataType::Numeric},
-    {"t1FnfghgK", "RR Wheel Speed", 0x7B0, 0x03, 2, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.28, 0.0, 42, DataType::Numeric},
-    {"vxpyKZ0Zo", "Engine Speed", 0x7E0, 0x01, 10, 0, {0xFF, 0xFF, 0x00, 0x00}, 2, false, 0.25, 0.0, 39, DataType::Numeric},
     {"ycETY1A_7", "Engine Oil Temperature", 0x7E0, 0x51, 9, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.0, -40.0, 57, DataType::Numeric},
     {"pl8Tao3_P", "Coolant Temp", 0x7E0, 0x01, 9, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.0, -40.0, 57, DataType::Numeric},
+    {"vxpyKZ0Zo", "Engine Speed", 0x7E0, 0x01, 10, 0, {0xFF, 0xFF, 0x00, 0x00}, 2, false, 0.25, 0.0, 39, DataType::Numeric},
+    {"cLlSvC_7u", "Vehicle Speed", 0x7E0, 0x01, 12, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.0, 0.0, 42, DataType::Numeric},
     {"GlSGt-9T7", "Calculate Load", 0x7E0, 0x01, 0, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 0.39215686274509803, 0.0, 33, DataType::Numeric},
     {"9BvEGq0dD", "MAF", 0x7E0, 0x01, 3, 0, {0xFF, 0xFF, 0x00, 0x00}, 2, false, 0.01, 0.0, 46, DataType::Numeric},
     {"AiyhbZOEd", "Engine Run Time", 0x7E0, 0x01, 13, 0, {0xFF, 0xFF, 0x00, 0x00}, 2, false, 1.0, 0.0, 52, DataType::Numeric},
@@ -142,6 +138,10 @@ const UdsDefinition UDS_DEFINITIONS[] = {
     {"NKb865K8G", "NT Sensor Voltage", 0x7E1, 0x81, 1, 0, {0xFF, 0xFF, 0x00, 0x00}, 2, false, 7.62939453125e-05, 0.0, 48, DataType::Numeric},
     {"QY8axK3Nf", "NC3 Sensor Voltage", 0x7E1, 0x81, 13, 0, {0xFF, 0xFF, 0x00, 0x00}, 2, false, 7.62939453125e-05, 0.0, 48, DataType::Numeric},
     {"32BDW-f03", "SP2 Sensor Voltage", 0x7E1, 0x81, 22, 0, {0xFF, 0xFF, 0x00, 0x00}, 2, false, 7.62939453125e-05, 0.0, 48, DataType::Numeric},
+    {"v4xnACb-1", "FR Wheel Speed", 0x7B0, 0x03, 0, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.28, 0.0, 42, DataType::Numeric},
+    {"-HYSOLbJn", "FL Wheel Speed", 0x7B0, 0x03, 1, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.28, 0.0, 42, DataType::Numeric},
+    {"t1FnfghgK", "RR Wheel Speed", 0x7B0, 0x03, 2, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.28, 0.0, 42, DataType::Numeric},
+    {"AcK0rmPvM", "RL Wheel Speed", 0x7B0, 0x03, 3, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.28, 0.0, 42, DataType::Numeric},
     {"yRGYTZgNS", "Vehicle Speed", 0x7B0, 0x21, 0, 0, {0xFF, 0x00, 0x00, 0x00}, 1, false, 1.28, 0.0, 42, DataType::Numeric},
     {"R-ofHq_E6", "FR Wheel Acceleration", 0x7B0, 0x42, 0, 0, {0xFF, 0x00, 0x00, 0x00}, 1, true, 1.569064, 0.0, 1, DataType::Numeric},
     {"8kTp8qubl", "FL Wheel Acceleration", 0x7B0, 0x42, 1, 0, {0xFF, 0x00, 0x00, 0x00}, 1, true, 1.569064, 0.0, 1, DataType::Numeric},

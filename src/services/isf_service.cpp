@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "can/twai_wrapper.h"
+#include "isf_broadcast.h"
 #include "isotp/iso_tp.h"
 #include "logger/logger.h"
 
@@ -42,6 +43,7 @@ bool IsfService::initialize()
         isotp_ = new IsoTp(twai_);
         ownsChannel_ = true;
     }
+    isotp_->setTap(tap, this);
     if (!twai_->initialize())
     {
         LOG_ERROR("ISF bus failed to open");
@@ -57,6 +59,7 @@ void IsfService::attach(TwaiWrapper *twai, IsoTp *isotp)
     twai_ = twai;
     isotp_ = isotp;
     ownsChannel_ = false;
+    isotp_->setTap(tap, this);
 }
 
 size_t IsfService::request(const ModuleDefinition &m, const uint8_t *payload, size_t length, uint32_t timeoutMs)
@@ -177,13 +180,59 @@ void IsfService::decodeBlock(ModuleState &m, uint8_t parameterAddress, const uin
 
     CANMessage changed[MessageTranslator::MaxFrames];
     int changedCount = translator_.apply(values, defCount, changed, MessageTranslator::MaxFrames);
-    for (int i = 0; i < changedCount; i++)
+    publish(changed, changedCount);
+}
+
+void IsfService::publish(const CANMessage *frames, int count)
+{
+    for (int i = 0; i < count; i++)
     {
         if (sink_ != nullptr)
         {
-            sink_(changed[i]);
+            sink_(frames[i]);
         }
-        forwardToIsf(changed[i]);
+        forwardToIsf(frames[i]);
+    }
+}
+
+// ------------------------------------------------------------------ broadcasts (the GT86 motion frames)
+
+void IsfService::onFrame(uint32_t id, const uint8_t *data, uint8_t len)
+{
+    ParameterValue values[MaxValuesPerBlock];
+    int n = BroadcastDecoder::decodeFrame(id, data, len, values, MaxValuesPerBlock);
+    if (n == 0)
+    {
+        return;
+    }
+    for (int i = 0; i < n; i++)
+    {
+        if (values[i].isAvailable)
+        {
+            LOG_DEBUG("broadcast %03lX %s = %g %s (raw %lld)", static_cast<unsigned long>(id),
+                      values[i].parameter->name, values[i].value, values[i].unit, static_cast<long long>(values[i].raw));
+        }
+    }
+    CANMessage changed[MessageTranslator::MaxFrames];
+    int changedCount = translator_.apply(values, n, changed, MessageTranslator::MaxFrames);
+    publish(changed, changedCount);
+}
+
+void IsfService::tap(void *context, uint32_t id, const uint8_t *data, uint8_t len)
+{
+    static_cast<IsfService *>(context)->onFrame(id, data, len);
+}
+
+void IsfService::pumpBroadcast()
+{
+    // Bounded, so a flood never keeps the session from its next request (the bus carries ~1100 frames/s).
+    constexpr int MaxPerCall = 128;
+    uint32_t id;
+    uint8_t data[8];
+    uint8_t len;
+    for (int i = 0; i < MaxPerCall && twai_->tryReceive(id, data, len, 0); i++)
+    {
+        onFrame(id, data, len);
     }
 }
 
@@ -424,6 +473,7 @@ void IsfService::listen()
         return;
     }
     twai_->checkAlerts();
+    pumpBroadcast();
     for (int i = 0; i < Modules::Count; i++)
     {
         ModuleState &m = modules_[i];

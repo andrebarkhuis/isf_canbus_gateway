@@ -10,6 +10,7 @@
 
 #include "can/twai_wrapper.h"
 #include "fake_bus.h"
+#include "isf_broadcast.h"
 #include "isotp/iso_tp.h"
 #include "logger/logger.h"
 #include "message_translator.h"
@@ -475,7 +476,20 @@ void translatorVectors()
         check("translator: definitions present", false, "missing");
         return;
     }
-    ParameterValue values[3];
+    const UdsDefinition *rpmB = nullptr, *speedB = nullptr; // the broadcast sources of GT86 0x141 and 0xD1
+    for (size_t i = 0; i < BROADCAST_SIGNALS_COUNT; i++)
+    {
+        if (std::string(BROADCAST_SIGNALS[i].identity.uniqueId) == "isf.2C4.EngineRPM")
+            rpmB = &BROADCAST_SIGNALS[i].identity;
+        if (std::string(BROADCAST_SIGNALS[i].identity.uniqueId) == "isf.0B4.VehicleSpeed")
+            speedB = &BROADCAST_SIGNALS[i].identity;
+    }
+    if (!rpmB || !speedB)
+    {
+        check("translator: broadcast sources present", false, "missing");
+        return;
+    }
+    ParameterValue values[5];
     values[0].parameter = rpm;
     values[0].isAvailable = true;
     values[0].raw = 1726 * 4;
@@ -488,9 +502,17 @@ void translatorVectors()
     values[2].isAvailable = true;
     values[2].raw = 60;
     values[2].value = 60;
+    values[3].parameter = rpmB;
+    values[3].isAvailable = true;
+    values[3].raw = 2209;
+    values[3].value = 1726;
+    values[4].parameter = speedB;
+    values[4].isAvailable = true;
+    values[4].raw = 6000;
+    values[4].value = 60;
     MessageTranslator t;
     CANMessage changed[MessageTranslator::MaxFrames];
-    int n = t.apply(values, 3, changed, MessageTranslator::MaxFrames);
+    int n = t.apply(values, 5, changed, MessageTranslator::MaxFrames);
     std::string got;
     bool ok141 = false, ok360 = false, okD1 = false, okSpeed = false, okTemps = false;
     for (int i = 0; i < n; i++)
@@ -520,6 +542,17 @@ std::vector<CANMessage> sunk;
 void sink(const CANMessage &m)
 {
     sunk.push_back(m);
+}
+std::string sunkText()
+{
+    std::string s;
+    for (auto &m : sunk)
+    {
+        char b[16];
+        snprintf(b, sizeof(b), "%03X#", static_cast<unsigned>(m.id));
+        s += (s.empty() ? "" : " ") + std::string(b) + hexOf(m.data, 8);
+    }
+    return s;
 }
 
 /// A scripted ECU that answers whole payloads: segments its reply, waits for our flow control before the CFs.
@@ -569,6 +602,34 @@ struct ScriptedEcu
         return r;
     }
 };
+
+void broadcastVectors()
+{
+    printf("broadcast decode (IS F frames from gt86-isf-swap/logs/ISF_SPEED_RPM_driving.csv)\n");
+    // 0B4 00 00 00 00 01 02 80 3F: SPEED 47|16@0+ x0.01 -> 0x0280 = 6.4 km/h
+    Frame speed = frameOf(0x0B4, "00000000010280" "3F");
+    ParameterValue v[8];
+    int n = BroadcastDecoder::decodeFrame(0x0B4, speed.data, speed.len, v, 8);
+    check("0x0B4: one signal, bytes 5-6 big-endian 0x0280 x 0.01 = 6.4 km/h", n == 1 && v[0].isAvailable && v[0].raw == 0x0280 &&
+          std::fabs(v[0].value - 6.4) < 1e-9 && std::string(v[0].unit) == "km/h", std::to_string(n));
+    // 2C4 03 F9 5B 20 00 80 D2 97: RPM 7|16@0- x0.78125 -> 0x03F9 = 1017 -> 794.53 rpm
+    Frame rpm = frameOf(0x2C4, "03F95B200080D297");
+    n = BroadcastDecoder::decodeFrame(0x2C4, rpm.data, rpm.len, v, 8);
+    check("0x2C4: rpm bytes 0-1 big-endian signed 0x03F9 x 0.78125 = 794.53", n == 1 && v[0].raw == 1017 && std::fabs(v[0].value - 794.53125) < 1e-9);
+    // 0B0 02 A3 02 74 00 00 (6 bytes): FR 0x02A3 = 6.75, FL 0x0274 = 6.28 km/h
+    Frame front = frameOf(0x0B0, "02A3027400" "00");
+    n = BroadcastDecoder::decodeFrame(0x0B0, front.data, front.len, v, 8);
+    bool okFront = n == 2 && std::fabs(v[0].value - 6.75) < 1e-9 && std::fabs(v[1].value - 6.28) < 1e-9;
+    check("0x0B0 (6 bytes): FR 6.75 km/h then FL 6.28 km/h", okFront, std::to_string(n));
+    // too short a frame: the field does not fit
+    n = BroadcastDecoder::decodeFrame(0x0B4, speed.data, 4, v, 8);
+    check("0x0B4 with 4 bytes: speed field does not fit, not available", n == 1 && !v[0].isAvailable);
+    // signed extraction
+    uint8_t neg[8] = {0xFF, 0xFE, 0, 0, 0, 0, 0, 0};
+    check("big-endian extract 7|16 of FF FE = 0xFFFE; little-endian 0|16 = 0xFEFF",
+          BroadcastDecoder::extract(neg, 7, 16, true) == 0xFFFE && BroadcastDecoder::extract(neg, 0, 16, false) == 0xFEFF);
+    check("an id that is no broadcast source decodes to nothing", BroadcastDecoder::decodeFrame(0x7E8, speed.data, 8, v, 8) == 0);
+}
 
 void endToEnd()
 {
@@ -630,7 +691,7 @@ void endToEnd()
         if (m.id == 0x360)
             okGt = m.data[3] == 0x3C; // coolant 20 degC -> 60
         if (m.id == 0x141)
-            okRpm = m.data[4] == 0x00 && m.data[5] == 0x80 && m.data[6] == 0xA7; // rpm 0 written, bits 46-47 kept
+            okRpm = true; // must not happen: 0x141 is fed by the 0x2C4 broadcast, not by Mode 21
         if (m.id == 0x1F0005E0) // ENG_Speed_Load: rpm 0
             okAdu = m.data[0] == 0 && m.data[1] == 0;
         if (m.id == 0x1F0005E1) // ENG_Temperatures: coolant raw 60, intake raw 63
@@ -640,7 +701,7 @@ void endToEnd()
     }
     check("read 21 01: the 26-byte block (live-isf.log) expands through the map and decodes", got, "");
     check("read 21 01: GT86 0x360 byte 3 = 3C (coolant 20 degC + 40)", okGt, ids);
-    check("read 21 01: GT86 0x141 refreshed with rpm 0 (constant values are still forwarded)", okRpm, ids);
+    check("read 21 01: GT86 0x141 is not touched by Mode 21 (its rpm comes from the 0x2C4 broadcast)", !okRpm, ids);
     check("read 21 01: ADU ENG_Speed_Load rpm 0", okAdu, ids);
     check("read 21 01: ADU ENG_Temperatures coolant raw 60, intake raw 63", okTemps, ids);
     check("read 21 01: ADU ENG_Electrical battery raw 32BC little-endian", okExtras, ids);
@@ -653,6 +714,49 @@ void endToEnd()
             fwdGt86 = true;
     }
     check("read 21 01: ADU ENG_Speed_Load is sent on the ISF bus as well; the GT86 packets are not", fwdAdu && !fwdGt86, sentText());
+
+    // Broadcasts: a 0B4 frame handed straight to the service translates into GT86 0xD1 at once.
+    sunk.clear();
+    Frame speed = frameOf(0x0B4, "000000000102803F");
+    service.onFrame(speed.id, speed.data, speed.len);
+    bool okD1 = false;
+    for (auto &m : sunk)
+    {
+        if (m.id == 0xD1)
+            okD1 = (m.data[0] | m.data[1] << 8) == 113 && m.data[2] == 0x13; // 6.4 / 0.0565 = 113.3 -> 113; rest default
+    }
+    check("broadcast 0x0B4 6.4 km/h -> GT86 0xD1 bytes 0-1 = 113 (0.0565 km/h per bit), nothing else touched",
+          okD1 && sunk.size() == 1, std::to_string(sunk.size()) + " frame(s)");
+    // ... and 0B0 / 0B2 / 2C4 fill 0xD4 and 0x141 (rpm 794.53 -> 795 = 0x031B in bits 32-45, bits 46-47 kept).
+    sunk.clear();
+    Frame front = frameOf(0x0B0, "02A302740000");
+    Frame rear = frameOf(0x0B2, "02A002580000");
+    Frame rpm = frameOf(0x2C4, "03F95B200080D297");
+    service.onFrame(front.id, front.data, front.len);
+    service.onFrame(rear.id, rear.data, rear.len);
+    service.onFrame(rpm.id, rpm.data, rpm.len);
+    bool okD4 = false, okRpmB = false;
+    for (auto &m : sunk)
+    {
+        if (m.id == 0xD4)
+            // FL 6.28 -> 111, FR 6.75 -> 119 (0B0 carries FR then FL); RL 6.00 -> 106, RR 6.72 -> 119 (0B2: RR then RL)
+            okD4 = (m.data[0] | m.data[1] << 8) == 111 && (m.data[2] | m.data[3] << 8) == 119 &&
+                   (m.data[4] | m.data[5] << 8) == 106 && (m.data[6] | m.data[7] << 8) == 119;
+        if (m.id == 0x141)
+            okRpmB = m.data[4] == 0x1B && m.data[5] == 0x83 && m.data[6] == 0xA7;
+    }
+    check("broadcast 0x0B0/0x0B2 -> GT86 0xD4 FL FR RL RR; 0x2C4 794.5 rpm -> 0x141 rpm 795 with bits 46-47 kept",
+          okD4 && okRpmB, sunkText());
+
+    // The same frame arriving on the bus while a request is in flight reaches the service through the channel's tap.
+    sunk.clear();
+    fakeBus().queue(2, frameOf(0x0B4, "0000000000000A3F")); // bytes 5-6 = 0x000A = 0.10 km/h -> round(0.1/0.0565) = 2
+    service.read(engine, 0x01);
+    bool tapped = false;
+    for (auto &m : sunk)
+        if (m.id == 0xD1 && (m.data[0] | m.data[1] << 8) == 2)
+            tapped = true;
+    check("a 0x0B4 broadcast arriving during a 21 01 request is decoded through the ISO-TP tap", tapped, sunkText());
 }
 } // namespace
 
@@ -665,6 +769,7 @@ int main(int argc, char **argv)
     decoderVectors();
     sessionVectors();
     translatorVectors();
+    broadcastVectors();
     endToEnd();
     if (failed == 0)
     {

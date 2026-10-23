@@ -33,7 +33,8 @@ When a behaviour is in question, compare the two files side by side and make the
 
 - The polling scheme (`IsfService::fastStep`, `slowStep`): ToyotaLens reads every supported block once per cycle
   for the tab in focus; the gateway reads engine `21 01` and ABS `21 03` every cycle and one other block per
-  cycle. Which blocks exist to poll comes from the forwarded parameters, intersected with the support bitmap
+  cycle. The broadcast decode (`IsfService::onFrame`, `src/isf_broadcast.*`, the `IsoTp` frame tap) is the
+  gateway's own too; ToyotaLens has no use for the modules' broadcast frames. Which blocks exist to poll comes from the forwarded parameters, intersected with the support bitmap
   (requirement R4.4).
 - `src/message_translator.*` and `src/translator_table.cpp`: decoded values into output frames.
 - `src/services/gt86_service.*`, `src/mcp_can/`: the second bus.

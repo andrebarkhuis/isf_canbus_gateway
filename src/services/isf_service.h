@@ -53,8 +53,10 @@ typedef void (*FrameSink)(const CANMessage &frame);
  *
  * Every reply goes through one `interpret`: it learns support bitmaps and data maps and decodes data blocks.
  * `discover` probes a module (21 00; any reply means present), walks the bitmaps and fetches the data maps of
- * the blocks the gateway polls. `listen` is the task loop body: discovery while a module is silent (retried
- * every RediscoverMs, as the ToyotaLens watch does while WAITING FOR CAR), then one polling step. A module's
+ * the blocks the gateway polls. `listen` is the task loop body: the broadcasts waiting in the receive queue, discovery while a module is
+ * silent (retried every RediscoverMs, as the ToyotaLens watch does while WAITING FOR CAR), then one polling
+ * step. Alongside, the modules' own broadcast frames reach `onFrame` as they arrive: from the receive queue
+ * between requests and from the ISO-TP channel's tap during one. A module's
  * silence is never a bus fault (§8.5).
  */
 class IsfService
@@ -116,6 +118,11 @@ public:
     /// R5: read one block (21 <id>) and decode it through `interpret`; true when a block came back.
     bool read(ModuleState &m, uint8_t parameterAddress);
 
+    /// One frame seen on the ISF bus that is not a reply to us: a module's broadcast (wheel speeds, speed, rpm).
+    /// Decodes it through BROADCAST_SIGNALS and translates the values at once, for the GT86 motion frames. The
+    /// Mode 21 path is untouched by this: the ADU frames keep the ECU's own view. Public for the self-test.
+    void onFrame(uint32_t id, const uint8_t *data, uint8_t len);
+
     ModuleState &state(int index)
     {
         return modules_[index];
@@ -135,6 +142,11 @@ private:
     static bool isFastBlock(uint32_t requestId, uint8_t parameterAddress);
     void fastStep(ModuleState &m);
     bool slowStep();
+    /// Takes every frame waiting in the receive queue (between requests) and hands it to onFrame.
+    void pumpBroadcast();
+    /// Hands translated frames to the sink and to the ISF bus copies.
+    void publish(const CANMessage *frames, int count);
+    static void tap(void *context, uint32_t id, const uint8_t *data, uint8_t len);
     /// Sends a translated frame on the ISF bus too when its OutputFrame says so, at the frame's own interval.
     void forwardToIsf(const CANMessage &frame);
     /// Repeats the ISF-bus copies at their intervals between polls, so a slow block's frame is not sent only

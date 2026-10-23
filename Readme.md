@@ -29,7 +29,9 @@ ToyotaLens's `data/{engine,ect,abs}.json`, pulled in by a generator, never hand-
    `21 00 / 20 / 40 …`, and fetch the response data map `A8 11 <id>` for every block the gateway polls. A silent
    module is probed again every 3 s, so the gateway can be powered before the ignition.
 2. **Poll** the blocks that carry forwarded parameters: engine `21 01` and ABS `21 03` every cycle (rpm, speed,
-   wheel speeds, coolant), the other blocks one per cycle in turn.
+   wheel speeds, coolant), the other blocks one per cycle in turn. In addition, the GT86 speed, wheel speed and
+   rpm frames are fed from the IS F modules' own broadcast frames (0x0B0, 0x0B2, 0x0B4, 0x2C4) the moment they
+   arrive, so they do not wait for a poll (`docs/output-frames.md` §2.1).
 3. **Decode** every parameter of a block exactly as ToyotaLens does (data-map expansion, masked big-endian read,
    sign, shift, scale, unit map).
 4. **Translate** into output frames (see [docs/output-frames.md](docs/output-frames.md)) and hand them to the
