@@ -501,7 +501,7 @@ void translatorVectors()
         if (changed[i].id == 0x360)
             ok360 = changed[i].data[2] == 0x84 && changed[i].data[3] == 90;
         if (changed[i].id == 0xD1)
-            okD1 = (changed[i].data[0] | changed[i].data[1] << 8) == 1062 && changed[i].data[4] == 0xB8;
+            okD1 = (changed[i].data[0] | changed[i].data[1] << 8) == 1062 && changed[i].data[2] == 0x13 && changed[i].data[4] == 0x00;
         if (changed[i].id == 0x1F0005E0) // ENG_Speed_Load: rpm bytes 0-1, speed byte 2
             okSpeed = changed[i].data[0] == 0xF8 && changed[i].data[1] == 0x1A && changed[i].data[2] == 60;
         if (changed[i].id == 0x1F0005E1) // ENG_Temperatures: coolant byte 0

@@ -391,8 +391,8 @@ BO_ 2667578883 ABS_Faults_Misc: 8 GATEWAY
  SG_ MC_SensorSupplyOpen : 6|1@1+ (1,0) [0|1] "" ADU
  SG_ SolenoidSupplyOpen : 7|1@1+ (1,0) [0|1] "" ADU
 
-CM_ BO_ 208 "Steering angle and lateral/longitudinal G; default bytes only";
-CM_ BO_ 209 "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data";
+CM_ BO_ 208 "Steering angle and lateral/longitudinal G; default bytes only: wheel straight, no G (the real car at rest sends 0E 00 01 00 00 00 00 FF)";
+CM_ BO_ 209 "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data; default is the real car at rest (00 00 13 00), foot off the brake";
 CM_ BO_ 211 "VSC / TCS / SCS lights; default bytes only";
 CM_ BO_ 212 "Four wheel speeds, 16 bits each, 0.0565 km/h per bit";
 CM_ BO_ 320 "Default bytes only: bytes 2-3 did not move with engine speed in the drive capture";

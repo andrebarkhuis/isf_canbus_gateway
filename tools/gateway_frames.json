@@ -21,10 +21,10 @@
   "toyotaLensData": "../../ToyotaLens/data",
   "frames": [
     {
-      "id": "0xD0", "name": "GT86_GSensor", "gt86": true, "interval": 100, "defaults": "8B FB 25 00 01 08 04 01", "comment": "Steering angle and lateral/longitudinal G; default bytes only"
+      "id": "0xD0", "name": "GT86_GSensor", "gt86": true, "interval": 100, "defaults": "00 00 01 00 00 00 00 00", "comment": "Steering angle and lateral/longitudinal G; default bytes only: wheel straight, no G (the real car at rest sends 0E 00 01 00 00 00 00 FF)"
     },
     {
-      "id": "0xD1", "name": "GT86_VehicleSpeed", "gt86": true, "interval": 100, "defaults": "00 00 00 00 B8 0F FC 08", "comment": "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data",
+      "id": "0xD1", "name": "GT86_VehicleSpeed", "gt86": true, "interval": 100, "defaults": "00 00 13 00 00 00 00 00", "comment": "Vehicle speed (bytes 0-1, 0.0565 km/h per bit) and brake data; default is the real car at rest (00 00 13 00), foot off the brake",
       "signals": [
         {"module": "engine", "uniqueId": "cLlSvC_7u", "name": "VehicleSpeed", "startBit": 0, "bits": 16, "factor": 0.0565, "offset": 0, "unit": "km/h"}
       ]
@@ -48,7 +48,7 @@
       "id": "0x140", "name": "GT86_EngineData1", "gt86": true, "interval": 50, "defaults": "00 05 00 43 00 00 00 01", "comment": "Default bytes only: bytes 2-3 did not move with engine speed in the drive capture"
     },
     {
-      "id": "0x141", "name": "GT86_EngineData2", "gt86": true, "interval": 50, "defaults": "00 00 00 00 00 83 A7 00", "comment": "Engine rpm in bits 32-45 (bytes 4-5, 14 bits, 1 rpm per bit); bits 46-47 kept from the default",
+      "id": "0x141", "name": "GT86_EngineData2", "gt86": true, "interval": 50, "defaults": "00 00 00 00 00 80 A7 00", "comment": "Engine rpm in bits 32-45 (bytes 4-5, 14 bits, 1 rpm per bit); bits 46-47 kept from the default",
       "signals": [
         {"module": "engine", "uniqueId": "vxpyKZ0Zo", "name": "EngineRPM", "startBit": 32, "bits": 14, "factor": 1, "offset": 0, "unit": "rpm"}
       ]

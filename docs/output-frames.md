@@ -35,19 +35,22 @@ band the IS F modules broadcast in).
 
 Sent whether or not the IS F answers, so the GT86 modules see a complete car. The default bytes are the frames
 recorded in `gt86-isf-swap/logs/GT86/cluster_working_no_errors.txt` (the cluster showed no warnings with exactly
-these), except that the speed fields of 0x0D1 and 0x0D4 are zero: that capture was taken at 114 km/h, and the
-defaults are what the GT86 sees before the first IS F answer and whenever the IS F stops answering, so they must
-describe a standing car. Intervals are the rates seen in the drive capture.
+these), except for the motion-related frames: that capture was taken at 114 km/h, and the defaults are what the
+GT86 sees before the first IS F answer and whenever the IS F stops answering, so they describe a car standing
+still with the engine off. 0x0D0 is wheel straight and no G, 0x0D1 is speed 0 and foot off the brake (the real
+car at rest sends `00 00 13 00`), 0x0D4 is four wheel speeds of 0, and 0x141 is 0 rpm. The remaining frames are
+the same at standstill as in the capture (checked against the drive capture's standstill periods). Intervals are
+the rates seen in the drive capture.
 
 | Id | Name | Default bytes | Interval | Translated signals |
 |---|---|---|---|---|
-| 0x0D0 | GT86_GSensor | `8B FB 25 00 01 08 04 01` | 100 ms | none |
-| 0x0D1 | GT86_VehicleSpeed | `00 00 00 00 B8 0F FC 08` | 100 ms | VehicleSpeed: bytes 0–1, 0.0565 km/h per bit, from engine `21 01` pos 12 |
+| 0x0D0 | GT86_GSensor | `00 00 01 00 00 00 00 00` | 100 ms | none (wheel straight, no G) |
+| 0x0D1 | GT86_VehicleSpeed | `00 00 13 00 00 00 00 00` | 100 ms | VehicleSpeed: bytes 0–1, 0.0565 km/h per bit, from engine `21 01` pos 12 |
 | 0x0D2 | GT86_Unknown_D2 | `00 00 FF FF 00 00 00 00` | 100 ms | none |
 | 0x0D3 | GT86_LightStatus | `00 06 C0 0F 00 00 32 00` | 100 ms | none |
 | 0x0D4 | GT86_WheelSpeeds | `00 00 00 00 00 00 00 00` | 40 ms | FL, FR, RL, RR: 16 bits each, 0.0565 km/h per bit, from ABS `21 03` |
 | 0x140 | GT86_EngineData1 | `00 05 00 43 00 00 00 01` | 50 ms | none (bytes 2–3 did not follow engine speed in the capture) |
-| 0x141 | GT86_EngineData2 | `00 00 00 00 00 83 A7 00` | 50 ms | EngineRPM: bits 32–45, 1 rpm per bit, from engine `21 01` pos 10; bits 46–47 kept |
+| 0x141 | GT86_EngineData2 | `00 00 00 00 00 80 A7 00` | 50 ms | EngineRPM: bits 32–45, 1 rpm per bit, from engine `21 01` pos 10; bits 46–47 kept |
 | 0x142 | GT86_EngineMisc | `00 00 00 00 00 00 00 00` | 10 ms | none |
 | 0x144 | GT86_BrakeData1 | `C0 00 58 02 01 A4 A0 00` | 50 ms | none |
 | 0x360 | GT86_Temperatures | `00 00 84 50 00 00 11 00` | 50 ms | byte 2 oil temperature, byte 3 coolant temperature, both +40, from engine `21 51` pos 9 and `21 01` pos 9 |
