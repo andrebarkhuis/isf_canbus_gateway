@@ -262,6 +262,16 @@ def write_translator_table(path, frames, broadcast):
         f.write("\n".join(lines))
 
 
+# Unit spellings for the DBC files only. The ECUmaster ADU recognises units by their exact text from a fixed list
+# (its own log and CANX files write the degree sign, UTF-8, and cm^3 for millilitres); anything else is flagged on
+# import and has to be mapped by hand. The firmware's unit map and gateway_frames.json keep the ASCII names.
+DBC_UNITS = {"degC": "°C", "deg": "°", "deg/s": "°/s", "ml": "cm^3"}
+
+
+def dbc_unit(unit):
+    return DBC_UNITS.get(unit, unit)
+
+
 def dbc_signal_name(p):
     """A broadcast signal's DBC name: frame token + the last segment of its uniqueId (isf.0B4.VehicleSpeed -> ISF_VehicleSpeed)."""
     return channel_name(p["frameName"], p["uniqueId"].split(".")[-1])
@@ -288,7 +298,7 @@ def write_dbc(path, frames, broadcast, title, nodes):
             out.append(' SG_ %s : %d|%d@%d%s (%s,%s) [%s|%s] "%s" GATEWAY' % (
                 dbc_signal_name(p), p["startBit"], p["bits"], 0 if p["bigEndian"] else 1, "-" if p["signed"] else "+",
                 fmt(p["scaleFactor"]).rstrip("0").rstrip("."), fmt(p["offset"]).rstrip("0").rstrip("."),
-                ("%g" % vmin), ("%g" % vmax), p["unit"]))
+                ("%g" % vmin), ("%g" % vmax), dbc_unit(p["unit"])))
         if fr.get("comment"):
             comments.append('CM_ BO_ %d "%s";' % (fr["idInt"], fr["comment"].replace('"', "'")))
         out.append("")
@@ -306,7 +316,7 @@ def write_dbc(path, frames, broadcast, title, nodes):
             vmin, vmax = sorted((lo * factor + offset, hi * factor + offset))
             out.append(' SG_ %s : %d|%d@1%s (%s,%s) [%s|%s] "%s" %s' % (
                 s["name"], s["startBit"], s["bits"], "-" if signed else "+", fmt(factor).rstrip("0").rstrip("."),
-                fmt(offset).rstrip("0").rstrip("."), ("%g" % vmin), ("%g" % vmax), unit, receiver))
+                fmt(offset).rstrip("0").rstrip("."), ("%g" % vmin), ("%g" % vmax), dbc_unit(unit), receiver))
             # No per-signal comment: the ECUmaster importer limits a message's DBC text to about 1000 bytes, and
             # docs/adu-frames.md carries the source of every signal instead.
             if s["passRaw"] and p.get("states"):
