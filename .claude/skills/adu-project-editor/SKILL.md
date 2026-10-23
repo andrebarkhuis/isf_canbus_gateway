@@ -49,6 +49,14 @@ input's name, a function's name, the constants `zero` / `one`. Message objects a
 index** (`mobIndex`): deleting one shifts every later index, which `remove-mob` handles. Groups are referenced
 by **1-based position** in the `groups` array (`groupId`; 0 = none).
 
+## Folders
+
+The client's project tree folders are the `groups` array: every item in every array carries `groupId`, the
+1-based position of its folder in `groups` (0 = root), and a group's own `groupId` is its parent, so folders
+nest. `info` prints the tree; `move --name X --folder F` puts any item (or folder) into F, creating F when new,
+`--folder /` for the root. `import-canx --group` puts the new objects and inputs into a folder the same way.
+Folder membership is cosmetic: nothing resolves by folder, names must be unique project-wide regardless.
+
 ## CAN message object (`canbusMobs` item, struct eCanbusMob)
 
 | variable | meaning |

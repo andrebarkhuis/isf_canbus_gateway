@@ -217,6 +217,45 @@ class Project:
                 lines.append("  %-28s = %s%s" % (item_var(t, "name"), describe_ops(program_ops(t), is_number, self.unknown), extra))
         return "\n".join(lines)
 
+    FOLDER_ARRAYS = ("canbusMobs", "canbusInputs", "analogInputs", "digitalInputs", "numbers", "functions", "enumerations", "timers", "momentarySwitches", "tables", "canbusExports", "dashboardPages", "dashboardAlarms")
+
+    def folder_report(self):
+        """The project tree as the client shows it: folders (groups, nestable through their own groupId) and the
+        items each holds; groupId 0 is the root."""
+        groups = [(item_var(t, "name"), int(item_var(t, "groupId") or 0)) for _, _, t in self.items("groups")]
+        members = {}
+        for arr in self.FOLDER_ARRAYS:
+            try:
+                for _, _, t in self.items(arr):
+                    members.setdefault(int(item_var(t, "groupId") or 0), []).append((arr, item_var(t, "name")))
+            except Exception:
+                pass
+        lines = []
+
+        def walk(gid, depth):
+            for arr, name in members.get(gid, []):
+                lines.append("  " * depth + "%s  (%s)" % (name, arr))
+            for i, (gname, parent) in enumerate(groups):
+                if parent == gid:
+                    lines.append("  " * depth + "[%s]" % gname)
+                    walk(i + 1, depth + 1)
+        walk(0, 1)
+        return "\n".join(lines)
+
+    def move_to_folder(self, name, folder):
+        """Puts the item called name (any array) into the folder, "" or "/" for the root. Returns the array it was in."""
+        gid = 0 if folder in ("", "/") else self.group_index(folder, create=True)
+        for arr in self.FOLDER_ARRAYS + ("groups",):
+            try:
+                items = self.items(arr)
+            except Exception:
+                continue
+            for s, e, t in items:
+                if item_var(t, "name") == name:
+                    self.text = self.text[:s] + set_item_var(t, "groupId", str(gid)) + self.text[e:]
+                    return arr
+        fail("no item called %s" % name)
+
     def page_report(self):
         self._known = self.known_channels()
         lines = []
@@ -469,6 +508,8 @@ def info(p):
               item_var(t, "byteOffset"), item_var(t, "bitCount"), " -> " + ov if ov else ""))
     for arr in ("analogInputs", "digitalInputs", "enumerations"):
         print("%s: %s" % (arr, p.item_names(arr)))
+    print("tree (folders in brackets, items with their array):")
+    print(p.folder_report())
     print("numbers and functions (a trailing ? marks a channel nothing in the project defines):")
     print(p.program_report())
     print(p.page_report())
@@ -492,6 +533,8 @@ def main():
     s.add_argument("--to", dest="new", required=True); s.add_argument("--out", required=True)
     s = sub.add_parser("remove-input"); s.add_argument("adu"); s.add_argument("--name", required=True); s.add_argument("--out", required=True)
     s = sub.add_parser("remove-mob"); s.add_argument("adu"); s.add_argument("--name", required=True); s.add_argument("--out", required=True)
+    s = sub.add_parser("move"); s.add_argument("adu"); s.add_argument("--name", required=True)
+    s.add_argument("--folder", required=True, help='folder (group) name, created if new; "/" for the root'); s.add_argument("--out", required=True)
     s = sub.add_parser("rename-mob"); s.add_argument("adu"); s.add_argument("--from", dest="old", required=True)
     s.add_argument("--to", dest="new", required=True); s.add_argument("--out", required=True)
     a = ap.parse_args()
@@ -538,6 +581,8 @@ def main():
     elif a.cmd == "remove-mob":
         remove_mob(p, a.name)
         print("removed message object", a.name, "and its inputs")
+    elif a.cmd == "move":
+        print("moved %s (%s) to folder %s" % (a.name, p.move_to_folder(a.name, a.folder), a.folder or "/"))
     elif a.cmd == "rename-mob":
         rename_mob(p, a.old, a.new)
         print("renamed message object", a.old, "->", a.new)
