@@ -21,7 +21,8 @@ ToyotaLens's `data/{engine,ect,abs}.json`, pulled in by a generator, never hand-
   flashing and the serial log (the S3's native USB Serial/JTAG port, VID 303A).
 - **CAN 1 (IS F bus):** the ESP32's TWAI controller, TX GPIO 7 / RX GPIO 6, 500 kbit/s.
 - **CAN 2 (GT86 bus):** MCP2515 on SPI2, SCK 12 / MISO 13 / MOSI 11 / CS 10, 16 MHz crystal, 500 kbit/s.
-- Termination is on by default on both channels (TERM1 / TERM2 pads on the back).
+- Termination is on by default on both channels (TERM1 / TERM2 pads on the back). A car bus already has its two
+  terminators, so open the pad of every channel that goes into one (`deployment-guide.md`, Troubleshooting).
 
 ## What it does
 
@@ -48,7 +49,7 @@ Every frame sent or received on the IS F bus is written to the serial log in can
 
 ```text
 isf_canbus_gateway/
-├── CLAUDE.md                    working rules: port ToyotaLens, keep the Mode 21 path, plans before edits
+├── CLAUDE.md                    the reading list: which documents to read, in which order (the rules are in Rules.md)
 ├── platformio.ini, sdkconfig.defaults, partitions.csv, CMakeLists.txt   PlatformIO + ESP-IDF project
 ├── src/
 │   ├── main.cpp                 app_main: the two tasks and the queue between them
@@ -75,7 +76,8 @@ isf_canbus_gateway/
 
 ## Build, flash, test
 
-See [build-guide.md](build-guide.md) and [deployment-guide.md](deployment-guide.md). In short:
+See [build-guide.md](build-guide.md) and [deployment-guide.md](deployment-guide.md) (the latter also explains
+every log line, the first power-up checklist and troubleshooting). In short:
 
 ```bash
 python -m venv .venv && .venv\Scripts\pip install -r requirements.txt   # once

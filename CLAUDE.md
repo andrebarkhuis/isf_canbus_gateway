@@ -1,45 +1,14 @@
-# Working rules for this repository
+# Where to read before working here
 
-Read `Readme.md` first, then `docs/toyotalens-port.md` and `docs/output-frames.md`.
+Read these in this order and follow them; nothing in this file replaces them.
 
-## The IS F side is a port of ToyotaLens, not a design of its own
-
-Everything that talks to the IS F modules (ISO-TP, the Mode 21 session, support bitmaps, data maps,
-parameter decoding, parameter lists) is `C:\projects\ToyotaLens` ported file for file: same names, constants,
-timers and edge-case decisions, and its specification vectors as the self-test. ToyotaLens was verified on the
-car; the gateway's first attempt was not. Before writing any IS F-side C++, open the matching ToyotaLens file
-(the table in `docs/toyotalens-port.md`) and make the port match it. Do not reason from first principles and
-do not "improve" the protocol code. Only the GT86/output side (frames, defaults, DBC/CANX, translator) is the
-gateway's own.
-
-## The Mode 21 path is the reference and is never removed
-
-The ADU frames (29-bit ids from 0x1F0005E0) come from Mode 21 over ISO-TP, with exactly known mappings from
-ToyotaLens's definitions. That path serves diagnostics and is the reference against which anything else is
-checked. The broadcast decode (IS F 0x0B0/0x0B2/0x0B4/0x2C4 into the GT86 motion frames) exists only for
-latency on the GT86 side and was added next to it. Never replace a Mode 21 source with a broadcast one, never
-drop the fast-polled blocks (`FAST_BLOCKS`, `fastStep`, `slowStep`) and never slow the ADU frames.
-
-## Plans before edits
-
-Explore first and get the plan approved before changing code. Do not introduce a new domain concept (a new
-kind of signal, frame, source or configuration key) without asking.
-
-## The ADU project is out of scope
-
-The ECUmaster ADU project (.adu) is not part of this repository and is never edited or generated here. The
-gateway's job ends at `gt86-bus.canx` / `isf-bus.canx` (and the DBC files), which the owner imports in the ADU
-client. `docs/adu-project.md` records what the ADU needs from those files.
-
-## Commands
-
-```bash
-python -m venv .venv && .venv\Scripts\pip install -r requirements.txt   # once
-python tools/generate.py        # after editing tools/gateway_frames.json: C++ tables, DBC, CANX, docs/adu-frames.md
-bash test/host/run.sh           # host self-test (Docker); must pass before a commit that touches src/ or tools/
-.venv\Scripts\pio run           # firmware build
-.venv\Scripts\pio run -t upload # flash
-```
-
-`tools/gateway_frames.json` is the single source for frames and signals; never edit the generated files
-(`src/uds/uds_definitions.cpp`, `src/translator_table.cpp`, `*.dbc`, `*.canx`, `docs/adu-frames.md`) by hand.
+1. `Readme.md` — what the gateway is, the hardware, the modules and blocks, the directory layout.
+2. `Rules.md` — the working rules for any agent or person changing this repository, the requirements
+   hierarchy and the verification checklist.
+3. `docs/toyotalens-port.md` — which ToyotaLens file each IS F-side file was ported from.
+4. `docs/output-frames.md` — the frames the gateway sends, where they came from, how to change them.
+5. `code-guide.md` — code style.
+6. `build-guide.md` — compiling, regenerating the tables, the host self-test.
+7. `deployment-guide.md` — flashing, the serial log, every log line, debugging.
+8. `docs/adu-project.md` — what the ECUmaster ADU needs from the gateway's files.
+9. `docs/adu-frames.md` — generated reference of the ADU frames and channels.
